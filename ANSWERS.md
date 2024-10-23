@@ -1,34 +1,50 @@
 1. Key Management:
 
 - We use Ed25519 Signatures
-
 - Besides the cryptographic material we store name and authority properties on the Key class
-
 - We use the system default keyring backend
-
-- How should key authority URLs be validated and what's the expected format of
-  .well-known/iscc-keys.json?
+- authority URLs format spec at docs/iscc-keys-format.md
 
 2. Signing:
 
-- Which signing algorithm(s) should be supported (RS256, ES256, EdDSA)?
-- What's the exact format of the signature object that will be added to the JSON?
-- Should there be size limits for the input JSON data?
-- How should nested objects be handled during JCS canonicalization?
+- We only support Ed25519 signing?
+- Signtures will be added as an object under the `signature` propetry with fields:
+  - authority - url authority (optional)
+  - pubkey - hex encoded public key
+  - signature - JWS Detached signature
+- We do not enforce any size limits on the input JSON data
+- JCS canonicalization handles nested objects deterministically
 
 3. Timestamping:
 
-- What's the protocol for communicating with timestamp servers?
-- What's the format of the timestamp request/response?
-- How are timestamp server signatures verified?
-- Should there be a default timestamp server?
-- Should there be retry logic for timestamp server requests?
+- The protocol for communication with the timestamp servers will be a REST API
+- The timestemping request will body could be:
+
+```json
+{
+    "payload": "571dae63146ee0fa4a393d9d502cef2e6692c5638aca646996b1171ae0609662",
+    "signature": "<signatur over the payload by the requester>"
+}
+```
+
+- The timestamping response body could be:
+
+```json
+{
+    "tid": "ISCC:AAAWN77F727NXSUS",
+    "signature": "<signature over the verified request object confirming unique tid asignment>"
+}
+```
+
+- Timestamp server signatures are verified the same as other signatures in the framework
+- The default timestamp server will be https://time.iscc.id
+- Retry logic for timestamp server requests will be the responsibility of the user
 
 4. Trust & Security:
 
-- How should authority URL validation work in detail?
-- Should there be a maximum age for signatures/timestamps?
-- Should there be a list of trusted timestamp servers?
+- Details about how authority URL validation works are at docs/iscc-keys-format.md?
+- There is no maximum age for signatures/timestamps?
+- A list of trusted timestamp server will be maintained on github.com/iscc/iscc-tid
 - How should certificate/key revocation be handled?
 
 5. Error Handling:
