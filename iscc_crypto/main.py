@@ -30,10 +30,16 @@ import jcs
 import jwcrypto
 import blake3
 import httpx
+import msgspec
 
 
-class Key:
-    pass
+class Key(msgspec.Struct):
+    """Represents an Ed25519 key pair with metadata for ISCC signing operations."""
+
+    private_key: jwcrypto.jwk.JWK
+    public_key: jwcrypto.jwk.JWK
+    name: str
+    authority: str | None = None
 
 
 def create_key(name="default", authority=None):
@@ -49,7 +55,20 @@ def create_key(name="default", authority=None):
     :return: Key object containing the Ed25519 key pair and metadata
     :raises ValueError: If name is empty or authority URL is invalid
     """
-    pass
+    if not name:
+        raise ValueError("Key name must not be empty")
+
+    if authority is not None:
+        if not authority.startswith("https://"):
+            raise ValueError("Authority URL must use HTTPS")
+        if "?" in authority or "#" in authority or "//" in authority[8:]:
+            raise ValueError("Invalid authority URL format")
+
+    # Generate Ed25519 key pair
+    private_key = jwcrypto.jwk.JWK.generate(kty="OKP", crv="Ed25519")
+    public_key = jwcrypto.jwk.JWK(jwk=private_key.export_public())
+
+    return Key(private_key=private_key, public_key=public_key, name=name, authority=authority)
 
 
 def save_key(key):
