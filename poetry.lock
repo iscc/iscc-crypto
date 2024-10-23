@@ -496,6 +496,40 @@ rtd = ["jupyter_sphinx", "mdit-py-plugins", "myst-parser", "pyyaml", "sphinx", "
 testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
 
 [[package]]
+name = "mdformat"
+version = "0.7.18"
+description = "CommonMark compliant Markdown formatter"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "mdformat-0.7.18-py3-none-any.whl", hash = "sha256:0060cff2a9d53a2c29a4b2be56ff90cc210d2e8506684fa482c9846166f05e22"},
+    {file = "mdformat-0.7.18.tar.gz", hash = "sha256:42cba8bc5a6bb12d50bdf7c1e470c1f837a8ab8ce81571d4e53b9e62051f6e4f"},
+]
+
+[package.dependencies]
+importlib-metadata = {version = ">=3.6.0", markers = "python_version < \"3.10\""}
+markdown-it-py = ">=1.0.0,<4.0.0"
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
+
+[[package]]
+name = "mdformat-tables"
+version = "1.0.0"
+description = "An mdformat plugin for rendering tables."
+optional = false
+python-versions = ">=3.7.0"
+files = [
+    {file = "mdformat_tables-1.0.0-py3-none-any.whl", hash = "sha256:94cd86126141b2adc3b04c08d1441eb1272b36c39146bab078249a41c7240a9a"},
+    {file = "mdformat_tables-1.0.0.tar.gz", hash = "sha256:a57db1ac17c4a125da794ef45539904bb8a9592e80557d525e1f169c96daa2c8"},
+]
+
+[package.dependencies]
+mdformat = ">=0.7.5,<0.8.0"
+wcwidth = ">=0.2.13"
+
+[package.extras]
+test = ["coverage", "pytest (>=6.0,<7.0)", "pytest-cov"]
+
+[[package]]
 name = "mdurl"
 version = "0.1.2"
 description = "Markdown URL utilities"
@@ -840,6 +874,17 @@ files = [
 ]
 
 [[package]]
+name = "wcwidth"
+version = "0.2.13"
+description = "Measures the displayed width of unicode strings in a terminal"
+optional = false
+python-versions = "*"
+files = [
+    {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
+    {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
+]
+
+[[package]]
 name = "win32-setctime"
 version = "1.1.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -875,4 +920,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "733c047ee4c4a8a17c62d4b8b42104ce18de4ea6b8e58a2b4ba31f7ec025ffcc"
+content-hash = "d3409449f6e09d2003d2abb65f299a5f8d98114879c13828b1b968b992713cda"

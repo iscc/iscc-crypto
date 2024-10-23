@@ -1,17 +1,22 @@
 # ISCC - Crypto
 
-The `iscc-crypto` python package implements cryptography related functionalities
-within the ISCC Framework. In particular this module provides functions to:
+The `iscc-crypto` python package implements cryptography related functionalities within the ISCC
+Framework.
 
-- Ceate and manage cryptographic keys
-- Sign and timestamp JSON data
-- Verify signatures and timestamps
+## Key Architectural Components:
+
+1. Key Management (create, save, load, export, import, set)
+1. Signing Operations (sign, verify_signature)
+1. Timestamping Operations (timestamp, verify_timestamp)
+1. Uses established standards (JWS, JCS, JWT)
+1. Web-domain based trust model
+1. Distributed timestamping protocol
 
 # Quick Start
 
-Key storage is delegated to the keyring service of the operating system. Be sure
-to understand the security properties of your systems keyring service.
-See [Python Keyring Module](https://pypi.org/project/keyring/)
+Key storage is delegated to the keyring service of the operating system. Be sure to understand the
+security properties of your systems keyring service. See
+[Python Keyring Module](https://pypi.org/project/keyring/)
 
 ### Create a new key
 

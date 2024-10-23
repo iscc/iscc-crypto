@@ -22,6 +22,8 @@ bandit = "*"
 poethepoet = "*"
 ruff = "*"
 black = "*"
+mdformat = "*"
+mdformat-tables = "*"
 
 [tool.ruff]
 line-length = 100
@@ -37,10 +39,11 @@ target-version = ['py39']
 
 [tool.poe.tasks]
 format-code = { cmd = "poetry run ruff format", help = "Code style formating with ruff" }
+format-markdown = { cmd = "mdformat --wrap 100 --end-of-line lf .", help = "Markdown formating with mdformat" }
 convert-lf = { script = "tests.lf:convert_lf", help = "Convert line endings to LF"}
 run-tests = { cmd = "poetry run pytest", help = "Run tests with pytest" }
 test-security = { cmd = "poetry run bandit -r iscc_crypto -q", help = "Run security check with bandit" }
-all = ["format-code", "convert-lf", "run-tests", "test-security"]
+all = ["format-code", "format-markdown", "convert-lf", "run-tests", "test-security"]
 
 [build-system]
 requires = ["poetry-core"]
