@@ -96,8 +96,29 @@ def save_key(key):
 
 def load_key(name="default"):
     # type: (str) -> Key
-    """Load cryptographic key from the keyring"""
-    pass
+    """
+    Load a cryptographic key from the system keyring.
+
+    Retrieves a previously saved Ed25519 key pair and metadata from the system's
+    default keyring backend.
+
+    :param name: Name of the key to load (defaults to "default")
+    :return: Key object containing Ed25519 key pair and metadata
+    :raises keyring.errors.KeyringError: If loading from keyring fails
+    :raises msgspec.DecodeError: If stored key data is invalid
+    :raises ValueError: If key name is empty
+    """
+    if not name:
+        raise ValueError("Key name must not be empty")
+
+    # Load encrypted key data from system keyring
+    key_data = keyring.get_password("iscc_crypto", name)
+    if key_data is None:
+        raise keyring.errors.KeyringError(f"No key found with name '{name}'")
+
+    # Deserialize key data into Key object
+    key = msgspec.json.decode(key_data.encode(), type=Key)
+    return key
 
 
 def export_key(key, filepath):
