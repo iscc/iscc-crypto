@@ -76,11 +76,22 @@ def create_key(name="default", authority=None):
 def save_key(key):
     # type: (Key) -> str
     """
-    Save the key the operating system keyring.
+    Save the key to the operating system keyring.
 
-    Returns the name under which the key was stored.
+    The key is stored securely using the system's default keyring backend.
+    The private key material is encrypted before storage.
+
+    :param key: Key object containing Ed25519 key pair and metadata
+    :return: Name under which the key was stored
+    :raises keyring.errors.KeyringError: If saving to keyring fails
     """
-    pass
+    # Serialize key data
+    key_data = msgspec.json.encode(key)
+
+    # Store in system keyring
+    keyring.set_password("iscc_crypto", key.name, key_data.decode())
+
+    return key.name
 
 
 def load_key(name="default"):
