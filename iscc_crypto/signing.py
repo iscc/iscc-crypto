@@ -46,13 +46,15 @@ def verify(metadata) -> bool:
 
 if __name__ == '__main__':
     from pprint import pprint
-    metadata = {
-        "@context": "http://purl.org/iscc/context",
-        "@type": "CreativeWork",
-        "$schema": "http://purl.org/iscc/schema",
-        "iscc": "ISCC:KID6X6GUH5F5G",
-        "name": "The never ending story",
-        "identifier": ["ISRC:AA6Q72000047", "ISBN:9783866801929"]
+    metadata = sample_data =  {
+     "age": 30,
+     "name": "John Doe",
+     "isStudent": False,
+     "scores": [85, 90, 92],
+     "address": {
+         "city": "New York",
+         "zip": "10001"
+        }
     }
     priv_key = iscc_crypto.get_key()
     signed = sign(metadata, priv_key)

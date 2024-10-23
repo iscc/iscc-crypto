@@ -1,11 +1,11 @@
 # ISCC - Crypto
 
 The `iscc-crypto` python package implements cryptography related functionalities
-of the ISCC Framework. In particular this module provides functions to:
+within the ISCC Framework. In particular this module provides functions to:
 
 - Ceate and manage cryptographic keys
-- Sign and verify ISCC metadata
-- Create confidential statements and commitments
+- Sign and timestamp JSON data
+- Verify signatures and timestamps
 
 # Quick Start
 
