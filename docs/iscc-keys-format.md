@@ -41,16 +41,10 @@ The file MUST contain a JSON object with two top-level properties:
             "kid": "2024-primary",
             "pubkey": "<Ed25519-public-key-as-base64>",
             "name": "ISCC Foundation Primary Key",
-            "created": "2024-01-01T00:00:00Z",
-            "expires": "2025-01-01T00:00:00Z",
-            "revoked": "2024-06-01T00:00:00Z",
-            "status": "active"
+            "expires": "2025-01-01T00:00:00Z"
         }
     ],
     "meta": {
-        "last_updated": "2024-01-15T14:30:00Z",
-        "next_update": "2024-01-16T14:30:00Z",
-        "max_age": 86400,
         "version": "1.0"
     }
 }
@@ -58,24 +52,18 @@ The file MUST contain a JSON object with two top-level properties:
 
 ## Key Object Properties
 
-| Property | Required | Type   | Description                                                                                                                                                                |
-| -------- | -------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| kid      | Yes      | string | Key identifier - unique within the domain                                                                                                                                  |
-| pubkey   | Yes      | string | Ed25519 public key in base64 format                                                                                                                                        |
-| name     | No       | string | Human readable name for the key                                                                                                                                            |
-| created  | No       | string | ISO 8601 UTC timestamp of key creation                                                                                                                                     |
-| expires  | No       | string | ISO 8601 UTC timestamp of key expiration                                                                                                                                   |
-| revoked  | No       | string | ISO 8601 UTC timestamp of key revocation                                                                                                                                   |
-| status   | No       | string | Key status: "active", "expired", or "revoked". Defaults to "active" if not present. Once a key is marked as "revoked" or "expired" it MUST NOT be changed back to "active" |
+| Property | Required | Type   | Description                               |
+| -------- | -------- | ------ | ----------------------------------------- |
+| kid      | Yes      | string | Key identifier - unique within the domain |
+| pubkey   | Yes      | string | Ed25519 public key in base64 format       |
+| name     | No       | string | Human readable name for the key           |
+| expires  | No       | string | ISO 8601 UTC timestamp of key expiration  |
 
 ## Meta Object Properties
 
-| Property     | Required | Type    | Description                                |
-| ------------ | -------- | ------- | ------------------------------------------ |
-| last_updated | No       | string  | ISO 8601 UTC timestamp of last file update |
-| next_update  | No       | string  | ISO 8601 UTC timestamp when to check again |
-| max_age      | No       | integer | Cache lifetime in seconds                  |
-| version      | Yes      | string  | Format version, currently "1.0"            |
+| Property | Required | Type   | Description                     |
+| -------- | -------- | ------ | ------------------------------- |
+| version  | Yes      | string | Format version, currently "1.0" |
 
 ## Security Considerations
 
@@ -94,11 +82,11 @@ Clients MUST reject the keys file if:
 
 - It is not served over HTTPS
 - It contains invalid JSON
-- Required fields are missing
-- Timestamps are not valid ISO 8601 UTC format
-- The `version` field indicates an unsupported version
+- Required fields are missing (kid, pubkey, version)
+- The expires timestamp is not a valid ISO 8601 UTC format
+- The version field indicates an unsupported version
 - The file is served with invalid path components
-- Any `pubkey` field contains invalid base64 or invalid Ed25519 key data
+- Any pubkey field contains invalid base64 or invalid Ed25519 key data
 
 ## Implementation Notes
 
