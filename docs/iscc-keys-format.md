@@ -58,23 +58,23 @@ The file MUST contain a JSON object with two top-level properties:
 
 ## Key Object Properties
 
-| Property | Required | Type   | Description                                                                                                                           |
-| -------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| kid      | Yes      | string | Key identifier - unique within the domain                                                                                             |
-| pubkey   | Yes      | string | Ed25519 public key in base64 format                                                                                                   |
-| name     | No       | string | Human readable name for the key                                                                                                       |
-| created  | Yes      | string | ISO 8601 UTC timestamp of key creation                                                                                                |
-| expires  | No       | string | ISO 8601 UTC timestamp of key expiration                                                                                              |
-| revoked  | No       | string | ISO 8601 UTC timestamp of key revocation                                                                                              |
-| status   | Yes      | string | Key status: "active", "expired", or "revoked". Once a key is marked as "revoked" or "expired" it MUST NOT be changed back to "active" |
+| Property | Required | Type   | Description                                                                                                                                                                |
+| -------- | -------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| kid      | Yes      | string | Key identifier - unique within the domain                                                                                                                                  |
+| pubkey   | Yes      | string | Ed25519 public key in base64 format                                                                                                                                        |
+| name     | No       | string | Human readable name for the key                                                                                                                                            |
+| created  | No       | string | ISO 8601 UTC timestamp of key creation                                                                                                                                     |
+| expires  | No       | string | ISO 8601 UTC timestamp of key expiration                                                                                                                                   |
+| revoked  | No       | string | ISO 8601 UTC timestamp of key revocation                                                                                                                                   |
+| status   | No       | string | Key status: "active", "expired", or "revoked". Defaults to "active" if not present. Once a key is marked as "revoked" or "expired" it MUST NOT be changed back to "active" |
 
 ## Meta Object Properties
 
 | Property     | Required | Type    | Description                                |
 | ------------ | -------- | ------- | ------------------------------------------ |
-| last_updated | Yes      | string  | ISO 8601 UTC timestamp of last file update |
+| last_updated | No       | string  | ISO 8601 UTC timestamp of last file update |
 | next_update  | No       | string  | ISO 8601 UTC timestamp when to check again |
-| max_age      | Yes      | integer | Cache lifetime in seconds                  |
+| max_age      | No       | integer | Cache lifetime in seconds                  |
 | version      | Yes      | string  | Format version, currently "1.0"            |
 
 ## Security Considerations
