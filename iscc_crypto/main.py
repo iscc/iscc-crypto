@@ -31,6 +31,7 @@ import jwcrypto
 import blake3
 import httpx
 import msgspec
+from jwcrypto.jwk import JWK
 
 
 class Key(msgspec.Struct):
@@ -65,8 +66,9 @@ def create_key(name="default", authority=None):
             raise ValueError("Invalid authority URL format")
 
     # Generate Ed25519 key pair
-    private_key = jwcrypto.jwk.JWK.generate(kty="OKP", crv="Ed25519")
-    public_key = jwcrypto.jwk.JWK(jwk=private_key.export_public())
+    private_key = JWK.generate(kty="OKP", crv="Ed25519")
+    # Parse exported public key as JSON before creating new JWK
+    public_key = JWK.from_json(private_key.export_public())
 
     return Key(private_key=private_key, public_key=public_key, name=name, authority=authority)
 

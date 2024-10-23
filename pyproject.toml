@@ -7,7 +7,7 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 keyring = "*"
 jcs = "*"
 jwcrypto = "*"
@@ -37,7 +37,7 @@ line-ending = "lf"
 line-length = 100
 preview = true
 enable-unstable-feature = ["string_processing"]
-target-version = ['py39']
+target-version = ['py310']
 
 [tool.poe.tasks]
 format-code = { cmd = "poetry run ruff format", help = "Code style formating with ruff" }
