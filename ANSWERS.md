@@ -44,14 +44,20 @@
 
 - Details about how authority URL validation works are at docs/iscc-keys-format.md?
 - There is no maximum age for signatures/timestamps?
-- A list of trusted timestamp server will be maintained on github.com/iscc/iscc-tid
-- How should certificate/key revocation be handled?
+- A public list of trusted timestamp servers will be maintained
+- Certificate/key revocation is handled according to docs/iscc-keys-format.md?
 
 5. Error Handling:
 
-- What specific error types should be defined?
-- How detailed should error messages be?
-- How should network errors be handled?
+- Define and raise custom exceptions for specific error cases:
+  - InvalidKeyError - for key validation/format issues
+  - SignatureError - for signature validation failures
+  - TimestampError - for timestamp validation/server issues
+  - AuthorityError - for authority URL validation problems
+- Error messages should be specific but not expose sensitive data
+- Network errors should be caught and wrapped in appropriate custom exceptions
+- Automatic retries for server requests are the responsibility of callers
+- Log all errors with sufficient context for debugging
 
 6. Performance:
 

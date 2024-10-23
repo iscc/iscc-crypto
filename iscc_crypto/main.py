@@ -29,6 +29,7 @@ import keyring
 import jcs
 import jwcrypto
 import blake3
+import httpx
 
 
 class Key:
@@ -36,7 +37,7 @@ class Key:
 
 
 def create_key(name="default", autority=None):
-    # type: (str, str) -> Key
+    # type: (str, str|None) -> Key
     """
     Create a new key to be used for signing JSON data.
 
