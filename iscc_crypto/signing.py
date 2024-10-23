@@ -25,7 +25,7 @@ def sign(metadata: Dict, key: jwk.JWK) -> Dict:
     token.detach_payload()
     signature = {
         "signature": token.serialize(compact=True),
-        "pubkey": key.export_public(as_dict=True)
+        "pubkey": key.export_public(as_dict=True),
     }
     msg["signature"] = signature
     return msg
@@ -33,38 +33,34 @@ def sign(metadata: Dict, key: jwk.JWK) -> Dict:
 
 def verify(metadata) -> bool:
     msg = metadata.copy()
-    signature = msg.pop('signature')
+    signature = msg.pop("signature")
     sig = jws.JWS()
-    sig.deserialize(signature['signature'])
-    sig.objects['payload'] = jcs.canonicalize(msg)
+    sig.deserialize(signature["signature"])
+    sig.objects["payload"] = jcs.canonicalize(msg)
     print("\n######## Deserialized Signature:")
     pprint(sig.objects)
-    key = jws.JWK(**signature['pubkey'])
+    key = jws.JWK(**signature["pubkey"])
     sig.verify(key)
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
-    metadata = sample_data =  {
-     "age": 30,
-     "name": "John Doe",
-     "isStudent": False,
-     "scores": [85, 90, 92],
-     "address": {
-         "city": "New York",
-         "zip": "10001"
-        }
+
+    metadata = sample_data = {
+        "age": 30,
+        "name": "John Doe",
+        "isStudent": False,
+        "scores": [85, 90, 92],
+        "address": {"city": "New York", "zip": "10001"},
     }
     priv_key = iscc_crypto.get_key()
     signed = sign(metadata, priv_key)
-    print(f'######## Metadata:')
+    print(f"######## Metadata:")
     print(json.dumps(metadata, indent=2))
-    print(f'\n######## Key:')
+    print(f"\n######## Key:")
     pprint(priv_key)
-    print(f'\n######## Signed Message:')
+    print(f"\n######## Signed Message:")
     print(json.dumps(signed, indent=2))
-    print(f'\n######## Verify Message:')
+    print(f"\n######## Verify Message:")
     pprint(verify(signed))
-
-
