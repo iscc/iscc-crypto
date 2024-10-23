@@ -36,16 +36,18 @@ class Key:
     pass
 
 
-def create_key(name="default", autority=None):
+def create_key(name="default", authority=None):
     # type: (str, str|None) -> Key
     """
-    Create a new key to be used for signing JSON data.
+    Create a new Ed25519 key pair for signing JSON data.
 
-    If an authority URL is given for the key than verifications of signatures created by that key
-    will include load and check against <autority>/.well-known/iscc-keys.json
+    If an authority URL is given, signature verification will check against
+    <authority>/.well-known/iscc-keys.json as specified in docs/iscc-keys-format.md
 
-    :param name: The name of the key for keyring storage and retrieval
-    :param autority: A url where we can check the keys validity
+    :param name: Name for key storage and retrieval (must be non-empty string)
+    :param authority: HTTPS URL of the authority (must follow iscc-keys-format.md spec)
+    :return: Key object containing the Ed25519 key pair and metadata
+    :raises ValueError: If name is empty or authority URL is invalid
     """
     pass
 
