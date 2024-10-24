@@ -35,15 +35,38 @@ from jwcrypto.jwk import JWK
 
 
 class Key(msgspec.Struct):
-    """Represents an Ed25519 key pair with metadata for ISCC signing operations."""
+    """Represents key pair with metadata for ISCC signing operations."""
 
-    private_key: jwcrypto.jwk.JWK
-    public_key: jwcrypto.jwk.JWK
-    name: str
+    kid: str
+    public_key: str
+    private_key: str
     authority: str | None = None
 
 
-def create_key(name="default", authority=None):
+class Signature(msgspec.Struct):
+    """A signature"""
+
+    pass
+
+
+class Timestamp(msgspec.Struct):
+    """A timestamp"""
+
+    pass
+
+
+class VerificationResult(msgspec.Struct):
+    """Result of verifying a signed/timestamped JSON object"""
+
+    signature_verified: bool
+    authority_verified: bool
+    timestamp_verified: bool
+    dataproof_verified: bool
+    timestamp: str | None = None
+    autority: str | None = None
+
+
+def create_key(kid="default", authority=None):
     # type: (str, str|None) -> Key
     """
     Create a new Ed25519 key pair for signing JSON data.
@@ -51,26 +74,12 @@ def create_key(name="default", authority=None):
     If an authority URL is given, signature verification will check against
     <authority>/.well-known/iscc-keys.json as specified in docs/iscc-keys-format.md
 
-    :param name: Name for key storage and retrieval (must be non-empty string)
+    :param kid: Key ID for key storage and retrieval (must be non-empty string)
     :param authority: HTTPS URL of the authority (must follow iscc-keys-format.md spec)
     :return: Key object containing the Ed25519 key pair and metadata
     :raises ValueError: If name is empty or authority URL is invalid
     """
-    if not name:
-        raise ValueError("Key name must not be empty")
-
-    if authority is not None:
-        if not authority.startswith("https://"):
-            raise ValueError("Authority URL must use HTTPS")
-        if "?" in authority or "#" in authority or "//" in authority[8:]:
-            raise ValueError("Invalid authority URL format")
-
-    # Generate Ed25519 key pair
-    private_key = JWK.generate(kty="OKP", crv="Ed25519")
-    # Parse exported public key as JSON before creating new JWK
-    public_key = JWK.from_json(private_key.export_public())
-
-    return Key(private_key=private_key, public_key=public_key, name=name, authority=authority)
+    pass
 
 
 def save_key(key):
@@ -85,13 +94,7 @@ def save_key(key):
     :return: Name under which the key was stored
     :raises keyring.errors.KeyringError: If saving to keyring fails
     """
-    # Serialize key data
-    key_data = msgspec.json.encode(key)
-
-    # Store in system keyring
-    keyring.set_password("iscc_crypto", key.name, key_data.decode())
-
-    return key.name
+    pass
 
 
 def load_key(name="default"):
@@ -108,17 +111,7 @@ def load_key(name="default"):
     :raises msgspec.DecodeError: If stored key data is invalid
     :raises ValueError: If key name is empty
     """
-    if not name:
-        raise ValueError("Key name must not be empty")
-
-    # Load encrypted key data from system keyring
-    key_data = keyring.get_password("iscc_crypto", name)
-    if key_data is None:
-        raise keyring.errors.KeyringError(f"No key found with name '{name}'")
-
-    # Deserialize key data into Key object
-    key = msgspec.json.decode(key_data.encode(), type=Key)
-    return key
+    pass
 
 
 def export_key(key, filepath):
@@ -139,7 +132,16 @@ def set_key(key):
     pass
 
 
-def sign(data, key=None):
+def sign_data(data, key=None):
+    # type: (bytes, Key|None) -> dict
+    """
+    Create a JWS signature over the provided data.
+    If no key is provided we use the currently set default key
+    """
+    pass
+
+
+def sign_object(obj, key=None):
     # type: (dict, Key|None) -> dict
     """
     Create a JWS/CT signature on any JSON/JCS serializable object.
