@@ -1,10 +1,18 @@
 # ISCC Keys Format Specification
 
+## Overview
+
 This document specifies the format for publishing authorized public keys via the
 `.well-known/iscc-keys.json` endpoint. The format enables domains to act as lightweight roots of
 trust by publishing their authorized public keys in a standardized way.
 
-## Overview
+This specification achieves its security goals for authorized public keys through:
+
+- HTTPS transport security
+- Domain verification
+- Clear path validation rules
+- Explicit expiration times
+- Simple and well-defined format
 
 The `iscc-keys.json` file MUST be served via HTTPS from the `.well-known` directory at any path
 level of a domain. The file MUST NOT be served from paths containing query parameters or fragments.
