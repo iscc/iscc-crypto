@@ -118,7 +118,7 @@ if __name__ == "__main__":
     # Sign file
     sig = sign_file(fp, k)
     print("SIGNATURE")
-    print(sig)
+    print(sig.hex())
     print("SIGNATURE TYPE")
     print(type(sig))
     print("SIGNATURE LENGTH")
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     # Create access proof
     proof = prove_file_access(fp, k, sig)
     print("ACCESS PROOF")
-    print(proof)
+    print(proof.hex())
 
     # Verify signature and proof separately
     v1 = verify_file(fp, k.public_key(), sig)
