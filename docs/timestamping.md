@@ -1,27 +1,51 @@
-# ISCC-TID - Distributed, Globally Unique, and Owned Timestamps
+# ISCC Timestamping Protocol Specification v1.0
 
-This specification defines a scalable distributed timestamping protocol with the following
-properties:
+**Distributed, Globally Unique, and Owned Timestamps**
 
-- Built on top of JWS/JWT standards
+## 1. Overview
+
+This specification defines a simple and scalable distributed timestamping protocol.
+
+Clients may request timestamps to:
+
+- Prove the existence of some data at time x
+- Acquire provable ownership of a globally unique Identifier bound to the timestamped data
+
+### 1.1 Protocol Features:
+
+- Builds on top of JWS/JWT
+- Time resolution: Dekamicroseconds (daµs): for 10 microseconds (1/100,000 second)
 - Up to 4096 independent timestamp-servers
-- Each server can issue up to 1M unique timestamps per seccond (microseconds since epoch)
-- High performance timestamping of large scale data
-- Timestamps are globaly unique accross servers
+- Theoretical upper bound of 100.000 unique timestamps per seccond per server
+- Scalable timestamping of large data
+- Globaly unique timestamps accross servers
 - Timestamps are identifiers owned by timestamp requesters
 - Timestamp owners can cryptographically prove timestamp ownership
 - Timestamps can be stored using 64-bit / 8-bytes
 - Timestamps support total ordering accross servers
 - Timestamps preserve order in numerical (integer) and lexical (base32hex) sorting
 
-## Overview
+### 1.2 Protocol Flow
 
-Clients may request a timestamp to:
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Timestamp Server
 
-- Prove the existence of some data at time x
-- Acquire provable ownership of a globally unique Identifier bound to the timestamped data
+    Note over C: Hash Data
+    Note over C: Create & Sign JWT
 
-**NOTE**: The same data can be timestamped multiple times by different parties.
+    C->>+S: POST /timestamp (JWT)
+
+    Note over S: Verify JWT Signature
+    Note over S: Create Timestamp
+    Note over S: Sign Response
+
+    S-->>-C: Return signed timestamp
+
+    Note over C: Verify Response
+    Note over C: Store ISCC-TID
+```
 
 ## ISCC-TID
 
@@ -117,4 +141,102 @@ Timestamp responses are JWT tokens using the following claim names:
 - timeservers are required to use a trustworthy source of time
 - Server must regularly synchronize their clock such that accuracy is ± 0.1 seconds
 - Reference implementation is at https://github.com/iscc/iscc-crypto
--
+
+______________________________________________________________________
+
+## 2. Data Structures
+
+### 2.1 ISCC-TID Format
+
+- Prefix: "ISCC:"
+- Version: "0"
+- Payload: base32hex(timestamp\[52bits\] | server-id\[12bits\])
+
+### 2.2 Request Format
+
+```json
+{
+    "type": "timestamp-request",
+    "jwt": "<jwt-token>"
+}
+```
+
+Required JWT claims:
+
+- ver: "1.0"
+- iss: <hex-encoded-public-key>
+- sub: <hex-encoded-blake3-hash>
+
+### 2.3 Response Format
+
+```json
+{
+    "type": "timestamp-response",
+    "jwt": "<jwt-token>"
+}
+```
+
+Required JWT claims:
+
+- ver: "1.0"
+- jti: <iscc-tid>
+- iss: <hex-encoded-server-public-key>
+- sub: <hex-encoded-blake3-hash>
+- azp: <hex-encoded-requester-public-key>
+
+## 3. Protocol Rules
+
+### 3.1 Cryptographic Requirements
+
+- EdDSA with Ed25519 curve only
+- Blake3-256 for hashing
+- No additional JWT headers allowed
+
+### 3.2 Transport Requirements
+
+- HTTPS only
+- Single POST endpoint
+- Content-Type: application/json
+- Max request size: 1KB
+- No caching
+- CORS enabled
+
+### 3.3 Server Requirements
+
+- Monotonically increasing timestamps (microsecond precision)
+- Clock sync within ±0.1s
+- Server ID from official registry
+- Valid server key according to iscc-keys-format
+
+### 3.4 Validation Rules
+
+- Request signature must verify against iss claim
+- Response signature must verify against server public key
+- Timestamps must be unique per server
+- No duplicate timestamps for same data+requester combination
+- Invalid requests/responses must be rejected
+
+## 4. Security Considerations
+
+- No sensitive data in requests/responses
+- Public keys establish identity and ownership
+- Replay protection via monotonic timestamps
+- Server key rotation according to iscc-keys-format
+
+```
+
+Key simplifications and security principles:
+
+1. Single signature algorithm (Ed25519) reduces complexity
+2. Minimal JWT claims - only what's needed
+3. Simple request/response format
+4. Clear validation rules
+5. No complex state management
+6. Public data only - no secrets in protocol
+7. Ownership proven through key possession
+8. Built on standard primitives (JWT, EdDSA)
+9. Clear server requirements
+10. Explicit security boundaries
+
+This structure provides a clear specification while keeping implementation complexity low and security requirements explicit but manageable.
+```
