@@ -42,7 +42,7 @@ def microtime():
                 return real_time
             else:
                 # Sleep briefly to prevent high CPU usage
-                time.sleep(0.00000001)  # Sleep one 100th of a microsecond
+                time.sleep(1e-7)  # Sleep 0.1 microsecond
 
 
 async def amicrotime():
