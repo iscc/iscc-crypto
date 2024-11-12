@@ -222,6 +222,95 @@ def benchmark_tid_async(duration=10.0):
     return rate
 
 
+async def _async_thread_worker(duration, count_queue):
+    """
+    Async worker function for threads within processes.
+
+    :param duration: How long to run in seconds
+    :param count_queue: Queue to report count back
+    """
+    count = 0
+    end = time.time() + duration
+    while time.time() < end:
+        await amicrotime()
+        count += 1
+    count_queue.put(count)
+
+
+def _threaded_async_worker(duration, count_queue, num_async):
+    """
+    Thread worker that runs multiple async coroutines.
+
+    :param duration: How long to run in seconds
+    :param count_queue: Queue to report count
+    :param num_async: Number of async coroutines per thread
+    """
+
+    async def run_workers():
+        tasks = [_async_thread_worker(duration, count_queue) for _ in range(num_async)]
+        await asyncio.gather(*tasks)
+
+    asyncio.run(run_workers())
+
+
+def _process_worker_async_threads(duration, result_queue, num_threads, num_async):
+    """
+    Process worker that spawns threads running async coroutines.
+
+    :param duration: How long to run in seconds
+    :param result_queue: Queue to report total count back to main process
+    :param num_threads: Number of threads per process
+    :param num_async: Number of async coroutines per thread
+    """
+    thread_queue = Queue()
+
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [
+            executor.submit(_threaded_async_worker, duration, thread_queue, num_async)
+            for _ in range(num_threads)
+        ]
+
+    process_total = sum(thread_queue.get() for _ in range(num_threads * num_async))
+    result_queue.put(process_total)
+
+
+def benchmark_tid_async_multi_tm(duration=10.0, num_processes=None, num_threads=None, num_async=10):
+    """
+    Benchmark amicrotime() using async coroutines within threads within processes.
+
+    :param duration: How long to run the benchmark in seconds
+    :param num_processes: Number of processes to use (defaults to CPU count)
+    :param num_threads: Number of threads per process (defaults to 2)
+    :param num_async: Number of async coroutines per thread (defaults to 10)
+    :return: Total number of timestamps generated per second
+    """
+    if num_processes is None:
+        num_processes = mp.cpu_count()
+    if num_threads is None:
+        num_threads = 2
+
+    result_queue = mp.Queue()
+    start = time.time()
+
+    processes = []
+    for _ in range(num_processes):
+        p = mp.Process(
+            target=_process_worker_async_threads,
+            args=(duration, result_queue, num_threads, num_async),
+        )
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+
+    total_count = sum(result_queue.get() for _ in range(num_processes))
+    elapsed = time.time() - start
+    rate = int(total_count / elapsed)
+    print(f"Total rate: {rate:,} timestamps/second")
+    return rate
+
+
 if __name__ == "__main__":
     print("\nSingle-threaded benchmark:")
     benchmark_tid()
@@ -233,3 +322,5 @@ if __name__ == "__main__":
     benchmark_tid_multiprocessing()
     print("\nMulti-process with threads benchmark:")
     benchmark_tid_multi_tm()
+    print("\nAsync multi-process with threads benchmark:")
+    benchmark_tid_async_multi_tm()
