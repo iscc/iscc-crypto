@@ -78,7 +78,7 @@ def _init_shared_memory():
 
     try:
         shm = shared_memory.SharedMemory(name=unique_name, create=True, size=8)
-        counter = atomics.atomic(width=8, atype=atomics.INT, buffer=shm.buf)
+        counter = atomics.atomic(width=8, atype=atomics.UINT, buffer=shm.buf)
         initial_time = time.time_ns() // NANOS_PER_MICRO
         if not (MIN_TIMESTAMP <= initial_time <= MAX_TIMESTAMP):
             raise ValueError(f"Initial timestamp {initial_time} out of valid range")
