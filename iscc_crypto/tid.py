@@ -7,8 +7,10 @@ The module implements timestamp generation with the following properties:
 - strictly monotonic (unique) timestamps
 - thread and multiprocessing safe
 - sync and async implementations
-- optimized for concurrent high-frequency timestamp generation
 - the timestamp generated never exceeds the current system time
+- as performant as possible given pure-python, cross-platform, security and OS constraints
+
+For time resolution constraints in pure-python see: https://stackoverflow.com/q/1133857/51627
 """
 
 import time
