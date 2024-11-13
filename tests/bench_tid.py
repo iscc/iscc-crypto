@@ -1,4 +1,4 @@
-from iscc_crypto.tid import microtime, amicrotime
+from iscc_crypto.microtime import microtime, amicrotime
 import time
 import threading
 import asyncio

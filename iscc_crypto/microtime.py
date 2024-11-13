@@ -1,33 +1,53 @@
 """
-ISCC Time-ID
+# Microtime - System-Wide Microsecond Timestamps
 
 This module provides high-precision, monotonic timestamp generation for distributed systems.
 It ensures system-wide unique timestamps with microsecond granularity that can be safely
-used across threads and processes.
+used across threads and independent processes.
 
-Key Requirements:
+## Key Features
+
 - Microsecond (μs) precision timestamps since Unix epoch
 - Strictly monotonic (always increasing) sequence guarantee
 - Thread-safe and multiprocessing-safe implementation across independent processes
 - Both synchronous and asynchronous interfaces
 - Upper-bounded by system time (never runs ahead)
 - Cross-platform compatible support
-- Minimal CPU usage
 
-Implementation Details:
+## Implementation Details
+
 - Uses shared memory for cross-process synchronization
 - Atomic operations ensure thread safety
 - Busy-wait with minimal sleep when system clock resolution is exceeded
 - Graceful cleanup of shared resources on process exit
 - Handles system clock adjustments and jumps
 
-Note:
-    The implementation is optimized within the constraints of OS-level `sleep` resolution.
-    For details on these constraints see:
-    https://stackoverflow.com/q/1133857/51627
+## Warning
+
+This module assumes your system clock is accurate and synchronized. You must separately
+ensure proper time synchronization across your infrastructure. Best practices include:
+
+- Use NTP with multiple reliable timeservers
+- Configure chrony or similar for precise time sync:
+  ```bash
+  # /etc/chrony.conf
+  pool pool.ntp.org iburst
+  makestep 1.0 3    # Step clock if off by >1 sec for first 3 updates
+  maxupdateskew 100.0
+  ```
+- Monitor clock drift and sync status:
+  ```bash
+  chronyc tracking  # Check sync status
+  chronyc sources   # View time sources
+  ```
+
+## Performance
+
+The implementation is optimized within the constraints of OS-specific `sleep` resolution.
+For details on these constraints see: https://stackoverflow.com/q/1133857/51627
 
 Usage:
-    >>> from iscc_crypto.tid import microtime
+    >>> from iscc_crypto.microtime import microtime
     >>> ts = microtime()  # Returns microseconds since epoch as integer
 """
 
@@ -54,7 +74,7 @@ def _init_shared_memory():
     # type: () -> tuple[shared_memory.SharedMemory, atomics.atomic]
     """Initialize shared memory and atomic counter."""
     user = getpass.getuser()
-    unique_name = f"tid-{user}-{uuid.getnode()}"
+    unique_name = f"microtime-{user}-{uuid.getnode()}"
 
     try:
         shm = shared_memory.SharedMemory(name=unique_name, create=True, size=8)
@@ -81,7 +101,7 @@ _SHM, _LAST_TS = _init_shared_memory()
 
 
 # Ensure shared memory is cleaned up on exit
-def cleanup_shared_memory():
+def _cleanup_shared_memory():
     # type: () -> None
     """Clean up shared memory resources on process exit."""
     _SHM.close()
@@ -92,7 +112,7 @@ def cleanup_shared_memory():
         log.debug("Shared memory already unlinked")
 
 
-atexit.register(cleanup_shared_memory)
+atexit.register(_cleanup_shared_memory)
 
 
 def microtime():
