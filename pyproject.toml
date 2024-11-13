@@ -16,6 +16,7 @@ blake3 = "^0.4.1"
 httpx = "^0.27.2"
 msgspec = "^0.18.6"
 smart-open = "^7.0.5"
+atomics = "^1.0.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -46,6 +47,7 @@ format-markdown = { cmd = "mdformat --wrap 100 --end-of-line lf .", help = "Mark
 convert-lf = { script = "tests.lf:convert_lf", help = "Convert line endings to LF"}
 run-tests = { cmd = "poetry run pytest", help = "Run tests with pytest" }
 test-security = { cmd = "poetry run bandit -r iscc_crypto -q", help = "Run security check with bandit" }
+format = ["format-code", "format-markdown", "convert-lf"]
 all = ["format-code", "format-markdown", "convert-lf", "run-tests", "test-security"]
 
 [build-system]
