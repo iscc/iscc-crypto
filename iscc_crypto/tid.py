@@ -1,16 +1,32 @@
 """
 ISCC Time-ID
 
-The module implements timestamp generation with the following properties:
+This module provides high-precision, monotonic timestamp generation for distributed systems.
+It ensures system-wide unique timestamps with microsecond granularity that can be safely
+used across threads and processes.
 
-- microsecond granularity
-- strictly monotonic (unique) timestamps
-- thread and multiprocessing safe
-- sync and async implementations
-- the timestamp generated never exceeds the current system time
-- as performant as possible given pure-python, cross-platform, security and OS constraints
+Key features:
+- Microsecond (μs) precision timestamps since Unix epoch
+- Strictly monotonic (always increasing) sequence guarantee
+- Thread-safe and multiprocessing-safe implementation
+- Both synchronous and asynchronous interfaces
+- Upper-bounded by system time (never runs ahead)
+- Cross-platform compatible pure Python implementation
+- Minimal CPU usage through adaptive sleep
 
-For time resolution constraints in pure-python see: https://stackoverflow.com/q/1133857/51627
+Warning:
+    The current implementation is sufficient for most use cases where processes are spawned
+    programmatically from a common parent process, but won't guarantee monotonicity across
+    independently started Python processes.
+
+Note:
+    The implementation is optimized within the constraints of pure-Python timing
+    resolution. For details on these constraints see:
+    https://stackoverflow.com/q/1133857/51627
+
+Usage:
+    >>> from iscc_crypto.tid import microtime
+    >>> ts = microtime()  # Returns microseconds since epoch as integer
 """
 
 import time
@@ -27,14 +43,12 @@ _LAST_TS = mp.Value(c_longlong, 0)
 def microtime():
     # type: () -> int
     """
-    Integer timestamp in microseconds since epoch.
+    Generate unique monotonic microsecond timestamps.
 
-    A timestamp generator that can be called from multiple threads and/or processes to genarate
-    system-wide unique (strictly monotoninc/increasing) timestamps. Timestamps are in microseconds
-    since unix epoch based on the system clock. This function will block the current thread
-    (time.sleep) until a new increasing microsecond is available. This may block for more than a
-    microsecond due to the minimum resolution of `time.sleep` or  if system time is adjusted
-    during runtime.
+    Thread and process safe timestamp generator that blocks minimally when
+    system clock resolution is exceeded.
+
+    :return: Microseconds since Unix epoch as monotonically increasing integer
     """
     with _LAST_TS.get_lock():
         while True:
@@ -48,11 +62,11 @@ def microtime():
 
 
 async def amicrotime():
+    # type: () -> int
     """
-    Async wrapper around the synchronous microtime() function using an executor.
+    Async wrapper for microtime() that runs in thread executor.
 
-    This method runs the blocking microtime() in a separate thread, avoiding
-    blocking the event loop and improving performance.
+    :return: Microseconds since Unix epoch as monotonically increasing integer
     """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, microtime)
