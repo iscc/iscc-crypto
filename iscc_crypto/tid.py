@@ -28,16 +28,36 @@ import time
 import asyncio
 from multiprocessing import shared_memory
 import atomics
-from rich import print
+import getpass
+import uuid
+import atexit
+
+# Create a unique shared memory name
+user = getpass.getuser()
+unique_name = f"tid-{user}-{uuid.getnode()}"
 
 # Create or connect to shared memory for atomic timestamp
 try:
-    _SHM = shared_memory.SharedMemory(name="iscc_tid", create=True, size=8)
+    _SHM = shared_memory.SharedMemory(name=unique_name, create=True, size=8)
     _LAST_TS = atomics.atomic(width=8, atype=atomics.INT, buffer=_SHM.buf)
     _LAST_TS.store(time.time_ns() // 1_000)  # Initialize to current time in microseconds
 except FileExistsError:
-    _SHM = shared_memory.SharedMemory(name="iscc_tid", create=False)
+    _SHM = shared_memory.SharedMemory(name=unique_name, create=False)
     _LAST_TS = atomics.atomic(width=8, atype=atomics.INT, buffer=_SHM.buf)
+except PermissionError as e:
+    raise PermissionError(f"Cannot create or access shared memory: {e}")
+
+
+# Ensure shared memory is cleaned up on exit
+def cleanup_shared_memory():
+    _SHM.close()
+    try:
+        _SHM.unlink()
+    except FileNotFoundError:
+        pass  # Already unlinked
+
+
+atexit.register(cleanup_shared_memory)
 
 
 def microtime():
@@ -79,19 +99,14 @@ async def amicrotime():
 
     :return: Microseconds since Unix epoch as monotonically increasing integer
     """
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, microtime)
 
 
 if __name__ == "__main__":
-    try:
-        print("Sync timestamp:", microtime())
+    print("Sync timestamp:", microtime())
 
-        async def run_async():
-            print("Async timestamp:", await amicrotime())
+    async def run_async():
+        print("Async timestamp:", await amicrotime())
 
-        asyncio.run(run_async())
-    finally:
-        # Cleanup shared memory
-        _SHM.close()
-        _SHM.unlink()
+    asyncio.run(run_async())
