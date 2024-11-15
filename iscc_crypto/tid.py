@@ -15,21 +15,36 @@ import math
 from base64 import b32encode, b32decode
 from iscc_crypto.microtime import microtime
 
-# 16-Bit Prefix
+# Header - 16-Bit Prefix
 MAINTYPE = "0110"  # ISCC-ID
 SUBTYPE = "0000"  # TIME-ID
 VERSION = "0000"  # V0
 LENGTH = "0001"  # 64-bit
-HEADER = int(MAINTYPE + SUBTYPE + VERSION + LENGTH, 2).to_bytes(2, byteorder="big")  # ISCC-HEADER
+HEADER_DATA = int(MAINTYPE + SUBTYPE + VERSION + LENGTH, 2).to_bytes(2, byteorder="big")
 
-# 12-Bit Suffix
-SERVER_ID = "000000000000"
+
+# 12-Bit Server-ID Suffix
+SERVER_ID = 0
 
 
 def tid():
     # type: () -> str
     """Create a new ISCC Time-ID"""
-    pass
+    ts = microtime()
+    if ts >= 2**52:  # Ensure timestamp fits in 52 bits
+        raise ValueError("Timestamp overflow")
+
+    # Shift timestamp left by 12 bits and combine with server ID
+    body = (ts << 12) | SERVER_ID
+
+    # Pack the 64-bit body into 8 bytes
+    body_bytes = body.to_bytes(8, byteorder="big")
+
+    # Concatenate header and body
+    data = HEADER_DATA + body_bytes
+
+    # Encode as base32
+    return "ISCC:" + encode_base32(data)
 
 
 def encode_base32(data):
