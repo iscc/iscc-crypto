@@ -5,7 +5,7 @@ This module provides high-precision, monotonic timestamp generation for distribu
 It ensures system-wide unique timestamps with microsecond granularity that can be safely
 used across threads and independent processes.
 
-## Key Features
+## Requirements
 
 - Microsecond (μs) precision timestamps since Unix epoch
 - Strictly monotonic (always increasing) sequence guarantee
@@ -13,6 +13,8 @@ used across threads and independent processes.
 - Both synchronous and asynchronous interfaces
 - Upper-bounded by system time (never runs ahead)
 - Cross-platform compatible support
+- Handles system clock adjustments and jumps
+- Graceful cleanup of shared resources on process exit
 
 ## Implementation Details
 
@@ -20,7 +22,7 @@ used across threads and independent processes.
 - Atomic operations ensure thread safety
 - Busy-wait with minimal sleep when system clock resolution is exceeded
 - Graceful cleanup of shared resources on process exit
-- Handles system clock adjustments and jumps
+
 
 ## Warning
 
@@ -107,9 +109,8 @@ def _cleanup_shared_memory():
     _SHM.close()
     try:
         _SHM.unlink()
-        log.debug("Cleaned up shared memory")
     except FileNotFoundError:
-        log.debug("Shared memory already unlinked")
+        pass
 
 
 atexit.register(_cleanup_shared_memory)
