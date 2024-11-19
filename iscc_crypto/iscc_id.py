@@ -1,12 +1,15 @@
 """
 ISCC-ID
 
-The ISCC-ID is a 64-bit identifier constructed from a timestamp and a server-id.
+The ISCC-ID is a 64-bit identifier constructed from a timestamp and a server-id where the first 50
+bits denote the UTC time in 0.01 Milliseconds since UNIX timestamp epoch and the last 12 bits denote
+the ID of the timestamping server. With 50-bit timestamps a single server can issue up to 100.000
+timestamps per second until the year 2326. The server-id suffix allows for a deployment of up to
+16384 timestamp servers and ensures that timestampes are distributed, globaly unique and sortable.
 With 50-bits for the timestamp and 14-bits for server-ids the system supports a theoretical
-100.000k timestamps per second and server with up to 16384 servers until the year 2326.
+maximum of 1.6384 billion timestamps per second.
 
 We use multiformants base32hex encoding to support parity between numerical and lexical sorting.
-
 The ISCC-ID has the following format:
 
 String Format:
@@ -15,9 +18,10 @@ String Format:
 - Multibase Prefix: v
 - Base32hex lower-case encoded concatention of: <multicodec><iscc-header><iscc-body>
 
-Bytestructure:
+Byte Structure:
 
 - Base32-Encoded concatenation of:
+    - 16-bit multicodec: Registerd ISCC multicodec CC01 - see https://t.ly/cOrwk
     - 16-bit header: Concatenation of the nibbles MAINTYPE, SUBTYPE, VERSION, LENGTH
     - 50-bit timestamp: Current microseconds since 1970-01-01T00:00:00Z
     - 14-bit server-id: The Time Server ID
@@ -32,7 +36,7 @@ hex_to_b32 = str.maketrans("0123456789ABCDEFGHIJKLMNOPQRSTUV", "ABCDEFGHIJKLMNOP
 
 
 MULTIBASE_PREFIX = "iscc:v"
-MULTICODEC = b"\xcc\x01"  # see https://t.ly/cOrwk
+MULTICODEC = b"\xcc\x01"
 MAINTYPE = "0110"  # ISCC-ID
 SUBTYPE = "0000"  # None
 VERSION = "0000"  # V0

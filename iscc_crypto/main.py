@@ -1,7 +1,7 @@
 """
 Top Level API for cryptographic operations within the ISCC Framework
 
-This module provides a simple and minimal implementation for signing, timestamping and
+This module provides a simple and minimal implementation for timestamping, signing and
 verifying JSON data within the ISCC Framework.
 
 Overview:
@@ -10,7 +10,7 @@ Overview:
 - We use JCS for canonical serialization of JSON data
 - We use JWS Detached format (no payload) as described by JWS/CT (Clear Text)
 - We use the existing reputation of web domains as lightweight roots of trust
-- On top of that we use simple third-party timestamping protocol
+- We use simple timestamping protocol
 
 Timestamping:
     A timestamp is a 64-bit hex value where the first 56 bits denote the UTC time in
