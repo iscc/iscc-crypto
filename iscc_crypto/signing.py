@@ -37,8 +37,8 @@ def verify(metadata) -> bool:
     sig = jws.JWS()
     sig.deserialize(signature["signature"])
     sig.objects["payload"] = jcs.canonicalize(msg)
-    print("\n######## Deserialized Signature:")
-    pprint(sig.objects)
+    # print("\n######## Deserialized Signature:")
+    # pprint(sig.objects)
     key = jws.JWK(**signature["pubkey"])
     sig.verify(key)
     return True
@@ -46,6 +46,7 @@ def verify(metadata) -> bool:
 
 if __name__ == "__main__":
     from pprint import pprint
+    from iscc_crypto.keys import get_key
 
     metadata = sample_data = {
         "age": 30,
@@ -54,7 +55,7 @@ if __name__ == "__main__":
         "scores": [85, 90, 92],
         "address": {"city": "New York", "zip": "10001"},
     }
-    priv_key = iscc_crypto.get_key()
+    priv_key = get_key()
     signed = sign(metadata, priv_key)
     print(f"######## Metadata:")
     print(json.dumps(metadata, indent=2))
