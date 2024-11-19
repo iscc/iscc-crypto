@@ -1,4 +1,7 @@
-from iscc_crypto.microtime import microtime, amicrotime
+from loguru import logger as log
+
+log.remove()
+from iscc_crypto.timestamp import timestamp, atimestamp, RESOLUTION
 import time
 import threading
 import asyncio
@@ -17,7 +20,7 @@ def _worker(duration, count_queue):
     count = 0
     end = time.time() + duration
     while time.time() < end:
-        microtime()
+        timestamp()
         count += 1
     count_queue.put(count)
 
@@ -58,7 +61,7 @@ def benchmark_tid(duration=10.0):
     end = start + duration
 
     while time.time() < end:
-        microtime()
+        timestamp()
         count += 1
 
     elapsed = time.time() - start
@@ -77,7 +80,7 @@ def _process_worker(duration, result_queue):
     count = 0
     end = time.time() + duration
     while time.time() < end:
-        microtime()
+        timestamp()
         count += 1
     result_queue.put(count)
 
@@ -122,7 +125,7 @@ def _thread_worker_for_process(duration, count_queue):
     count = 0
     end = time.time() + duration
     while time.time() < end:
-        microtime()
+        timestamp()
         count += 1
     count_queue.put(count)
 
@@ -188,7 +191,7 @@ async def _async_worker(duration):
     count = 0
     end = time.time() + duration
     while time.time() < end:
-        await amicrotime()
+        await atimestamp()
         count += 1
     return count
 
@@ -232,7 +235,7 @@ async def _async_thread_worker(duration, count_queue):
     count = 0
     end = time.time() + duration
     while time.time() < end:
-        await amicrotime()
+        await atimestamp()
         count += 1
     count_queue.put(count)
 
@@ -312,6 +315,7 @@ def benchmark_tid_async_multi_tm(duration=10.0, num_processes=None, num_threads=
 
 
 if __name__ == "__main__":
+    print(f"Benchmarking timestamp at resolution {RESOLUTION}")
     print("\nSingle-threaded benchmark:")
     benchmark_tid()
     print("\nSingle-threaded async benchmark:")
