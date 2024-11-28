@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 from jwcrypto import jwk
 import keyring
 import json
-from loguru import logger as log
 
 
 def create_keypair(kid="default", issuer=None):
@@ -42,7 +41,6 @@ def create_keypair(kid="default", issuer=None):
     if issuer:
         key_data["iss"] = issuer
 
-    log.trace(f"Created key with kid: {kid}")
     return key_data
 
 
@@ -72,7 +70,6 @@ def store_keypair(keypair, overwrite=False):
 
     keydata = json.dumps(keypair)
     keyring.set_password(service_name="iscc", username=kid, password=keydata)
-    log.trace(f"Stored key with kid: {kid}")
     return kid
 
 
@@ -87,7 +84,6 @@ def load_keypair(kid="default"):
     :raises ValueError: If key does not exist
     """
     keydata = keyring.get_password(service_name="iscc", username=kid)
-    log.trace(f"Loaded key with kid: {kid}")
     if not keydata:
         raise ValueError(f"No key found with ID '{kid}'")
 
@@ -110,19 +106,3 @@ def delete_keypair(kid):
         raise ValueError(f"No key found with ID '{kid}'")
 
     keyring.delete_password(service_name="iscc", username=kid)
-    log.trace(f"Deleted key with kid: {kid}")
-
-
-if __name__ == "__main__":
-    from rich import print
-
-    # Configure logging
-    log.remove()
-    log.add(sink=print, level="TRACE")
-
-    kp = create_keypair(kid="testkey", issuer="https://iscc.ai")
-    print(kp)
-    kid = store_keypair(kp, overwrite=False)
-    lkp = load_keypair(kid)
-    print(lkp)
-    delete_keypair(kid)
