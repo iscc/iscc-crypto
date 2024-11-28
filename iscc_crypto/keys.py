@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from jwcrypto import jwk
 import keyring
 import json
+from loguru import logger as log
 
 
 def create_keypair(kid="default", issuer=None):
@@ -41,6 +42,7 @@ def create_keypair(kid="default", issuer=None):
     if issuer:
         key_data["iss"] = issuer
 
+    log.trace(f"Created key with kid: {kid}")
     return key_data
 
 
@@ -70,6 +72,7 @@ def store_keypair(keypair, overwrite=False):
 
     keydata = json.dumps(keypair)
     keyring.set_password(service_name="iscc", username=kid, password=keydata)
+    log.trace(f"Stored key with kid: {kid}")
     return kid
 
 
@@ -84,6 +87,7 @@ def load_keypair(kid="default"):
     :raises ValueError: If key does not exist
     """
     keydata = keyring.get_password(service_name="iscc", username=kid)
+    log.trace(f"Loaded key with kid: {kid}")
     if not keydata:
         raise ValueError(f"No key found with ID '{kid}'")
 
@@ -93,13 +97,30 @@ def load_keypair(kid="default"):
         raise ValueError(f"Invalid key data for ID '{kid}'")
 
 
+def delete_keypair(kid):
+    # type: (str) -> None
+    """
+    Delete a keypair from the operating system keyring.
+
+    :param str kid: Key ID of the keypair to delete
+    :raises keyring.errors.KeyringError: If deleting from keyring fails
+    :raises ValueError: If key does not exist
+    """
+    if not keyring.get_password(service_name="iscc", username=kid):
+        raise ValueError(f"No key found with ID '{kid}'")
+
+    keyring.delete_password(service_name="iscc", username=kid)
+    log.trace(f"Deleted key with kid: {kid}")
+
+
 if __name__ == "__main__":
     from rich import print
 
-    kp = create_keypair(issuer="https://iscc.ai")
+    kp = create_keypair(kid="testkey", issuer="https://iscc.ai")
     print(kp)
-    name = store_keypair(kp, overwrite=True)
-    print(f"Stored as {name}")
-    lkp = load_keypair(name)
-    print("Loaded keypair:")
+    kid = store_keypair(kp, overwrite=False)
+    print(f"Stored with kid: {kid}")
+    lkp = load_keypair(kid)
+    print(f"Loaded keypair {kid}:")
     print(lkp)
+    delete_keypair(kid)
