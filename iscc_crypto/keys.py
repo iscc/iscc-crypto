@@ -4,6 +4,8 @@ from time import time
 from urllib.parse import urlparse
 from jwcrypto import jwk
 import keyring
+import json
+from loguru import logger as log
 
 
 def create_keypair(kid="default", issuer=None):
@@ -43,17 +45,33 @@ def create_keypair(kid="default", issuer=None):
     return key_data
 
 
-def store_keypair(keypair):
-    # type: (dict) -> str
+def store_keypair(keypair, overwrite=False):
+    # type: (dict, bool) -> str
     """
     Store the key to the operating system keyring.
 
-    The key is stored securely using the system's default keyring backend.
+    The key is stored using the system's default keyring backend.
 
     :param dict keypair: Key object containing Ed25519 keypair and metadata
+    :param bool overwrite: Allow overwriting existing key with same kid
     :return: Name under which the key was stored
     :raises keyring.errors.KeyringError: If saving to keyring fails
+    :raises ValueError: If key exists and overwrite=False
     """
+
+    if "kid" not in keypair:
+        raise ValueError("Key ID (kid) missing from keypair")
+
+    kid = keypair["kid"]
+
+    # Check if key already exists
+    existing = keyring.get_password(service_name="iscc", username=kid)
+    if existing and not overwrite:
+        raise ValueError(f"Key with ID '{kid}' already exists and overwrite=False")
+
+    keydata = json.dumps(keypair)
+    keyring.set_password(service_name="iscc", username=kid, password=keydata)
+    return kid
 
 
 if __name__ == "__main__":
