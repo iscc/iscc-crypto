@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 from jwcrypto import jwk
 import keyring
 import json
-from loguru import logger as log
 
 
 def create_keypair(kid="default", issuer=None):
@@ -74,48 +73,33 @@ def store_keypair(keypair, overwrite=False):
     return kid
 
 
+def load_keypair(kid="default"):
+    # type: (str) -> dict
+    """
+    Load a keypair from the operating system keyring.
+
+    :param str kid: Key ID of the keypair to load (defaults to 'default')
+    :return: Key object containing Ed25519 keypair and metadata
+    :raises keyring.errors.KeyringError: If loading from keyring fails
+    :raises ValueError: If key does not exist
+    """
+    keydata = keyring.get_password(service_name="iscc", username=kid)
+    if not keydata:
+        raise ValueError(f"No key found with ID '{kid}'")
+
+    try:
+        return json.loads(keydata)
+    except json.JSONDecodeError:
+        raise ValueError(f"Invalid key data for ID '{kid}'")
+
+
 if __name__ == "__main__":
     from rich import print
 
-    print(create_keypair("iscc", "https://iscc.ai/actor/random-house"))
-
-
-# IGNORE THIS OUTCOMMENTED CODE:
-# def get_key(name: Optional[str] = None) -> jwk.JWK:
-#     """
-#     Returns the key stored under `name`. If `name` is blank returns the default key.
-#     If no key exists for `name` a new EC secp256k1 key is generated, stored and
-#     returned.
-#     """
-#     name = name or "iscc"
-#     user = getpass.getuser()
-#     kr = keyring.get_keyring()
-#     keydata = kr.get_password(service=name, username=user)
-#     if keydata:
-#         key = jwk.JWK(**json_decode(keydata))
-#     else:
-#         key = generate_key()
-#         keydata = key.export(private_key=True, as_dict=False)
-#         kr.set_password(service=name, username=user, password=keydata)
-#     return key
-#
-#
-# def generate_key():
-#     """
-#     Generate a new EC secp256k1 key
-#     """
-#     key = jwk.JWK.generate(kty="EC", crv="secp256k1")
-#     log.info(f"Generated new key: {key.export(private_key=False)}")
-#     return key
-#
-#
-# if __name__ == "__main__":
-#     k = get_key()
-#     print("KEY:")
-#     print(k)
-#     print("PUBKEY DICT")
-#     print(k.export_public(as_dict=True))
-#     print("PUBKEY PEM")
-#     print(k.export_to_pem(private_key=False, password=None))
-#     print("PRIVATE KEY")
-#     print(k.export_private())
+    kp = create_keypair(issuer="https://iscc.ai")
+    print(kp)
+    name = store_keypair(kp, overwrite=True)
+    print(f"Stored as {name}")
+    lkp = load_keypair(name)
+    print("Loaded keypair:")
+    print(lkp)
