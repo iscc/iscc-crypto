@@ -116,11 +116,13 @@ def delete_keypair(kid):
 if __name__ == "__main__":
     from rich import print
 
+    # Configure logging
+    log.remove()
+    log.add(sink=print, level="TRACE")
+
     kp = create_keypair(kid="testkey", issuer="https://iscc.ai")
     print(kp)
     kid = store_keypair(kp, overwrite=False)
-    print(f"Stored with kid: {kid}")
     lkp = load_keypair(kid)
-    print(f"Loaded keypair {kid}:")
     print(lkp)
     delete_keypair(kid)
