@@ -22,6 +22,7 @@ import jcs
 import json
 import jwcrypto.jwk
 import jwcrypto.jws
+from iscc_crypto.keys import validate_keypair
 
 
 def sign_json(obj, keypair):
@@ -36,6 +37,9 @@ def sign_json(obj, keypair):
     :param dict keypair: Keypair for signing as dict
     :return: Signed object with 'signatures' array containing JWS strings
     """
+
+    validate_keypair(keypair)
+
     # Deep copy to avoid modifying input
     result = copy.deepcopy(obj)
 
@@ -46,7 +50,13 @@ def sign_json(obj, keypair):
     jwk = jwcrypto.jwk.JWK.from_json(json.dumps(keypair))
 
     # Prepare JWS header
-    header = {"alg": "EdDSA", "iss": keypair["iss"], "jwk": json.loads(jwk.export_public())}
+    header = {
+        "alg": "EdDSA",
+        "iss": keypair["iss"],
+        "jwk": json.loads(jwk.export_public()),
+        "b64": False,
+        "crit": ["b64"],
+    }
 
     # Canonicalize payload
     payload: bytes = jcs.canonicalize(result, utf8=True)
@@ -88,25 +98,26 @@ def verify_json(obj):
 
     # Try to verify each signature
     for sig in signatures:
-        try:
-            # Parse JWS token
-            jws = jwcrypto.jws.JWS()
-            jws.deserialize(sig)
+        # Parse JWS token
+        jws = jwcrypto.jws.JWS()
+        jws.allowed_algs = ["EdDSA"]
+        jws.deserialize(sig)
 
-            # Get protected header
-            protected = jws.objects["protected"]
-            header = json.loads(protected)
-            if "jwk" not in header:
-                log.error("jwk not in header")
-                return False
-            jwk = jwcrypto.jwk.JWK(**header["jwk"])
+        # Get protected header
+        protected = jws.objects["protected"]
+        header = json.loads(protected)
 
-            # Set payload and verify signature
-            jws.objects["payload"] = payload
-            jws.verify(jwk)
-        except Exception as e:
-            log.error(e)
+        if header.get("b64") is not False:
+            log.error("b64 parameter must be false")
             return False
+        if "b64" not in header.get("crit", []):
+            log.error("b64 must be listed in crit")
+            return False
+
+        jwk = jwcrypto.jwk.JWK(**header["jwk"])
+
+        # Verify signature against detached payload
+        jws.verify(jwk, detached_payload=payload)
 
     return True
 
