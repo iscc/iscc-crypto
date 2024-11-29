@@ -24,7 +24,7 @@ import jwcrypto.jwk
 import jwcrypto.jws
 
 
-def sign_object(obj, keypair):
+def sign_json(obj, keypair):
     # type: (dict, dict) -> dict
     """
     Create a JWS/CT signature on any JSON/JCS serializable object.
@@ -64,7 +64,7 @@ def sign_object(obj, keypair):
     return result
 
 
-def verify_object(obj):
+def verify_json(obj):
     # type: (dict) -> bool
     """
     Verify JWS/CT signatures on a JSON object.
@@ -118,9 +118,9 @@ if __name__ == "__main__":
     kp = create_keypair("testkey", "https://example.com")
     print(kp)
     obj = {"nonce": "b0e9c8760d0f2e8f76fb623d16238607a14f36298552e9780f229a6401914490"}
-    sobj1 = sign_object(obj, kp)
+    sobj1 = sign_json(obj, kp)
     print(sobj1)
-    sobj2 = sign_object(sobj1, kp)
+    sobj2 = sign_json(sobj1, kp)
     print(sobj2)
-    print(verify_object(sobj1))
-    print(verify_object(sobj2))
+    print(verify_json(sobj1))
+    print(verify_json(sobj2))
