@@ -106,3 +106,19 @@ def delete_keypair(kid):
         raise ValueError(f"No key found with ID '{kid}'")
 
     keyring.delete_password(service_name="iscc", username=kid)
+
+
+def validate_keypair(keypair):
+    # type: (dict) -> None
+    """
+    Validate a keypair against requirements.
+
+    :param dict keypair: Key object containing Ed25519 keypair and metadata
+    :raises ValueError: If validating keypair fails
+    """
+    if not isinstance(keypair, dict):
+        raise ValueError("Keypair must be a dictionary")
+    if keypair.get("kty") != "OKP":
+        raise ValueError("Key type must be OKP")
+    if keypair.get("crv") != "Ed25519":
+        raise ValueError("Only Ed25519 curve is supported")
