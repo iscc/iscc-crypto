@@ -17,6 +17,7 @@ httpx = "*"
 msgspec = "*"
 smart-open = "*"
 atomics = "*"
+base58 = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
