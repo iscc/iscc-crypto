@@ -1,124 +1,152 @@
-"""Key Management"""
+import jcs
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives import serialization
+import base58
+import msgspec
+from hashlib import sha256
 
-from time import time
-from urllib.parse import urlparse
-from jwcrypto import jwk
-import keyring
-import json
+
+class KeyPair(msgspec.Struct):
+    """Combined public and secret key data structure."""
+
+    public_key: str
+    secret_key: str
 
 
-def create_keypair(kid="default", issuer=None):
-    # type: (str, str|None) -> dict
+def create_keypair():
+    # type: () -> KeyPair
     """
-    Create a new Ed25519 key pair for signing JSON data.
+    Generate an Ed25519 keypair for use with eddsa-jcs-2022 cryptosuite.
+    Returns a tuple of (publicKeyMultibase, secretKeyMultibase) encoded in multibase format.
 
-    Warning:
-        The returned data includes sensitive key material. Handle with care!
-
-    If an issuer URL is given, signature verification will check against
-    <issuer>/.well-known/jwks.json as specified in docs/iscc-keys-format.md
-
-    :param str kid: Key ID used for key storage and retrieval (must be unique within `issuer`)
-    :param str issuer: HTTPS URL of the key issuing authority
-    :return: Key object containing the Ed25519 key pair and metadata
-    :raises ValueError: If name is empty or issuer URL is invalid
+    The keys are encoded according to the Multikey specification:
+    - A 0xed01 prefix for public key
+    - A 0x80ed01 prefix for private key
+    - Followed by the raw key bytes
+    - The result is base58-btc encoded with 'z' prefix
     """
-    if not kid:
-        raise ValueError("Key ID cannot be empty")
+    # Generate the Ed25519 keypair
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    public_key = private_key.public_key()
 
-    if issuer:
-        parsed = urlparse(issuer)
-        if not all([parsed.scheme == "https", parsed.netloc]):
-            raise ValueError("Authority must be a valid HTTPS URL")
+    # Get the raw bytes
+    private_bytes = private_key.private_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PrivateFormat.Raw,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    public_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+    )
 
-    # Generate Ed25519 key pair
-    key = jwk.JWK.generate(kty="OKP", crv="Ed25519", kid=kid, use="sig")
+    # Add the Multikey prefixes
+    prefixed_public = bytes.fromhex("ed01") + public_bytes
+    prefixed_private = bytes.fromhex("8026") + private_bytes
 
-    # Export as dict and add metadata
-    key_data = key.export(private_key=True, as_dict=True)
+    # Encode in base58-btc with 'z' prefix
+    public_multibase = "z" + base58.b58encode(prefixed_public).decode("utf-8")
+    private_multibase = "z" + base58.b58encode(prefixed_private).decode("utf-8")
 
-    key_data["nbf"] = int(time())
-    if issuer:
-        key_data["iss"] = issuer
-
-    return key_data
+    return KeyPair(public_key=public_multibase, secret_key=private_multibase)
 
 
-def store_keypair(keypair, overwrite=False):
-    # type: (dict, bool) -> str
+def from_secret(secret_key):
+    # type: (str) -> KeyPair
     """
-    Store the key to the operating system keyring.
+    Create a KeyPair from an existing multibase-encoded secret key.
 
-    The key is stored using the system's default keyring backend.
-
-    :param dict keypair: Key object containing Ed25519 keypair and metadata
-    :param bool overwrite: Allow overwriting existing key with same kid
-    :return: Name under which the key was stored
-    :raises keyring.errors.KeyringError: If saving to keyring fails
-    :raises ValueError: If key exists and overwrite=False
+    :param secret_key: Multibase encoded secret key (z-base58-btc)
+    :return: KeyPair with public and secret keys
     """
+    # Remove multibase prefix and decode
+    secret_bytes = base58.b58decode(secret_key[1:])
 
-    if "kid" not in keypair:
-        raise ValueError("Key ID (kid) missing from keypair")
+    # Remove multikey prefix and create private key
+    private_key = ed25519.Ed25519PrivateKey.from_private_bytes(secret_bytes[2:])
+    public_key = private_key.public_key()
 
-    kid = keypair["kid"]
+    # Get raw public key bytes
+    public_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+    )
 
-    # Check if key already exists
-    existing = keyring.get_password(service_name="iscc", username=kid)
-    if existing and not overwrite:
-        raise ValueError(f"Key with ID '{kid}' already exists and overwrite=False")
+    # Add multikey prefixes and encode
+    prefixed_public = bytes.fromhex("ed01") + public_bytes
+    public_multibase = "z" + base58.b58encode(prefixed_public).decode("utf-8")
 
-    keydata = json.dumps(keypair)
-    keyring.set_password(service_name="iscc", username=kid, password=keydata)
-    return kid
+    return KeyPair(public_key=public_multibase, secret_key=secret_key)
 
 
-def load_keypair(kid="default"):
-    # type: (str) -> dict
+def sign(payload, keypair):
+    # type: (bytes, KeyPair) -> str
     """
-    Load a keypair from the operating system keyring.
+    Sign a bytes payload using eddsa-jcs-2022 cryptosuite.
 
-    :param str kid: Key ID of the keypair to load (defaults to 'default')
-    :return: Key object containing Ed25519 keypair and metadata
-    :raises keyring.errors.KeyringError: If loading from keyring fails
-    :raises ValueError: If key does not exist
+    :param payload: Bytes to sign
+    :param keypair: KeyPair containing the signing key
+    :return: Multibase encoded signature (z-base58-btc)
     """
-    keydata = keyring.get_password(service_name="iscc", username=kid)
-    if not keydata:
-        raise ValueError(f"No key found with ID '{kid}'")
+    # Decode secret key from multibase
+    secret_bytes = base58.b58decode(keypair.secret_key[1:])
 
-    try:
-        return json.loads(keydata)
-    except json.JSONDecodeError:
-        raise ValueError(f"Invalid key data for ID '{kid}'")
+    # Create private key from bytes (skip multikey prefix)
+    private_key = ed25519.Ed25519PrivateKey.from_private_bytes(secret_bytes[2:])
 
+    # Sign the payload
+    signature = private_key.sign(payload)
 
-def delete_keypair(kid):
-    # type: (str) -> None
-    """
-    Delete a keypair from the operating system keyring.
-
-    :param str kid: Key ID of the keypair to delete
-    :raises keyring.errors.KeyringError: If deleting from keyring fails
-    :raises ValueError: If key does not exist
-    """
-    if not keyring.get_password(service_name="iscc", username=kid):
-        raise ValueError(f"No key found with ID '{kid}'")
-
-    keyring.delete_password(service_name="iscc", username=kid)
+    # Encode signature in multibase format
+    return "z" + base58.b58encode(signature).decode("utf-8")
 
 
-def validate_keypair(keypair):
-    # type: (dict) -> None
-    """
-    Validate a keypair against requirements.
+# Example usage:
+if __name__ == "__main__":
+    test_key = KeyPair(
+        public_key="z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
+        secret_key="z3u2en7t5LR2WtQH5PfFqMqwVHBeXouLzo6haApm8XHqvjxq",
+    )
+    print(f"Test Key: {test_key}")
+    reconstructed = from_secret(test_key.secret_key)
+    print(f"Reconstructed Key: {reconstructed}")
+    assert test_key == reconstructed
 
-    :param dict keypair: Key object containing Ed25519 keypair and metadata
-    :raises ValueError: If validating keypair fails
-    """
-    if not isinstance(keypair, dict):
-        raise ValueError("Keypair must be a dictionary")
-    if keypair.get("kty") != "OKP":
-        raise ValueError("Key type must be OKP")
-    if keypair.get("crv") != "Ed25519":
-        raise ValueError("Only Ed25519 curve is supported")
+    credential = {
+        "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        "id": "urn:uuid:58172aac-d8ba-11ed-83dd-0b3aef56cc33",
+        "type": ["VerifiableCredential", "AlumniCredential"],
+        "name": "Alumni Credential",
+        "description": "A minimum viable example of an Alumni Credential.",
+        "issuer": "https://vc.example/issuers/5678",
+        "validFrom": "2023-01-01T00:00:00Z",
+        "credentialSubject": {"id": "did:example:abcdefgh", "alumniOf": "The School of Examples"},
+    }
+
+    assert (
+        sha256(jcs.canonicalize(credential)).hexdigest()
+        == "59b7cb6251b8991add1ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
+    )
+
+    options = {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2023-02-24T23:36:38Z",
+        "verificationMethod": "did:key:z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2#z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
+        "proofPurpose": "assertionMethod",
+    }
+
+    assert (
+        sha256(jcs.canonicalize(options)).hexdigest()
+        == "c46b3487ab7087c4f426b546c449094ff57b8fefa6fd85e83f1b31e24c230da8"
+    )
+
+    combined = "c46b3487ab7087c4f426b546c449094ff57b8fefa6fd85e83f1b31e24c230da859b7cb6251b8991add1ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
+
+    expected_signature = (
+        "zboydVv31kj6jP37GMBZwYyjbvrqr9MWeY9NCEfYUwLcKwkdqAcB44dqEcqaMi8mfdvT2Vbnvdrv6XRaYzgpuPWn"
+    )
+    signature = sign(bytes.fromhex(combined), test_key)
+    print(signature)
+    assert signature == expected_signature
