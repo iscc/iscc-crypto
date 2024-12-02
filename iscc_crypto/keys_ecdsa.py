@@ -127,6 +127,51 @@ def sign(payload, keypair):
     return "z" + base58.b58encode(signature).decode("utf-8")
 
 
+def verify(payload, signature, public_key):
+    # type: (bytes, str, str) -> bool
+    """
+    Verify a signature against a payload and public key.
+
+    :param payload: Original bytes that were signed
+    :param signature: Multibase encoded signature (z-base58-btc)
+    :param public_key: Multibase encoded public key (z-base58-btc)
+    :return: True if signature is valid, False otherwise
+    """
+    # Decode signature from multibase
+    sig_bytes = base58.b58decode(signature[1:])
+
+    # Split signature into r and s components (32 bytes each)
+    r = int.from_bytes(sig_bytes[:32], "big")
+    s = int.from_bytes(sig_bytes[32:], "big")
+
+    # Convert to DER format for verification
+    der_sig = asym_utils.encode_dss_signature(r, s)
+
+    # Decode public key from multibase
+    pub_bytes = base58.b58decode(public_key[1:])[2:]  # Skip multikey prefix
+
+    # Create public key object
+    pub_key = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pub_bytes)
+
+    try:
+        # Verify the signature
+        pub_key.verify(der_sig, payload, ec.ECDSA(hashes.SHA256()))
+        return True
+    except Exception:
+        return False
+
+
+def recover_pubkey(payload, signature):
+    # type: (bytes, str) -> str
+    """
+    Recover public key from signature and payload.
+
+    :param payload: Original bytes that were signed
+    :param signature: Multibase encoded signature (z-base58-btc)
+    :return: Multibase encoded public key (z-base58-btc)
+    """
+
+
 if __name__ == "__main__":
     from rich import print
     from hashlib import sha256
@@ -185,3 +230,6 @@ if __name__ == "__main__":
     print("Signature:")
     print(signature)
     assert signature == expected_signature
+
+    assert verify(bytes.fromhex(combined), signature, test_key.public_key)
+    # assert recover_pubkey(bytes.fromhex(combined), signature) == test_key.public_key
