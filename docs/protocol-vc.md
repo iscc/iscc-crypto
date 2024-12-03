@@ -5,7 +5,7 @@
 The ISCC Timestamping Protocol defines a standardized way to create verifiable timestamps and
 declarations for digital content using W3C Verifiable Credentials. It enables content creators,
 rights holders, and other parties to establish verifiable proofs of existence, ISCC-ID ownership,
-and  content declarations at specific points in time.
+and content declarations at specific points in time.
 
 ### 1.1 Purpose and Scope
 
@@ -53,11 +53,73 @@ The protocol leverages the W3C Verifiable Credentials Data Model to:
 
 ### 2.1 ISCC Identifier (ISCC-ID)
 
-- 64-bit identifier structure
-- 52-bit microsecond timestamp component
-- 12-bit server-id component
-- Encoding format and rules
-- Theoretical capacity and limitations
+The ISCC-ID is a 64-bit timestamp that includes a server identifier to ensure global uniqueness and 
+chronological ordering. Each ISCC-ID represents a specific microsecond in time and the identity of 
+the notary server that issued it.
+
+#### 2.1.1 Structure
+
+The 64-bit identifier consists of:
+
+- **Timestamp** (52 bits): Microseconds since Unix epoch (1970-01-01T00:00:00Z)
+- **Server ID** (12 bits): Unique identifier of the issuing notary server
+
+This structure enables:
+
+- Timestamp precision to the microsecond
+- Support for up to 4,096 unique notary servers
+- Chronological sorting of identifiers
+- Operation until year 2112
+
+The self-describing header format allows for seamless protocol evolution by supporting new MAINTYPE, 
+SUBTYPE, VERSION, and LENGTH values. This ensures backward compatibility while enabling future 
+extensions if timestamp range or server capacity needs to be expanded.
+
+#### 2.1.2 Canonical Format
+
+The canonical string representation of an ISCC-ID uses the following format:
+
+```
+ISCC:MAIWFBMUTUVMPUAA
+```
+
+Components:
+
+- Protocol prefix: `ISCC:`
+- Base32-encoded concatenation of:
+  - Header (16 bits):
+    - MAINTYPE = `0110` (ISCC-ID)
+    - SUBTYPE = `0000` (None)
+    - VERSION = `0001` (V1)
+    - LENGTH = `0001` (64-bit)
+  - Payload (64 bits):
+    - 52-bit timestamp
+    - 12-bit server-id
+
+#### 2.1.3 Capacity and Limitations
+
+The ISCC-ID format provides:
+
+- Maximum timestamp: Year 2112 (52-bit microseconds)
+- Maximum servers: 4,096 (12-bit server-id)
+- Theoretical throughput: ~4 billion timestamps per second across all servers
+- Per-server throughput: Up to 1 million timestamps per second
+
+#### 2.1.4 Server ID Registry
+
+Server IDs are managed through:
+
+- Decentralized smart contract registry
+- Mapping of server-id to DID
+- Public key infrastructure
+- Service endpoint discovery
+
+This ensures:
+
+- Unique server identification
+- Verifiable server authority
+- Discoverable service endpoints
+- Transparent operation
 
 ### 2.2 Verifiable Credentials
 
