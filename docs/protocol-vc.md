@@ -19,10 +19,61 @@
 
 ### 2.2 Verifiable Credentials
 
-- VC data model integration
-- ISCC-specific credential types
-- Required and optional properties
-- Context definitions
+The ISCC Timestamping Protocol uses the W3C Verifiable Credentials Data Model to express timestamps
+and declarations as cryptographically verifiable claims. This enables seamless integration with
+existing VC ecosystem tools and infrastructure.
+
+#### 2.2.1 Credential Types
+
+The protocol defines two primary credential types:
+
+- `IsccTimestamp` - For basic content timestamping
+- `IsccDeclaration` - For ISCC-CODE declarations with ownership claims
+
+#### 2.2.2 Required Properties
+
+All ISCC credentials MUST include:
+
+- `@context` - With `https://www.w3.org/ns/credentials/v2` as first item
+- `type` - Must include `VerifiableCredential` and the specific ISCC type
+- `issuer` - The DID of the issuing ISCC Notary server
+- `issuanceDate` - UTC datetime of credential issuance
+- `credentialSubject` - Contains the ISCC-specific claims
+
+#### 2.2.3 Credential Subject Properties
+
+The `credentialSubject` for timestamps MUST contain:
+
+- `iscc_id` - The ISCC-ID assigned by the notary
+- `datahash` - The blake3 multihash of the timestamped data
+- `notary_pubkey` - The public key of the notary server
+
+For declarations it MUST additionally include:
+
+- `iscc_code` - The declared ISCC-CODE
+- `requester_pubkey` - Public key of the declaring entity
+
+#### 2.2.4 Optional Properties
+
+Credentials MAY include:
+
+- `id` - A unique URI for the credential
+- `validUntil` - Expiration datetime for the credential
+- `credentialStatus` - Information about revocation status
+- `termsOfUse` - Usage conditions and restrictions
+- `evidence` - Additional proof materials
+
+#### 2.2.5 Context Definition
+
+The protocol defines a JSON-LD context that includes:
+
+- ISCC-specific term definitions
+- Cryptographic primitive mappings
+- Verification method types
+- Proof format specifications
+
+This context MUST be included in all ISCC credentials to ensure proper semantic interpretation of
+the claims.
 
 ### 2.3 Cryptographic Primitives
 
