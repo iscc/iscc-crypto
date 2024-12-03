@@ -342,3 +342,51 @@ Key considerations:
 - Format aligns with ISCC multibase usage
 - Ed25519 support matches ISCC needs
 - No blockchain dependency required
+
+# DID Method Web - Timestamping Relevance
+
+## Core Features
+
+The `did:web` method provides:
+- DNS and HTTPS based DID resolution
+- No blockchain/special infrastructure needed
+- Leverages existing web security (TLS)
+- Domain reputation as trust anchor
+
+## DID Format
+
+Uses domain names and paths:
+- Basic: `did:web:example.com`
+- With path: `did:web:example.com:user:alice`
+- With port: `did:web:example.com%3A3000`
+- Resolves to: `https://{domain}/.well-known/did.json`
+
+## Security Features
+
+Required security measures:
+- HTTPS with strong TLS configuration
+- Domain name validation
+- DNS security (DNSSEC recommended)
+- Cross-Origin Resource Sharing (CORS)
+
+## Document Resolution
+
+Simple HTTPS-based process:
+1. Convert DID to HTTPS URL
+2. Fetch DID document via GET request
+3. Verify domain/certificate match
+4. Parse JSON-LD document
+
+## Relevance for ISCC Timestamping
+
+The did:web method provides:
+1. Simple web-based notary identification
+2. Built on existing web infrastructure
+3. Domain reputation for trust
+4. Easy key rotation/management
+
+Key considerations:
+- Could identify notaries via did:web
+- Leverages existing DNS/TLS security
+- Simple to deploy and maintain
+- Domain reputation aids trust
