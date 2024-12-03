@@ -1,193 +1,170 @@
-# ISCC Timestamping Protocol - VC Edition
+# ISCC Timestamping Protocol
 
-## Overview
+## 1. Introduction
 
-This specification defines how to represent ISCC Timestamps as Verifiable Credentials, enabling
-integration with the broader VC ecosystem while maintaining the unique features of ISCC
-Timestamping.
+- Purpose and scope of the protocol
+- Key features and benefits
+- Relationship to VC ecosystem
+- Terminology and conventions
 
-## Core Concepts
+## 2. Core Components
 
-### ISCC-ID Structure
+### 2.1 ISCC Identifier (ISCC-ID)
 
-- 64-bit identifier (unchanged from core spec)
-  - 52-bit microsecond timestamp
-  - 12-bit server-id
-- Theoretical capacity of ~4 billion timestamps/second
-- Valid until year 2112
+- 64-bit identifier structure
+- 52-bit microsecond timestamp component
+- 12-bit server-id component
+- Encoding format and rules
+- Theoretical capacity and limitations
 
-### Verifiable Credentials Integration
+### 2.2 Verifiable Credentials
 
-- Timestamps expressed as VCs
-- Data Integrity proofs for tamper-evidence
-- Standard VC properties for ecosystem compatibility
-- ISCC-specific credential types and contexts
+- VC data model integration
+- ISCC-specific credential types
+- Required and optional properties
+- Context definitions
 
-## Credential Format
+### 2.3 Cryptographic Primitives
 
-### Required Properties
+- Hash algorithms and encodings
+- Signature schemes
+- Key formats and management
+- Proof formats and validation
 
-- `@context`
-  - `https://www.w3.org/ns/credentials/v2`
-  - ISCC-specific context URL
-- `type`
-  - `VerifiableCredential`
-  - `IsccTimestamp`
-- `issuer` - Timestamping server DID
-- `credentialSubject`
-  - ISCC timestamp data
-  - Datahash binding
+## 3. Protocol Operations
 
-### Optional Properties
+### 3.1 Data Timestamping
 
-- `id` - ISCC-ID as URI
-- `validFrom` - Timestamp creation time
-- `credentialStatus` - Revocation information
-
-## Securing Mechanisms
-
-### Data Integrity Proofs
-
-- EdDSA with JSON Canonicalization (JCS)
-- Multikey format for keys
-- Base58-btc encoding
-- Microsecond precision support
-
-### Proof Format
-
-```json
-{
-  "proof": {
-    "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
-    "created": "[timestamp]",
-    "verificationMethod": "[notary-did]#key-1",
-    "proofPurpose": "assertionMethod",
-    "proofValue": "[signature]"
-  }
-}
-```
-
-## Notary Identification
-
-### DID Methods
-
-- `did:web` for DNS-based trust
-- `did:key` for self-contained keys
-- Maps to existing server-id registry
-
-### Controller Documents
-
-- Public key publication
-- Service endpoint discovery
-- Verification relationship definitions
-
-## API Endpoints
-
-### Data Timestamping
-
-- Request/response formats
-- VC representation
-- Backward compatibility
-
-### ISCC-ID Acquisition
-
-- Credential issuance flow
-- Ownership attestation
-- Access control
-
-### ISCC-CODE Declaration
-
-- Code registration process
-- Metadata binding
+- Request format and parameters
+- Response structure
+- Credential issuance
 - Verification procedures
 
-## Security Considerations
+### 3.2 ISCC-ID Acquisition
 
-### Timestamp Integrity
+- Request requirements
+- Authorization process
+- Response format
+- Ownership attestation
 
-- Proof verification
-- Server authentication
-- Replay protection
+### 3.3 ISCC-CODE Declaration
 
-### Key Management
+- Declaration request format
+- Validation rules
+- Response structure
+- Metadata binding
 
-- Notary key rotation
-- Credential status checking
+## 4. Security Architecture
+
+### 4.1 Notary Infrastructure
+
+- Server identification (DIDs)
+- Key management
 - Trust establishment
+- Service discovery
 
-## Examples
+### 4.2 Proof Generation
 
-### Basic Timestamp
+- Data Integrity proofs
+- Timestamp proofs
+- Signature creation
+- Canonicalization
 
-```json
-{
-  "@context": [
-    "https://www.w3.org/ns/credentials/v2",
-    "https://iscc.codes/credentials/v1"
-  ],
-  "type": ["VerifiableCredential", "IsccTimestamp"],
-  "issuer": "did:web:notary.iscc.codes",
-  "validFrom": "2024-01-01T12:00:00.123456Z",
-  "credentialSubject": {
-    "iscc_id": "ISCC:MAIWFBMUTUVMPUAA",
-    "datahash": "z9zL29fdZfXHXWbNTRdjLiSrSHGKJYxGmtsNyPVatv2zXF"
-  },
-  "proof": {
-    "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
-    "created": "2024-01-01T12:00:00.123456Z",
-    "verificationMethod": "did:web:notary.iscc.codes#key-1",
-    "proofPurpose": "assertionMethod",
-    "proofValue": "z4ER..."
-  }
-}
-```
+### 4.3 Verification
 
-### Code Declaration
+- Proof validation
+- Chain of trust
+- Status checking
+- Revocation handling
 
-```json
-{
-  "@context": [
-    "https://www.w3.org/ns/credentials/v2",
-    "https://iscc.codes/credentials/v1"
-  ],
-  "type": ["VerifiableCredential", "IsccDeclaration"],
-  "issuer": "did:web:notary.iscc.codes",
-  "validFrom": "2024-01-01T12:00:00.123456Z",
-  "credentialSubject": {
-    "iscc_id": "ISCC:MAIWFBMUTUVMPUAA",
-    "iscc_code": "ISCC:KACT4EBWK27737D2AYCJRAL5Z36G76RFRMO4554RU26HZ4ORJGIVHDI",
-    "datahash": "z9zL29fdZfXHXWbNTRdjLiSrSHGKJYxGmtsNyPVatv2zXF"
-  },
-  "proof": {
-    "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
-    "created": "2024-01-01T12:00:00.123456Z",
-    "verificationMethod": "did:web:notary.iscc.codes#key-1",
-    "proofPurpose": "assertionMethod",
-    "proofValue": "z4ER..."
-  }
-}
-```
+## 5. Data Formats
 
-## Implementation Guidance
+### 5.1 Request Messages
 
-### Migration Path
+- Common fields
+- Operation-specific parameters
+- Validation rules
+- Error handling
 
-- Backward compatibility support
-- Gradual VC adoption
-- Legacy format handling
+### 5.2 Response Messages
 
-### Ecosystem Integration
+- Credential structure
+- Proof formats
+- Status codes
+- Error responses
 
-- VC wallet compatibility
-- Verification library support
-- Standard tooling usage
+### 5.3 Credential Types
 
-## References
+- IsccTimestamp
+- IsccDeclaration
+- Extension points
+- Versioning
 
-1. W3C Verifiable Credentials Data Model
-1. W3C Decentralized Identifiers (DIDs)
-1. W3C Data Integrity
-1. ISCC Timestamping Protocol
+## 6. Implementation Guidelines
+
+### 6.1 Best Practices
+
+- Security considerations
+- Performance optimization
+- Error handling
+- Rate limiting
+
+### 6.2 Integration Patterns
+
+- VC ecosystem integration
+- Wallet compatibility
+- Service implementation
+- Client libraries
+
+## 7. Protocol Extensions
+
+### 7.1 Optional Features
+
+- Metadata support
+- Authority delegation
+- Batch operations
+- Custom proofs
+
+### 7.2 Future Compatibility
+
+- Version handling
+- Feature negotiation
+- Migration support
+- Backward compatibility
+
+## 8. Reference Implementation
+
+- API specifications
+- Example code
+- Test vectors
+- Conformance requirements
+
+## Appendices
+
+### A. JSON Schema Definitions
+
+- Request schemas
+- Response schemas
+- Credential schemas
+- Error schemas
+
+### B. Example Messages
+
+- Basic timestamps
+- Code declarations
+- Error cases
+- Complex scenarios
+
+### C. Security Considerations
+
+- Threat model
+- Attack vectors
+- Mitigation strategies
+- Best practices
+
+### D. References
+
+- Normative references
+- Informative references
+- Related specifications
+- Tools and libraries
