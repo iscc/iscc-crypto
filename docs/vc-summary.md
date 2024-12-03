@@ -66,3 +66,57 @@ Key differences to consider:
 - ISCC focuses on content timestamping vs identity credentials
 - ISCC uses specialized timestamp format vs generic VC claims
 - ISCC has specific server-id requirements not in VC model
+
+# Data Integrity - Timestamping Relevance
+
+## Core Concepts
+
+A **data integrity proof** provides:
+- Information about the proof mechanism
+- Parameters required for verification
+- The proof value itself
+
+## Required Properties for DataIntegrityProof
+
+- `type` - Must be "DataIntegrityProof"
+- `cryptosuite` - Identifier for the cryptographic suite
+- `proofValue` - Base-encoded binary data for verification
+
+## Optional Properties
+
+- `id` - URL uniquely identifying the proof
+- `created` - ISO datetime when proof was created
+- `expires` - ISO datetime when proof expires
+- `verificationMethod` - URL pointing to verification key
+- `proofPurpose` - Intended use of the proof
+- `domain` - Security domain(s) where proof is valid
+- `challenge` - One-time value to prevent replay attacks
+- `nonce` - Random value to increase privacy
+
+## Cryptographic Suites
+
+A conforming cryptographic suite must specify:
+- Transformation algorithms (if any)
+- Hashing algorithms and parameters
+- Proof serialization algorithms
+- Proof verification algorithms
+
+## Securing Data
+
+Two common transformation approaches:
+1. JSON Canonicalization (JCS) - For pure JSON data
+2. RDF Dataset Canonicalization - For JSON-LD with semantic meaning
+
+## Relevance for ISCC Timestamping
+
+The Data Integrity specification provides:
+1. Well-defined proof formats and verification
+2. Standardized cryptographic suite requirements
+3. Flexible transformation options
+4. Built-in replay attack prevention
+
+Key considerations:
+- ISCC timestamps could use DataIntegrityProof format
+- Cryptographic suites need to support microsecond precision
+- Server-id could be encoded in verificationMethod
+- Domain/challenge useful for timestamp security
