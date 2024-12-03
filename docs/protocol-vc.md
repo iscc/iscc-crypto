@@ -45,7 +45,7 @@ field after `VerifiableCredential`:
    - Requires requester signature
    - Binds ISCC-CODE and/or datahash (at least one MUST be present)
    - May include optional metadata bindings
-   - Establishes both ownership and content binding
+   - Establishes both ISCC-ID ownership and content binding
 
 
 #### 2.2.2 Required Properties
@@ -54,8 +54,7 @@ All ISCC credentials MUST include:
 
 - `@context` - With `https://www.w3.org/ns/credentials/v2` as first item
 - `type` - Must include `VerifiableCredential` and the specific ISCC type
-- `issuer` - The DID of the issuing ISCC Notary server
-- `issuanceDate` - UTC datetime of credential issuance
+- `issuer` - The `did:web` of the issuing ISCC Notary server
 - `credentialSubject` - Contains the ISCC-specific claims
 
 #### 2.2.3 Credential Subject Properties
