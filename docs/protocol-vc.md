@@ -2,10 +2,52 @@
 
 ## 1. Introduction
 
-- Purpose and scope of the protocol
-- Key features and benefits
-- Relationship to VC ecosystem
-- Terminology and conventions
+The ISCC Timestamping Protocol defines a standardized way to create verifiable timestamps and
+declarations for digital content using W3C Verifiable Credentials. It enables content creators,
+rights holders, and other parties to establish verifiable proofs of existence, ISCC-ID ownership,
+and  content declarations at specific points in time.
+
+### 1.1 Purpose and Scope
+
+This protocol specification defines:
+
+- A microsecond-precise timestamping mechanism
+- Methods for establishing content existence and ISCC-ID ownership
+- Procedures for declaring ISCC-CODES
+- Integration with the Verifiable Credentials ecosystem
+- Security and cryptographic requirements
+- API endpoints and data formats
+
+### 1.2 Key Features
+
+The protocol provides:
+
+- High-precision distributed timestamping (microsecond resolution)
+- Cryptographically verifiable timestamps and declarations
+- Support for ownerless and owned timestamps
+- Content binding through ISCC-CODEs and datahashes
+- Integration with decentralized identity systems
+- Standardized credential formats and proofs
+- Offline verification capabilities
+
+### 1.3 Verifiable Credentials Integration
+
+The protocol leverages the W3C Verifiable Credentials Data Model to:
+
+- Express timestamps as cryptographically verifiable claims
+- Enable integration with existing VC infrastructure
+- Provide standardized verification methods
+- Support credential presentation and exchange
+- Enable selective disclosure of timestamp metadata
+
+### 1.4 Terminology
+
+- **ISCC-ID**: A 64-bit identifier combining timestamp and server-id
+- **Datahash**: A blake3 multihash over arbitrary data
+- **ISCC-CODE**: A content-derived fingerprint following the ISCC specification
+- **Notary**: A timestamping server that issues credentials
+- **Requester**: An entity requesting timestamps or making declarations
+- **DID**: Decentralized Identifier as specified by the W3C DID Core specification
 
 ## 2. Core Components
 
