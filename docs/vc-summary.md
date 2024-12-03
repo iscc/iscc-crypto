@@ -234,3 +234,63 @@ Key considerations:
 - Multikey format already aligns with ISCC
 - Service endpoints useful for notary discovery
 - Verification relationships map to timestamp use cases
+
+# DID Core - Timestamping Relevance
+
+## Core Concepts
+
+A **Decentralized Identifier (DID)** provides:
+- Globally unique identification without central authority
+- Cryptographically verifiable control
+- Resolution to DID documents containing verification methods
+- Service endpoint discovery
+
+## DID Syntax
+
+Three-part structure:
+1. `did:` - URI scheme identifier
+2. Method name - Identifies DID method
+3. Method-specific identifier - Unique within method
+
+Example: `did:example:123456789abcdefghi`
+
+## DID Documents
+
+Required Properties:
+- `id` - The DID itself
+- `@context` - JSON-LD context definitions
+
+Optional Properties:
+- `verificationMethod` - List of verification methods
+- `service` - List of service endpoints
+- `controller` - DIDs of authorized controllers
+
+## Verification Methods
+
+Standard key representation formats:
+1. `publicKeyJwk` - JSON Web Key format
+2. `publicKeyMultibase` - Multibase/Multicodec format
+   - Same format as ISCC protocol uses
+   - Supports Ed25519, ECDSA, etc.
+
+## Service Endpoints
+
+Enables discovery of:
+- Authentication services
+- Authorization services
+- Interaction endpoints
+- Additional metadata
+
+## Relevance for ISCC Timestamping
+
+The DID Core specification provides:
+1. Decentralized identifier system for notaries
+2. Standard key and service discovery
+3. Flexible verification methods
+4. Method-specific customization
+
+Key considerations:
+- Could use DIDs to identify ISCC notaries
+- DID methods could map to notary networks
+- Service endpoints enable notary discovery
+- Verification methods align with ISCC needs
