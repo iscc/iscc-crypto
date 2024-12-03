@@ -120,3 +120,97 @@ Key considerations:
 - Cryptographic suites need to support microsecond precision
 - Server-id could be encoded in verificationMethod
 - Domain/challenge useful for timestamp security
+
+# EdDSA-JCS-2022 Cryptosuite - Timestamping Relevance
+
+## Core Features
+
+The `eddsa-jcs-2022` cryptosuite provides:
+- Ed25519 signatures (EdDSA with edwards25519 curve)
+- JSON Canonicalization Scheme (JCS) for data normalization
+- Base58-btc encoding for signatures and keys
+- Strong unforgeability (SUF-CMA)
+
+## Key Format
+
+Uses Multikey format:
+- Public key prefix: `0xed01`
+- Base58-btc encoded with `z` prefix
+- 32-byte public key data
+- Example: `z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2`
+
+## Proof Generation
+
+1. Canonicalize document using JCS
+2. Hash canonicalized document (SHA-256)
+3. Hash proof configuration (SHA-256)
+4. Concatenate hashes
+5. Sign with Ed25519
+6. Base58-btc encode signature
+
+## Security Properties
+
+- SUF-CMA (strong unforgeability under chosen message attacks)
+- BS (binding signatures)
+- SBS (strongly binding signatures)
+- Protection against key substitution attacks
+
+## Relevance for ISCC Timestamping
+
+The cryptosuite provides:
+1. Fast and secure signatures
+2. Deterministic canonicalization
+3. Compact key and signature encoding
+4. Proven security properties
+
+Key considerations:
+- JCS ensures stable hashing of timestamp data
+- Ed25519 performance suits high-volume timestamping
+- Security properties match timestamping needs
+- Base58-btc encoding aligns with ISCC practices
+
+# Controller Document - Timestamping Relevance
+
+## Core Concepts
+
+A **controller document** provides:
+- Cryptographic material for verification
+- Service endpoints for interaction
+- Verification relationships and methods
+- Controller delegation capabilities
+
+## Required Properties
+
+- `id` - URL uniquely identifying the document/controller
+- `type` - For verification methods (e.g., "JsonWebKey", "Multikey")
+- `controller` - URL identifying the controller of verification methods
+
+## Verification Methods
+
+Two supported key formats:
+1. JsonWebKey - Standard JWK format
+2. Multikey - Compact multiformat encoding
+   - Same format as used in ISCC protocol
+   - Supports Ed25519, ECDSA, BLS12-381
+
+## Verification Relationships
+
+Defines how verification methods may be used:
+- `authentication` - For proving control
+- `assertionMethod` - For making claims
+- `capabilityInvocation` - For invoking capabilities
+- `capabilityDelegation` - For delegating control
+
+## Relevance for ISCC Timestamping
+
+The Controller Document specification provides:
+1. Standard way to publish notary public keys
+2. Well-defined key formats and relationships
+3. Service endpoint discovery mechanism
+4. Delegation capabilities for distributed notaries
+
+Key considerations:
+- Could standardize ISCC notary key publication
+- Multikey format already aligns with ISCC
+- Service endpoints useful for notary discovery
+- Verification relationships map to timestamp use cases
