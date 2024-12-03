@@ -47,7 +47,6 @@ field after `VerifiableCredential`:
    - May include optional metadata bindings
    - Establishes both ISCC-ID ownership and content binding
 
-
 #### 2.2.2 Required Properties
 
 All ISCC credentials MUST include:
@@ -59,28 +58,58 @@ All ISCC credentials MUST include:
 
 #### 2.2.3 Credential Subject Properties
 
-The `credentialSubject` for timestamps MUST contain:
+The credential subject structure varies by type:
 
-- `iscc_id` - The ISCC-ID assigned by the notary
-- `datahash` - The blake3 multihash of the timestamped data
-- `notary_pubkey` - The public key of the notary server
+1. For `IsccTimestamp` (ownerless):
 
-For declarations it MUST additionally include:
+   ```json
+   {
+     "credentialSubject": {
+       "id": "iscc:MAIWFBMUTUVMPUAA",
+       "datahash": "z9zL29fdZfXHXWbNTRdjLiSrSHGKJYxGmtsNyPVatv2zXF"
+     }
+   }
+   ```
 
-- `iscc_code` - The declared ISCC-CODE
-- `requester_pubkey` - Public key of the declaring entity
+   - Simple assertion of existence
+   - No owner/controller reference
+   - ISCC-ID and datahash are the subject of the claim
 
-#### 2.2.4 Optional Properties
+1. For `IsccOwnership`:
 
-Credentials MAY include:
+   ```json
+   {
+     "credentialSubject": {
+       "id": "did:key:z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
+       "controlsIsccId": "iscc:MAIWFBMUTUVMPUAA"
+     }
+   }
+   ```
 
-- `id` - A unique URI for the credential
-- `validUntil` - Expiration datetime for the credential
-- `credentialStatus` - Information about revocation status
-- `termsOfUse` - Usage conditions and restrictions
-- `evidence` - Additional proof materials
+   - Subject is the requester (identified by DID)
+   - Credential attests control over ISCC-ID
+   - Clear ownership relationship
 
-#### 2.2.5 Context Definition
+1. For `IsccDeclaration`:
+
+   ```json
+   {
+     "credentialSubject": {
+       "id": "did:key:z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
+       "controlsIsccId": "iscc:MAIWFBMUTUVMPUAA",
+       "declares": {
+         "isccCode": "ISCC:KACT4EBWK27737D2...",
+         "datahash": "z9zL29fdZfXHXWbNTRdjLiSrSHGKJYxGmtsNyPVatv2zXF"
+       }
+     }
+   }
+   ```
+
+   - Subject is the requester (identified by DID)
+   - Combines ownership with content binding
+   - Structured declaration data
+
+#### 2.2.4 Context Definition
 
 The protocol defines a JSON-LD context that includes:
 
