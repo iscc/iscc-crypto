@@ -294,3 +294,51 @@ Key considerations:
 - DID methods could map to notary networks
 - Service endpoints enable notary discovery
 - Verification methods align with ISCC needs
+
+# DID Method Key - Timestamping Relevance
+
+## Core Features
+
+The `did:key` method provides:
+- Purely generative DIDs from public keys
+- No registry or blockchain required
+- Deterministic DID Document generation
+- Support for multiple key types
+
+## Key Format
+
+Uses Multibase/Multicodec encoding:
+- Base58-btc encoded with `z` prefix
+- Multicodec identifier for key type
+- Raw public key bytes
+- Example: `did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK`
+
+## Supported Key Types
+
+Common cryptographic suites:
+- Ed25519 (starts with `z6Mk`)
+- X25519 (starts with `z6LS`)
+- Secp256k1 (starts with `zQ3s`)
+- P-256 (starts with `zDn`)
+
+## Document Generation
+
+Automatic expansion to DID Document:
+- Verification methods from public key
+- Standard verification relationships
+- Key agreement capabilities
+- No external resolution needed
+
+## Relevance for ISCC Timestamping
+
+The did:key method provides:
+1. Registry-free notary identification
+2. Deterministic key verification
+3. Compact key representation
+4. Fast resolution performance
+
+Key considerations:
+- Could identify notaries via did:key
+- Format aligns with ISCC multibase usage
+- Ed25519 support matches ISCC needs
+- No blockchain dependency required
