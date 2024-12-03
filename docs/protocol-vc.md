@@ -53,8 +53,8 @@ The protocol leverages the W3C Verifiable Credentials Data Model to:
 
 ### 2.1 ISCC Identifier (ISCC-ID)
 
-The ISCC-ID is a 64-bit timestamp that includes a server identifier to ensure global uniqueness and 
-chronological ordering. Each ISCC-ID represents a specific microsecond in time and the identity of 
+The ISCC-ID is a 64-bit timestamp that includes a server identifier to ensure global uniqueness and
+chronological ordering. Each ISCC-ID represents a specific microsecond in time and the identity of
 the notary server that issued it.
 
 #### 2.1.1 Structure
@@ -71,8 +71,8 @@ This structure enables:
 - Chronological sorting of identifiers
 - Operation until year 2112
 
-The self-describing header format allows for seamless protocol evolution by supporting new MAINTYPE, 
-SUBTYPE, VERSION, and LENGTH values. This ensures backward compatibility while enabling future 
+The self-describing header format allows for seamless protocol evolution by supporting new MAINTYPE,
+SUBTYPE, VERSION, and LENGTH values. This ensures backward compatibility while enabling future
 extensions if timestamp range or server capacity needs to be expanded.
 
 #### 2.1.2 Canonical Format
@@ -107,19 +107,16 @@ The ISCC-ID format provides:
 
 #### 2.1.4 Server ID Registry
 
-Server IDs are managed through:
+Server IDs are managed through a permissionless smart contract that maps 12-bit server IDs to notary
+service endpoint URLs. The registry:
 
-- Decentralized smart contract registry
-- Mapping of server-id to DID
-- Public key infrastructure
-- Service endpoint discovery
+- Allows registration of new server IDs
+- Maps server IDs to service endpoints
+- Provides endpoint discovery
+- Ensures unique server identification
 
-This ensures:
-
-- Unique server identification
-- Verifiable server authority
-- Discoverable service endpoints
-- Transparent operation
+The smart contract maintains an immutable record of server registrations and endpoint updates,
+enabling transparent and decentralized operation of the timestamping network.
 
 ### 2.2 Verifiable Credentials
 
