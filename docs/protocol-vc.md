@@ -25,10 +25,28 @@ existing VC ecosystem tools and infrastructure.
 
 #### 2.2.1 Credential Types
 
-The protocol defines two primary credential types:
+The protocol defines three mutually exclusive credential types that MUST be included in the `type`
+field after `VerifiableCredential`:
 
-- `IsccTimestamp` - For basic content timestamping
-- `IsccDeclaration` - For ISCC-CODE declarations with ownership claims
+1. `IsccTimestamp` - For ownerless timestamps
+
+   - Only requires datahash
+   - No requester signature
+   - Simple proof of existence at point in time
+
+1. `IsccOwnership` - For owned but unbound timestamps
+
+   - Requires requester signature
+   - No content bindings
+   - Establishes control over ISCC-ID
+
+1. `IsccDeclaration` - For owned and content-bound timestamps
+
+   - Requires requester signature
+   - Binds ISCC-CODE and/or datahash (at least one MUST be present)
+   - May include optional metadata bindings
+   - Establishes both ownership and content binding
+
 
 #### 2.2.2 Required Properties
 
