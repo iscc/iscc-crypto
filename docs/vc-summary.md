@@ -3,6 +3,7 @@
 ## Core Concepts
 
 A **verifiable credential** contains:
+
 - Claims made by an issuer about a subject
 - Metadata about the credential itself
 - A cryptographic proof that makes the credential tamper-evident
@@ -24,10 +25,12 @@ A **verifiable credential** contains:
 ## Securing Mechanisms
 
 Two classes of securing mechanisms are supported:
+
 1. Embedded proofs - included in the credential data
-2. Enveloping proofs - wrap the credential data
+1. Enveloping proofs - wrap the credential data
 
 The Data Integrity proof format uses an embedded proof like:
+
 ```json
 {
   "proof": {
@@ -49,20 +52,23 @@ The Data Integrity proof format uses an embedded proof like:
 ## Ecosystem Compatibility
 
 A digital credential format is compatible with the VC ecosystem if:
+
 1. It can be transformed into a conforming VC document
-2. The transformation preserves @context values
-3. The result uses at least one securing mechanism
-4. It has a registered media type
+1. The transformation preserves @context values
+1. The result uses at least one securing mechanism
+1. It has a registered media type
 
 ## Relevance for ISCC Timestamping
 
 The ISCC Timestamping Protocol could:
+
 1. Use VC data model for timestamp responses
-2. Leverage existing securing mechanisms
-3. Benefit from standardized status checking
-4. Enable integration with VC ecosystem tools
+1. Leverage existing securing mechanisms
+1. Benefit from standardized status checking
+1. Enable integration with VC ecosystem tools
 
 Key differences to consider:
+
 - ISCC focuses on content timestamping vs identity credentials
 - ISCC uses specialized timestamp format vs generic VC claims
 - ISCC has specific server-id requirements not in VC model
@@ -72,6 +78,7 @@ Key differences to consider:
 ## Core Concepts
 
 A **data integrity proof** provides:
+
 - Information about the proof mechanism
 - Parameters required for verification
 - The proof value itself
@@ -96,6 +103,7 @@ A **data integrity proof** provides:
 ## Cryptographic Suites
 
 A conforming cryptographic suite must specify:
+
 - Transformation algorithms (if any)
 - Hashing algorithms and parameters
 - Proof serialization algorithms
@@ -104,18 +112,21 @@ A conforming cryptographic suite must specify:
 ## Securing Data
 
 Two common transformation approaches:
+
 1. JSON Canonicalization (JCS) - For pure JSON data
-2. RDF Dataset Canonicalization - For JSON-LD with semantic meaning
+1. RDF Dataset Canonicalization - For JSON-LD with semantic meaning
 
 ## Relevance for ISCC Timestamping
 
 The Data Integrity specification provides:
+
 1. Well-defined proof formats and verification
-2. Standardized cryptographic suite requirements
-3. Flexible transformation options
-4. Built-in replay attack prevention
+1. Standardized cryptographic suite requirements
+1. Flexible transformation options
+1. Built-in replay attack prevention
 
 Key considerations:
+
 - ISCC timestamps could use DataIntegrityProof format
 - Cryptographic suites need to support microsecond precision
 - Server-id could be encoded in verificationMethod
@@ -126,6 +137,7 @@ Key considerations:
 ## Core Features
 
 The `eddsa-jcs-2022` cryptosuite provides:
+
 - Ed25519 signatures (EdDSA with edwards25519 curve)
 - JSON Canonicalization Scheme (JCS) for data normalization
 - Base58-btc encoding for signatures and keys
@@ -134,6 +146,7 @@ The `eddsa-jcs-2022` cryptosuite provides:
 ## Key Format
 
 Uses Multikey format:
+
 - Public key prefix: `0xed01`
 - Base58-btc encoded with `z` prefix
 - 32-byte public key data
@@ -142,11 +155,11 @@ Uses Multikey format:
 ## Proof Generation
 
 1. Canonicalize document using JCS
-2. Hash canonicalized document (SHA-256)
-3. Hash proof configuration (SHA-256)
-4. Concatenate hashes
-5. Sign with Ed25519
-6. Base58-btc encode signature
+1. Hash canonicalized document (SHA-256)
+1. Hash proof configuration (SHA-256)
+1. Concatenate hashes
+1. Sign with Ed25519
+1. Base58-btc encode signature
 
 ## Security Properties
 
@@ -158,12 +171,14 @@ Uses Multikey format:
 ## Relevance for ISCC Timestamping
 
 The cryptosuite provides:
+
 1. Fast and secure signatures
-2. Deterministic canonicalization
-3. Compact key and signature encoding
-4. Proven security properties
+1. Deterministic canonicalization
+1. Compact key and signature encoding
+1. Proven security properties
 
 Key considerations:
+
 - JCS ensures stable hashing of timestamp data
 - Ed25519 performance suits high-volume timestamping
 - Security properties match timestamping needs
@@ -174,6 +189,7 @@ Key considerations:
 ## Core Concepts
 
 A **controller document** provides:
+
 - Cryptographic material for verification
 - Service endpoints for interaction
 - Verification relationships and methods
@@ -188,14 +204,16 @@ A **controller document** provides:
 ## Verification Methods
 
 Two supported key formats:
+
 1. JsonWebKey - Standard JWK format
-2. Multikey - Compact multiformat encoding
+1. Multikey - Compact multiformat encoding
    - Same format as used in ISCC protocol
    - Supports Ed25519, ECDSA, BLS12-381
 
 ## Verification Relationships
 
 Defines how verification methods may be used:
+
 - `authentication` - For proving control
 - `assertionMethod` - For making claims
 - `capabilityInvocation` - For invoking capabilities
@@ -204,12 +222,14 @@ Defines how verification methods may be used:
 ## Relevance for ISCC Timestamping
 
 The Controller Document specification provides:
+
 1. Standard way to publish notary public keys
-2. Well-defined key formats and relationships
-3. Service endpoint discovery mechanism
-4. Delegation capabilities for distributed notaries
+1. Well-defined key formats and relationships
+1. Service endpoint discovery mechanism
+1. Delegation capabilities for distributed notaries
 
 Key considerations:
+
 - Could standardize ISCC notary key publication
 - Multikey format already aligns with ISCC
 - Service endpoints useful for notary discovery
