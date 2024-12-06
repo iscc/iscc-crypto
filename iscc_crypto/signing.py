@@ -1,5 +1,4 @@
 import base58
-from cryptography.hazmat.primitives.asymmetric import ed25519
 from iscc_crypto.keys import KeyPair
 
 
@@ -17,14 +16,8 @@ def sign_data(payload, keypair):
     :param keypair: KeyPair containing the signing key
     :return: Multibase encoded signature (z-base58-btc)
     """
-    # Decode secret key from multibase
-    secret_bytes = base58.b58decode(keypair.secret_key[1:])
-
-    # Create private key from bytes (skip multikey prefix)
-    private_key = ed25519.Ed25519PrivateKey.from_private_bytes(secret_bytes[2:])
-
-    # Sign the payload
-    signature = private_key.sign(payload)
+    # Sign the payload using cached private key
+    signature = keypair.sk_obj.sign(payload)
 
     # Encode signature in multibase format
     return "z" + base58.b58encode(signature).decode("utf-8")

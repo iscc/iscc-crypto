@@ -1,6 +1,7 @@
 import base58
-import msgspec
 import os
+from dataclasses import dataclass
+from functools import cached_property
 from dotenv import load_dotenv
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -20,7 +21,8 @@ PREFIX_PUBLIC_KEY = bytes.fromhex("ED01")
 PREFIX_SECRET_KEY = bytes.fromhex("8026")
 
 
-class KeyPair(msgspec.Struct):
+@dataclass(frozen=True)
+class KeyPair:
     """Combined public and secret key data structure."""
 
     public_key: str
@@ -34,6 +36,14 @@ class KeyPair(msgspec.Struct):
 
     key_id: str | None = None
     """Optional key identifier within the controller document (e.g. did:web:example.com#key-0)."""
+
+    @cached_property
+    def sk_obj(self):
+        # type: () -> ed25519.Ed25519PrivateKey
+        """Get cached secret key object."""
+        # Decode secret key from multibase and create private key object
+        secret_bytes = base58.b58decode(self.secret_key[1:])[2:]  # Skip multikey prefix
+        return ed25519.Ed25519PrivateKey.from_private_bytes(secret_bytes)
 
 
 def create_keypair(controller=None, key_id=None):
