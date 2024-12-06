@@ -1,3 +1,4 @@
+import pytest
 import base58
 from iscc_crypto import *
 
@@ -106,7 +107,6 @@ def test_from_env(monkeypatch):
 def test_from_env_missing_key(monkeypatch):
     # type: (object) -> None
     """Test error handling for missing environment variables."""
-    import pytest
 
     # Clear relevant environment variables
     monkeypatch.delenv("ISCC_CRYPTO_SECRET_KEY", raising=False)
@@ -118,7 +118,6 @@ def test_from_env_missing_key(monkeypatch):
 def test_from_secret_invalid():
     # type: () -> None
     """Test error handling for invalid secret keys."""
-    import pytest
 
     # Test invalid multibase prefix
     with pytest.raises(ValueError, match="must start with 'z'"):
