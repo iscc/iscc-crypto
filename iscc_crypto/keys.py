@@ -1,0 +1,67 @@
+import base58
+import msgspec
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives import serialization
+
+
+PREFIX_PUBLIC_KEY = bytes.fromhex("ED01")
+PREFIX_SECRET_KEY = bytes.fromhex("8026")
+
+
+class KeyPair(msgspec.Struct):
+    """Combined public and secret key data structure."""
+
+    public_key: str
+    """The public key encoded as a multibase string."""
+
+    secret_key: str
+    """The private/secret key encoded as a multibase string."""
+
+    controller: str | None = None
+    """Optional URL for the controlling authority in DID Web format (did:web:example.com)."""
+
+    key_id: str | None = None
+    """Optional key identifier within the controller document (e.g. did:web:example.com#key-0)."""
+
+
+def create_keypair(controller=None, key_id=None):
+    # type: (str|None, str|None) -> KeyPair
+    """
+    Create a new Ed25519 key pair for signing in accordance with https://www.w3.org/TR/vc-di-eddsa/.
+
+    WARNING:
+        The returned data includes sensitive key material. Handle with care!
+
+    :param str controller: HTTPS URL of the key issuing authority (DID Controller Document).
+    :param str key_id: Key ID used for key storage and retrieval
+    :return: Key object containing the Ed25519 key pair and metadata
+    :raises ValueError: If name is empty or controler URL is invalid
+    """
+    # Generate the Ed25519 keypair
+    secret_key = ed25519.Ed25519PrivateKey.generate()
+    public_key = secret_key.public_key()
+
+    # Get the raw bytes
+    secret_bytes = secret_key.private_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PrivateFormat.Raw,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    public_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+    )
+
+    # Add the Multikey prefixes
+    prefixed_public = PREFIX_PUBLIC_KEY + public_bytes
+    prefixed_secret = PREFIX_SECRET_KEY + secret_bytes
+
+    # Encode in base58-btc with 'z' prefix
+    public_multibase = "z" + base58.b58encode(prefixed_public).decode("utf-8")
+    secret_multibase = "z" + base58.b58encode(prefixed_secret).decode("utf-8")
+
+    return KeyPair(
+        public_key=public_multibase,
+        secret_key=secret_multibase,
+        controller=controller,
+        key_id=key_id,
+    )
