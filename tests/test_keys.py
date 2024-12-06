@@ -138,3 +138,10 @@ def test_from_secret_invalid():
     invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
     with pytest.raises(ValueError, match="Invalid secret key"):
         from_secret(invalid_key)
+
+
+def test_spec_vector():
+    """Test against test vectors https://www.w3.org/TR/vc-di-eddsa/#representation-eddsa-jcs-2022"""
+    secure_key = "z3u2en7t5LR2WtQH5PfFqMqwVHBeXouLzo6haApm8XHqvjxq"
+    expected_public_key = "z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2"
+    assert from_secret(secure_key).public_key == expected_public_key
