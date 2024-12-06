@@ -8,27 +8,29 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-keyring = "*"
+cryptography = "*"
 jcs = "*"
-jwcrypto = "*"
 loguru = "*"
 blake3 = "*"
-httpx = "*"
 msgspec = "*"
-smart-open = "*"
-atomics = "*"
 base58 = "*"
+python-dotenv = "^1.0.1"
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 bandit = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 poethepoet = "*"
 ruff = "*"
 black = "*"
 mdformat = "*"
 mdformat-tables = "*"
+mdformat_admon = "*"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs-material = "<=9.5.46"
 
 [tool.ruff]
 line-length = 100
@@ -43,13 +45,14 @@ enable-unstable-feature = ["string_processing"]
 target-version = ['py310']
 
 [tool.poe.tasks]
+build-docs = { script = "tests.build_docs:main", help = "Copy README & CHANGELOG to /docs" }
 format-code = { cmd = "poetry run ruff format", help = "Code style formating with ruff" }
 format-markdown = { cmd = "mdformat --wrap 100 --end-of-line lf .", help = "Markdown formating with mdformat" }
 convert-lf = { script = "tests.lf:convert_lf", help = "Convert line endings to LF"}
 run-tests = { cmd = "poetry run pytest", help = "Run tests with pytest" }
 test-security = { cmd = "poetry run bandit -r iscc_crypto -q", help = "Run security check with bandit" }
 format = ["format-code", "format-markdown", "convert-lf"]
-all = ["format-code", "format-markdown", "convert-lf", "run-tests", "test-security"]
+all = ["build-docs ", "format-code", "format-markdown", "convert-lf", "run-tests", "test-security"]
 
 [build-system]
 requires = ["poetry-core"]
