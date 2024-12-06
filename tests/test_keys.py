@@ -1,5 +1,5 @@
 import base58
-from iscc_crypto.keys import create_keypair, PREFIX_PUBLIC_KEY, PREFIX_SECRET_KEY
+from iscc_crypto.keys import create_keypair, PREFIX_PUBLIC_KEY, PREFIX_SECRET_KEY, from_secret
 
 
 def test_create_keypair_basic():
@@ -47,3 +47,55 @@ def test_unique_keys():
     kp2 = create_keypair()
     assert kp1.public_key != kp2.public_key
     assert kp1.secret_key != kp2.secret_key
+
+
+def test_from_secret():
+    # type: () -> None
+    """Test creating a KeyPair from an existing secret key."""
+    # First create a keypair to get a valid secret key
+    original = create_keypair()
+    # Create new keypair from secret key
+    restored = from_secret(original.secret_key)
+    # Public key should match
+    assert restored.public_key == original.public_key
+    assert restored.secret_key == original.secret_key
+    assert restored.controller is None
+    assert restored.key_id is None
+
+
+def test_from_secret_with_metadata():
+    # type: () -> None
+    """Test from_secret with controller and key_id."""
+    original = create_keypair()
+    controller = "did:web:example.com"
+    key_id = "key-1"
+    restored = from_secret(original.secret_key, controller=controller, key_id=key_id)
+    assert restored.public_key == original.public_key
+    assert restored.controller == controller
+    assert restored.key_id == key_id
+
+
+def test_from_secret_invalid():
+    # type: () -> None
+    """Test error handling for invalid secret keys."""
+    import pytest
+
+    # Test invalid multibase prefix
+    with pytest.raises(ValueError, match="must start with 'z'"):
+        from_secret("invalid")
+
+    # Test invalid base58 encoding
+    with pytest.raises(ValueError, match="Invalid base58"):
+        from_secret("z!!!!")
+
+    # Test invalid key prefix
+    invalid_bytes = b"wrong" + b"\x00" * 32
+    invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
+    with pytest.raises(ValueError, match="Invalid secret key prefix"):
+        from_secret(invalid_key)
+
+    # Test invalid key length
+    invalid_bytes = PREFIX_SECRET_KEY + b"\x00" * 16  # Too short
+    invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
+    with pytest.raises(ValueError, match="Invalid secret key"):
+        from_secret(invalid_key)

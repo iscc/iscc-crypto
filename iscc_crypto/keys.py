@@ -65,3 +65,50 @@ def create_keypair(controller=None, key_id=None):
         controller=controller,
         key_id=key_id,
     )
+
+
+def from_secret(secret_key, controller=None, key_id=None):
+    # type: (str, str|None, str|None) -> KeyPair
+    """
+    Create a KeyPair from an existing Ed25519 secret key in multikey format.
+
+    :param str secret_key: The secret key in multikey format (z-base58 encoded)
+    :param str controller: HTTPS URL of the key issuing authority (DID Controller Document)
+    :param str key_id: Key ID used for key storage and retrieval
+    :return: Key object containing the Ed25519 key pair and metadata
+    :raises ValueError: If secret key is invalid
+    """
+    if not secret_key.startswith("z"):
+        raise ValueError("Secret key must start with 'z' (base58btc multibase prefix)")
+
+    # Decode the secret key
+    try:
+        secret_bytes = base58.b58decode(secret_key[1:])
+    except Exception as e:
+        raise ValueError(f"Invalid base58 encoding: {e}")
+
+    if not secret_bytes.startswith(PREFIX_SECRET_KEY):
+        raise ValueError("Invalid secret key prefix")
+
+    # Create private key object
+    try:
+        private_key = ed25519.Ed25519PrivateKey.from_private_bytes(secret_bytes[2:])
+    except Exception as e:
+        raise ValueError(f"Invalid secret key bytes: {e}")
+
+    # Get public key
+    public_key = private_key.public_key()
+    public_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+    )
+
+    # Encode public key in multikey format
+    prefixed_public = PREFIX_PUBLIC_KEY + public_bytes
+    public_multibase = "z" + base58.b58encode(prefixed_public).decode("utf-8")
+
+    return KeyPair(
+        public_key=public_multibase,
+        secret_key=secret_key,
+        controller=controller,
+        key_id=key_id,
+    )
