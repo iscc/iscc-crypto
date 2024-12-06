@@ -12,7 +12,6 @@ cryptography = "*"
 jcs = "*"
 loguru = "*"
 blake3 = "*"
-msgspec = "*"
 base58 = "*"
 python-dotenv = "^1.0.1"
 
