@@ -41,23 +41,17 @@ def create_keypair(controller=None, key_id=None):
     secret_key = ed25519.Ed25519PrivateKey.generate()
     public_key = secret_key.public_key()
 
-    # Get the raw bytes
+    # Get and encode the secret key
     secret_bytes = secret_key.private_bytes(
         encoding=serialization.Encoding.Raw,
         format=serialization.PrivateFormat.Raw,
         encryption_algorithm=serialization.NoEncryption(),
     )
-    public_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-    )
-
-    # Add the Multikey prefixes
-    prefixed_public = PREFIX_PUBLIC_KEY + public_bytes
     prefixed_secret = PREFIX_SECRET_KEY + secret_bytes
-
-    # Encode in base58-btc with 'z' prefix
-    public_multibase = "z" + base58.b58encode(prefixed_public).decode("utf-8")
     secret_multibase = "z" + base58.b58encode(prefixed_secret).decode("utf-8")
+
+    # Get and encode the public key
+    public_multibase = encode_public_key(public_key)
 
     return KeyPair(
         public_key=public_multibase,
@@ -96,15 +90,8 @@ def from_secret(secret_key, controller=None, key_id=None):
     except Exception as e:
         raise ValueError(f"Invalid secret key bytes: {e}")
 
-    # Get public key
-    public_key = private_key.public_key()
-    public_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-    )
-
-    # Encode public key in multikey format
-    prefixed_public = PREFIX_PUBLIC_KEY + public_bytes
-    public_multibase = "z" + base58.b58encode(prefixed_public).decode("utf-8")
+    # Get and encode the public key
+    public_multibase = encode_public_key(private_key.public_key())
 
     return KeyPair(
         public_key=public_multibase,
@@ -112,3 +99,18 @@ def from_secret(secret_key, controller=None, key_id=None):
         controller=controller,
         key_id=key_id,
     )
+
+
+def encode_public_key(public_key):
+    # type: (ed25519.Ed25519PublicKey) -> str
+    """
+    Encode a public key in multikey format.
+
+    :param public_key: Ed25519 public key object
+    :return: Multikey encoded public key string
+    """
+    public_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+    )
+    prefixed_public = PREFIX_PUBLIC_KEY + public_bytes
+    return "z" + base58.b58encode(prefixed_public).decode("utf-8")
