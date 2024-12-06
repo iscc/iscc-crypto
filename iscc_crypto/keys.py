@@ -1,7 +1,19 @@
 import base58
 import msgspec
+import os
+from dotenv import load_dotenv
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
+
+
+__all__ = [
+    "PREFIX_PUBLIC_KEY",
+    "PREFIX_SECRET_KEY",
+    "KeyPair",
+    "create_keypair",
+    "from_secret",
+    "from_env",
+]
 
 
 PREFIX_PUBLIC_KEY = bytes.fromhex("ED01")
@@ -98,6 +110,31 @@ def from_secret(secret_key, controller=None, key_id=None):
         secret_key=secret_key,
         controller=controller,
         key_id=key_id,
+    )
+
+
+def from_env():
+    # type: () -> KeyPair
+    """
+    Create a KeyPair from environment variables.
+
+    Loads the following environment variables:
+    - ISCC_SECRET_KEY: The secret key in multikey format
+    - ISCC_CONTROLLER: Optional controller URL
+    - ISCC_KEY_ID: Optional key identifier
+
+    :return: KeyPair constructed from environment variables
+    :raises ValueError: If ISCC_SECRET_KEY is missing or invalid
+    """
+    load_dotenv()
+    secret_key = os.getenv("ISCC_CRYPTO_SECRET_KEY")
+    if not secret_key:
+        raise ValueError("ISCC_CRYPTO_SECRET_KEY environment variable is required")
+
+    return from_secret(
+        secret_key=secret_key,
+        controller=os.getenv("ISCC_CRYPTO_CONTROLLER"),
+        key_id=os.getenv("ISCC_CRYPTO_KEY_ID"),
     )
 
 

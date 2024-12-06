@@ -1,5 +1,5 @@
 import base58
-from iscc_crypto.keys import create_keypair, PREFIX_PUBLIC_KEY, PREFIX_SECRET_KEY, from_secret
+from iscc_crypto import *
 
 
 def test_create_keypair_basic():
@@ -73,6 +73,46 @@ def test_from_secret_with_metadata():
     assert restored.public_key == original.public_key
     assert restored.controller == controller
     assert restored.key_id == key_id
+
+
+def test_from_env(monkeypatch):
+    # type: (object) -> None
+    """Test loading KeyPair from environment variables."""
+    # Create a keypair to get valid test data
+    kp = create_keypair()
+
+    # Test with all environment variables
+    monkeypatch.setenv("ISCC_CRYPTO_SECRET_KEY", kp.secret_key)
+    monkeypatch.setenv("ISCC_CRYPTO_CONTROLLER", "did:web:test.com")
+    monkeypatch.setenv("ISCC_CRYPTO_KEY_ID", "key-test")
+
+    loaded = from_env()
+    assert loaded.public_key == kp.public_key
+    assert loaded.secret_key == kp.secret_key
+    assert loaded.controller == "did:web:test.com"
+    assert loaded.key_id == "key-test"
+
+    # Test with only required secret key
+    monkeypatch.delenv("ISCC_CRYPTO_CONTROLLER")
+    monkeypatch.delenv("ISCC_CRYPTO_KEY_ID")
+
+    loaded = from_env()
+    assert loaded.public_key == kp.public_key
+    assert loaded.secret_key == kp.secret_key
+    assert loaded.controller is None
+    assert loaded.key_id is None
+
+
+def test_from_env_missing_key(monkeypatch):
+    # type: (object) -> None
+    """Test error handling for missing environment variables."""
+    import pytest
+
+    # Clear relevant environment variables
+    monkeypatch.delenv("ISCC_CRYPTO_SECRET_KEY", raising=False)
+
+    with pytest.raises(ValueError, match="ISCC_CRYPTO_SECRET_KEY.*required"):
+        from_env()
 
 
 def test_from_secret_invalid():
