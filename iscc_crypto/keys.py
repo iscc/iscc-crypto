@@ -119,12 +119,12 @@ def from_env():
     Create a KeyPair from environment variables.
 
     Loads the following environment variables:
-    - ISCC_SECRET_KEY: The secret key in multikey format
-    - ISCC_CONTROLLER: Optional controller URL
-    - ISCC_KEY_ID: Optional key identifier
+    - ISCC_CRYPTO_SECRET_KEY: The secret key in multikey format
+    - ISCC_CRYPTO_CONTROLLER: Optional controller URL
+    - ISCC_CRYPTO_KEY_ID: Optional key identifier
 
     :return: KeyPair constructed from environment variables
-    :raises ValueError: If ISCC_SECRET_KEY is missing or invalid
+    :raises ValueError: If ISCCCRYPTO__SECRET_KEY is missing or invalid
     """
     load_dotenv()
     secret_key = os.getenv("ISCC_CRYPTO_SECRET_KEY")
