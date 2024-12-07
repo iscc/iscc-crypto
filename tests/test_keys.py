@@ -1,5 +1,8 @@
 import pytest
 import base58
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 from iscc_crypto import *
 
 
@@ -145,3 +148,20 @@ def test_spec_vector():
     secure_key = "z3u2en7t5LR2WtQH5PfFqMqwVHBeXouLzo6haApm8XHqvjxq"
     expected_public_key = "z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2"
     assert from_secret(secure_key).public_key == expected_public_key
+
+
+def test_pk_obj():
+    """Test public key object creation and caching."""
+    kp = create_keypair()
+    # Test that pk_obj returns an Ed25519PublicKey instance
+    assert isinstance(kp.pk_obj, Ed25519PublicKey)
+    # Test caching by verifying we get the same object back
+    assert kp.pk_obj is kp.pk_obj
+    # Verify the public key object matches the encoded public key
+    public_bytes = base58.b58decode(kp.public_key[1:])[2:]  # Skip multikey prefix
+    assert (
+        kp.pk_obj.public_bytes(
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+        )
+        == public_bytes
+    )

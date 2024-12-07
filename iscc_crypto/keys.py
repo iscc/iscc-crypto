@@ -45,6 +45,14 @@ class KeyPair:
         secret_bytes = base58.b58decode(self.secret_key[1:])[2:]  # Skip multikey prefix
         return ed25519.Ed25519PrivateKey.from_private_bytes(secret_bytes)
 
+    @cached_property
+    def pk_obj(self):
+        # type: () -> ed25519.Ed25519PublicKey
+        """Get cached public key object."""
+        # Decode public key from multibase and create public key object
+        public_bytes = base58.b58decode(self.public_key[1:])[2:]  # Skip multikey prefix
+        return ed25519.Ed25519PublicKey.from_public_bytes(public_bytes)
+
 
 def create_keypair(controller=None, key_id=None):
     # type: (str|None, str|None) -> KeyPair
