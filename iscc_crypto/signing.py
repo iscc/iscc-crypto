@@ -11,24 +11,38 @@ __all__ = [
 ]
 
 
-def sign_json(obj, keypair, created=None):
+def sign_json(result, keypair, created=None):
     # type: (dict, KeyPair, str|None) -> dict
     """
     Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.
 
     Creates a proof that follows the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
     The proof is added as a 'proof' property to a copy of the input object. The signing process:
-    1. Canonicalizes the input object and proof options using JCS
-    2. Creates a composite hash of both canonicalized values
-    3. Signs the hash with the provided Ed25519 key
-    4. Encodes the signature in multibase format
+    1. Performs context injection if needed for data integrity
+    2. Canonicalizes the input object and proof options using JCS
+    3. Creates a composite hash of both canonicalized values
+    4. Signs the hash with the provided Ed25519 key
+    5. Encodes the signature in multibase format
 
-    :param obj: JSON-compatible dictionary to be signed
+    :param result: JSON-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
     :param created: Optional ISO timestamp string (default: current UTC time)
     :return: Copy of input object with added 'proof' property containing the signature
     """
+    # Make a copy to avoid modifying input
+    result = result.copy()
 
+    # Handle context injection per spec
+    if "@context" in result:
+        if isinstance(result["@context"], str):
+            result["@context"] = [result["@context"]]
+
+        # Only inject data integrity context if v2 credentials context not present
+        if "https://www.w3.org/ns/credentials/v2" not in result["@context"]:
+            if "https://w3id.org/security/data-integrity/v2" not in result["@context"]:
+                result["@context"].append("https://w3id.org/security/data-integrity/v2")
+
+    # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
     proof_options = {
@@ -39,16 +53,15 @@ def sign_json(obj, keypair, created=None):
         "proofPurpose": "assertionMethod",
     }
 
-    payload_digest = sha256(jcs.canonicalize(obj)).digest()
+    payload_digest = sha256(jcs.canonicalize(result)).digest()
     options_digest = sha256(jcs.canonicalize(proof_options)).digest()
     signature_payload = options_digest + payload_digest
     signature = create_signature(signature_payload, keypair)
 
     proof_options["proofValue"] = signature
-    signed_json = obj.copy()
-    signed_json["proof"] = proof_options
+    result["proof"] = proof_options
 
-    return signed_json
+    return result
 
 
 def create_signature(payload, keypair):
