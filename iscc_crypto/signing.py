@@ -18,11 +18,16 @@ def sign_json(result, keypair, created=None):
 
     Creates a proof that follows the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
     The proof is added as a 'proof' property to a copy of the input object. The signing process:
-    1. Performs context injection if needed for data integrity
+    1. Optionally injects context for JSON-LD processing if @context exists
     2. Canonicalizes the input object and proof options using JCS
     3. Creates a composite hash of both canonicalized values
     4. Signs the hash with the provided Ed25519 key
     5. Encodes the signature in multibase format
+
+    Context injection follows section 2.4.2 of the spec:
+    - If @context exists and Data Integrity terms are used, injects data integrity context
+    - Context injection may be skipped for non-JSON-LD processing
+    - If no @context is present, no extensions to the spec are allowed
 
     :param result: JSON-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
@@ -32,15 +37,20 @@ def sign_json(result, keypair, created=None):
     # Make a copy to avoid modifying input
     result = result.copy()
 
-    # Handle context injection per spec
+    # Handle context injection per spec section 2.4.2
     if "@context" in result:
+        # Convert string context to array
         if isinstance(result["@context"], str):
             result["@context"] = [result["@context"]]
 
-        # Only inject data integrity context if v2 credentials context not present
-        if "https://www.w3.org/ns/credentials/v2" not in result["@context"]:
-            if "https://w3id.org/security/data-integrity/v2" not in result["@context"]:
-                result["@context"].append("https://w3id.org/security/data-integrity/v2")
+        # Only inject if neither data integrity nor v2 credentials context present
+        has_di_context = "https://w3id.org/security/data-integrity/v2" in result["@context"]
+        has_vc_context = "https://www.w3.org/ns/credentials/v2" in result["@context"]
+
+        if not (has_di_context or has_vc_context):
+            # Context injection is optional for non-JSON-LD processing
+            # We inject it since we're using Data Integrity terms (proof, proofValue)
+            result["@context"].append("https://w3id.org/security/data-integrity/v2")
 
     # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
