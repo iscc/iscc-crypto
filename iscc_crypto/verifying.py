@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
 
 __all__ = [
-    "verify_bytes",
+    "verify_raw",
     "verify_document",
 ]
 
@@ -52,12 +52,12 @@ def verify_document(doc, public_key):
 
     # Create verification payload and verify signature
     verification_payload = create_signature_payload(doc_without_proof, proof_options)
-    if verify_bytes(verification_payload, proof["proofValue"], public_key):
+    if verify_raw(verification_payload, proof["proofValue"], public_key):
         return True, doc_without_proof
     return False, None
 
 
-def verify_bytes(payload, signature, public_key):
+def verify_raw(payload, signature, public_key):
     # type: (bytes, str, Ed25519PublicKey) -> bool
     """
     Verify an EdDSA signature over raw bytes. The signature must be encoded according to

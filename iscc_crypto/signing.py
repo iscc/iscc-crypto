@@ -7,7 +7,7 @@ import jcs
 
 __all__ = [
     "sign_document",
-    "sign_bytes",
+    "sign_raw",
     "create_signature_payload",
 ]
 
@@ -65,7 +65,7 @@ def sign_document(doc, keypair, created=None):
     }
 
     verification_payload = create_signature_payload(result, proof_options)
-    signature = sign_bytes(verification_payload, keypair)
+    signature = sign_raw(verification_payload, keypair)
 
     proof_options["proofValue"] = signature
     result["proof"] = proof_options
@@ -73,7 +73,7 @@ def sign_document(doc, keypair, created=None):
     return result
 
 
-def sign_bytes(payload, keypair):
+def sign_raw(payload, keypair):
     # type: (bytes, KeyPair) -> str
     """
     Create a detached EdDSA signature over raw bytes. The signature is produced according to

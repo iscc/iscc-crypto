@@ -1,23 +1,23 @@
 from iscc_crypto.keys import keypair_generate
-from iscc_crypto.signing import sign_bytes
-from iscc_crypto.verifying import verify_bytes, verify_document
+from iscc_crypto.signing import sign_raw
+from iscc_crypto.verifying import verify_raw, verify_document
 
 
 def test_valid_signature():
     """Test verification of a valid signature"""
     kp = keypair_generate()
     payload = b"test data"
-    sig = sign_bytes(payload, kp)
-    assert verify_bytes(payload, sig, kp.pk_obj) is True
+    sig = sign_raw(payload, kp)
+    assert verify_raw(payload, sig, kp.pk_obj) is True
 
 
 def test_invalid_signature():
     """Test rejection of an invalid signature"""
     kp = keypair_generate()
     payload = b"test data"
-    sig = sign_bytes(payload, kp)
+    sig = sign_raw(payload, kp)
     wrong_payload = b"wrong data"
-    assert verify_bytes(wrong_payload, sig, kp.pk_obj) is False
+    assert verify_raw(wrong_payload, sig, kp.pk_obj) is False
 
 
 def test_wrong_public_key():
@@ -25,8 +25,8 @@ def test_wrong_public_key():
     kp1 = keypair_generate()
     kp2 = keypair_generate()
     payload = b"test data"
-    sig = sign_bytes(payload, kp1)
-    assert verify_bytes(payload, sig, kp2.pk_obj) is False
+    sig = sign_raw(payload, kp1)
+    assert verify_raw(payload, sig, kp2.pk_obj) is False
 
 
 def test_malformed_signature():
@@ -35,19 +35,19 @@ def test_malformed_signature():
     payload = b"test data"
 
     # Missing z-prefix
-    sig = sign_bytes(payload, kp)[1:]
-    assert verify_bytes(payload, sig, kp.pk_obj) is False
+    sig = sign_raw(payload, kp)[1:]
+    assert verify_raw(payload, sig, kp.pk_obj) is False
 
     # Invalid base58
-    assert verify_bytes(payload, "z!!!invalid!!!", kp.pk_obj) is False
+    assert verify_raw(payload, "z!!!invalid!!!", kp.pk_obj) is False
 
 
 def test_empty_inputs():
     """Test handling of empty inputs"""
     kp = keypair_generate()
-    assert verify_bytes(b"", "", kp.pk_obj) is False
-    assert verify_bytes(b"data", "", kp.pk_obj) is False
-    assert verify_bytes(b"", "z123", kp.pk_obj) is False
+    assert verify_raw(b"", "", kp.pk_obj) is False
+    assert verify_raw(b"data", "", kp.pk_obj) is False
+    assert verify_raw(b"", "z123", kp.pk_obj) is False
 
 
 def test_verify_json_valid():
@@ -82,9 +82,9 @@ def test_verify_json_valid():
     options_digest = sha256(jcs.canonicalize(proof_options)).digest()
     verification_payload = options_digest + doc_digest
 
-    from iscc_crypto.signing import sign_bytes
+    from iscc_crypto.signing import sign_raw
 
-    signature = sign_bytes(verification_payload, kp)
+    signature = sign_raw(verification_payload, kp)
     document["proof"]["proofValue"] = signature
 
     # Verify
@@ -172,9 +172,9 @@ def test_verify_json_tampered_document():
     options_digest = sha256(jcs.canonicalize(proof_options)).digest()
     verification_payload = options_digest + doc_digest
 
-    from iscc_crypto.signing import sign_bytes
+    from iscc_crypto.signing import sign_raw
 
-    signature = sign_bytes(verification_payload, kp)
+    signature = sign_raw(verification_payload, kp)
     original["proof"]["proofValue"] = signature
 
     # Verify original

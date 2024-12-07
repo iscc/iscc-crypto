@@ -66,7 +66,7 @@ def test_spec_vector_signing():
         "c46b3487ab7087c4f426b546c449094ff57b8fefa6fd85e83f1b31e24c230da859b7cb6251b8991add1"
         "ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
     )
-    assert icr.sign_bytes(payload, TEST_KEY) == EXPECTED_SIGNATURE
+    assert icr.sign_raw(payload, TEST_KEY) == EXPECTED_SIGNATURE
 
 
 def test_spec_vector_object_signing():
