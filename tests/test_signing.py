@@ -16,4 +16,4 @@ def test_spec_vector_signing():
         "zboydVv31kj6jP37GMBZwYyjbvrqr9MWeY9NCEfYUwLcKwkdqAcB44dqEcqaMi8mfdvT2Vbnvdrv6XRaYzgpuPWn"
     )
 
-    assert icr.sign_data(payload, TESTKEY) == expected_signature
+    assert icr.create_signature(payload, TESTKEY) == expected_signature

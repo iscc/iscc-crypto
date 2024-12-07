@@ -3,14 +3,15 @@ from iscc_crypto.keys import KeyPair
 
 
 __all__ = [
-    "sign_data",
+    "create_signature",
 ]
 
 
-def sign_data(payload, keypair):
+def create_signature(payload, keypair):
     # type: (bytes, KeyPair) -> str
     """
-    Sign a bytes payload conformant with eddsa-jcs-2022 cryptosuite.
+    Create a detached EdDSA signature over raw bytes. The signature is produced according to
+    [RFC8032] and encoded using the base-58-btc header and alphabet conformant with eddsa-jcs-2022.
 
     :param payload: Bytes to sign
     :param keypair: KeyPair containing the signing key
