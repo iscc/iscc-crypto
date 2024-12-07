@@ -185,3 +185,23 @@ def test_encode_secret_key():
     assert decoded.startswith(PREFIX_SECRET_KEY)
     # Verify the key length (32 bytes + 2 prefix bytes)
     assert len(decoded) == 34
+
+
+def test_encode_public_key():
+    # type: () -> None
+    """Test encoding of Ed25519 public key to multikey format."""
+    # Create a keypair to get a valid public key
+    kp = create_keypair()
+    # Get the raw public key object
+    pk_obj = kp.pk_obj
+    # Encode it using our function
+    encoded = encode_public_key(pk_obj)
+    # Verify the encoding matches the original
+    assert encoded == kp.public_key
+    # Verify it starts with multibase prefix
+    assert encoded.startswith("z")
+    # Decode and verify the key prefix
+    decoded = base58.b58decode(encoded[1:])
+    assert decoded.startswith(PREFIX_PUBLIC_KEY)
+    # Verify the key length (32 bytes + 2 prefix bytes)
+    assert len(decoded) == 34
