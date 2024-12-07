@@ -1,9 +1,7 @@
 import base58
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from hashlib import sha256
-import jcs
-
+from iscc_crypto.signing import create_signature_payload
 
 __all__ = [
     "verify_signature",
@@ -52,12 +50,8 @@ def verify_json(document, public_key):
     proof_options = proof.copy()
     del proof_options["proofValue"]
 
-    # Compute composite hash for verification
-    doc_digest = sha256(jcs.canonicalize(doc_without_proof)).digest()
-    options_digest = sha256(jcs.canonicalize(proof_options)).digest()
-    verification_payload = options_digest + doc_digest
-
-    # Verify signature
+    # Create verification payload and verify signature
+    verification_payload = create_signature_payload(doc_without_proof, proof_options)
     if verify_signature(verification_payload, proof["proofValue"], public_key):
         return True, doc_without_proof
     return False, None

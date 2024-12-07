@@ -8,6 +8,7 @@ import jcs
 __all__ = [
     "sign_json",
     "create_signature",
+    "create_signature_payload",
 ]
 
 
@@ -63,10 +64,8 @@ def sign_json(result, keypair, created=None):
         "proofPurpose": "assertionMethod",
     }
 
-    payload_digest = sha256(jcs.canonicalize(result)).digest()
-    options_digest = sha256(jcs.canonicalize(proof_options)).digest()
-    signature_payload = options_digest + payload_digest
-    signature = create_signature(signature_payload, keypair)
+    verification_payload = create_signature_payload(result, proof_options)
+    signature = create_signature(verification_payload, keypair)
 
     proof_options["proofValue"] = signature
     result["proof"] = proof_options
@@ -89,3 +88,17 @@ def create_signature(payload, keypair):
 
     # Encode signature in multibase format
     return "z" + base58.b58encode(signature).decode("utf-8")
+
+
+def create_signature_payload(document_data, proof_options):
+    # type: (dict, dict) -> bytes
+    """
+    Create a signature payload from document data and proof options.
+
+    :param document_data: Document data without proof
+    :param proof_options: Proof options without proofValue
+    :return: Signature payload bytes
+    """
+    doc_digest = sha256(jcs.canonicalize(document_data)).digest()
+    options_digest = sha256(jcs.canonicalize(proof_options)).digest()
+    return options_digest + doc_digest
