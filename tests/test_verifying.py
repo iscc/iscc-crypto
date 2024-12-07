@@ -1,11 +1,11 @@
-from iscc_crypto.keys import keypair_generate
+from iscc_crypto.keys import key_generate
 from iscc_crypto.signing import sign_raw
 from iscc_crypto.verifying import verify_raw, verify_doc
 
 
 def test_valid_signature():
     """Test verification of a valid signature"""
-    kp = keypair_generate()
+    kp = key_generate()
     payload = b"test data"
     sig = sign_raw(payload, kp)
     assert verify_raw(payload, sig, kp.pk_obj) is True
@@ -13,7 +13,7 @@ def test_valid_signature():
 
 def test_invalid_signature():
     """Test rejection of an invalid signature"""
-    kp = keypair_generate()
+    kp = key_generate()
     payload = b"test data"
     sig = sign_raw(payload, kp)
     wrong_payload = b"wrong data"
@@ -22,8 +22,8 @@ def test_invalid_signature():
 
 def test_wrong_public_key():
     """Test rejection when using wrong public key"""
-    kp1 = keypair_generate()
-    kp2 = keypair_generate()
+    kp1 = key_generate()
+    kp2 = key_generate()
     payload = b"test data"
     sig = sign_raw(payload, kp1)
     assert verify_raw(payload, sig, kp2.pk_obj) is False
@@ -31,7 +31,7 @@ def test_wrong_public_key():
 
 def test_malformed_signature():
     """Test handling of malformed signatures"""
-    kp = keypair_generate()
+    kp = key_generate()
     payload = b"test data"
 
     # Missing z-prefix
@@ -44,7 +44,7 @@ def test_malformed_signature():
 
 def test_empty_inputs():
     """Test handling of empty inputs"""
-    kp = keypair_generate()
+    kp = key_generate()
     assert verify_raw(b"", "", kp.pk_obj) is False
     assert verify_raw(b"data", "", kp.pk_obj) is False
     assert verify_raw(b"", "z123", kp.pk_obj) is False
@@ -52,7 +52,7 @@ def test_empty_inputs():
 
 def test_verify_json_valid():
     """Test verification of a valid JSON document with proof"""
-    kp = keypair_generate()
+    kp = key_generate()
 
     # Create a document with valid proof
     document = {
@@ -95,7 +95,7 @@ def test_verify_json_valid():
 
 def test_verify_json_invalid_inputs():
     """Test verification with invalid inputs"""
-    kp = keypair_generate()
+    kp = key_generate()
 
     # Test non-dict input
     assert verify_doc("not a dict", kp.pk_obj) == (False, None)
@@ -112,7 +112,7 @@ def test_verify_json_invalid_inputs():
 
 def test_verify_json_invalid_proof_properties():
     """Test verification with invalid proof properties"""
-    kp = keypair_generate()
+    kp = key_generate()
 
     # Base document
     doc = {
@@ -147,7 +147,7 @@ def test_verify_json_invalid_proof_properties():
 
 def test_verify_json_tampered_document():
     """Test verification of a tampered document"""
-    kp = keypair_generate()
+    kp = key_generate()
 
     # Create original document with valid proof
     original = {

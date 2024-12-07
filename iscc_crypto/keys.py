@@ -11,12 +11,12 @@ __all__ = [
     "PREFIX_PUBLIC_KEY",
     "PREFIX_SECRET_KEY",
     "KeyPair",
-    "keypair_generate",
-    "keypair_from_secret",
-    "keypair_from_env",
-    "public_key_encode",
-    "secret_key_encode",
-    "public_key_from_doc",
+    "key_generate",
+    "key_from_secret",
+    "key_from_env",
+    "pubkey_encode",
+    "seckey_encode",
+    "pubkey_from_proof",
 ]
 
 
@@ -57,7 +57,7 @@ class KeyPair:
         return ed25519.Ed25519PublicKey.from_public_bytes(public_bytes)
 
 
-def keypair_generate(controller=None, key_id=None):
+def key_generate(controller=None, key_id=None):
     # type: (str|None, str|None) -> KeyPair
     """
     Create a new Ed25519 key pair for signing in accordance with https://www.w3.org/TR/vc-di-eddsa/.
@@ -75,8 +75,8 @@ def keypair_generate(controller=None, key_id=None):
     public_key = secret_key.public_key()
 
     # Encode keys
-    secret_multibase = secret_key_encode(secret_key)
-    public_multibase = public_key_encode(public_key)
+    secret_multibase = seckey_encode(secret_key)
+    public_multibase = pubkey_encode(public_key)
 
     return KeyPair(
         public_key=public_multibase,
@@ -86,7 +86,7 @@ def keypair_generate(controller=None, key_id=None):
     )
 
 
-def keypair_from_secret(secret_key, controller=None, key_id=None):
+def key_from_secret(secret_key, controller=None, key_id=None):
     # type: (str, str|None, str|None) -> KeyPair
     """
     Create a KeyPair from an existing Ed25519 secret key in multikey format.
@@ -116,7 +116,7 @@ def keypair_from_secret(secret_key, controller=None, key_id=None):
         raise ValueError(f"Invalid secret key bytes: {e}")
 
     # Get and encode the public key
-    public_multibase = public_key_encode(private_key.public_key())
+    public_multibase = pubkey_encode(private_key.public_key())
 
     return KeyPair(
         public_key=public_multibase,
@@ -126,7 +126,7 @@ def keypair_from_secret(secret_key, controller=None, key_id=None):
     )
 
 
-def keypair_from_env():
+def key_from_env():
     # type: () -> KeyPair
     """
     Create a KeyPair from environment variables.
@@ -144,14 +144,14 @@ def keypair_from_env():
     if not secret_key:
         raise ValueError("ISCC_CRYPTO_SECRET_KEY environment variable is required")
 
-    return keypair_from_secret(
+    return key_from_secret(
         secret_key=secret_key,
         controller=os.getenv("ISCC_CRYPTO_CONTROLLER"),
         key_id=os.getenv("ISCC_CRYPTO_KEY_ID"),
     )
 
 
-def public_key_encode(public_key):
+def pubkey_encode(public_key):
     # type: (ed25519.Ed25519PublicKey) -> str
     """
     Encode a public key in multikey format.
@@ -166,7 +166,7 @@ def public_key_encode(public_key):
     return "z" + base58.b58encode(prefixed_public).decode("utf-8")
 
 
-def secret_key_encode(secret_key):
+def seckey_encode(secret_key):
     # type: (ed25519.Ed25519PrivateKey) -> str
     """
     Encode a secret key in multikey format.
@@ -183,7 +183,7 @@ def secret_key_encode(secret_key):
     return "z" + base58.b58encode(prefixed_secret).decode("utf-8")
 
 
-def public_key_from_doc(doc):
+def pubkey_from_proof(doc):
     # type: (dict) -> ed25519.Ed25519PublicKey
     """
     Extract Ed25519PublicKey from a document with DataIntegrityProof.
