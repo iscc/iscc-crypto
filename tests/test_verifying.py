@@ -1,6 +1,6 @@
 from iscc_crypto.keys import keypair_generate
 from iscc_crypto.signing import sign_raw
-from iscc_crypto.verifying import verify_raw, verify_document
+from iscc_crypto.verifying import verify_raw, verify_doc
 
 
 def test_valid_signature():
@@ -88,7 +88,7 @@ def test_verify_json_valid():
     document["proof"]["proofValue"] = signature
 
     # Verify
-    verified, extracted_doc = verify_document(document, kp.pk_obj)
+    verified, extracted_doc = verify_doc(document, kp.pk_obj)
     assert verified is True
     assert extracted_doc == doc_without_proof
 
@@ -98,16 +98,16 @@ def test_verify_json_invalid_inputs():
     kp = keypair_generate()
 
     # Test non-dict input
-    assert verify_document("not a dict", kp.pk_obj) == (False, None)
-    assert verify_document(None, kp.pk_obj) == (False, None)
+    assert verify_doc("not a dict", kp.pk_obj) == (False, None)
+    assert verify_doc(None, kp.pk_obj) == (False, None)
 
     # Test missing proof
     doc_no_proof = {"content": "test"}
-    assert verify_document(doc_no_proof, kp.pk_obj) == (False, None)
+    assert verify_doc(doc_no_proof, kp.pk_obj) == (False, None)
 
     # Test invalid proof type
     doc_invalid_proof = {"content": "test", "proof": "not a dict"}
-    assert verify_document(doc_invalid_proof, kp.pk_obj) == (False, None)
+    assert verify_doc(doc_invalid_proof, kp.pk_obj) == (False, None)
 
 
 def test_verify_json_invalid_proof_properties():
@@ -127,22 +127,22 @@ def test_verify_json_invalid_proof_properties():
     # Test wrong type
     wrong_type = doc.copy()
     wrong_type["proof"]["type"] = "WrongType"
-    assert verify_document(wrong_type, kp.pk_obj) == (False, None)
+    assert verify_doc(wrong_type, kp.pk_obj) == (False, None)
 
     # Test wrong cryptosuite
     wrong_suite = doc.copy()
     wrong_suite["proof"]["cryptosuite"] = "wrong-suite"
-    assert verify_document(wrong_suite, kp.pk_obj) == (False, None)
+    assert verify_doc(wrong_suite, kp.pk_obj) == (False, None)
 
     # Test missing proofValue
     no_proof_value = doc.copy()
     del no_proof_value["proof"]["proofValue"]
-    assert verify_document(no_proof_value, kp.pk_obj) == (False, None)
+    assert verify_doc(no_proof_value, kp.pk_obj) == (False, None)
 
     # Test invalid proofValue prefix
     wrong_prefix = doc.copy()
     wrong_prefix["proof"]["proofValue"] = "x123"  # Should start with 'z'
-    assert verify_document(wrong_prefix, kp.pk_obj) == (False, None)
+    assert verify_doc(wrong_prefix, kp.pk_obj) == (False, None)
 
 
 def test_verify_json_tampered_document():
@@ -178,9 +178,9 @@ def test_verify_json_tampered_document():
     original["proof"]["proofValue"] = signature
 
     # Verify original
-    assert verify_document(original, kp.pk_obj)[0] is True
+    assert verify_doc(original, kp.pk_obj)[0] is True
 
     # Tamper with content
     tampered = original.copy()
     tampered["content"] = "tampered"
-    assert verify_document(tampered, kp.pk_obj)[0] is False
+    assert verify_doc(tampered, kp.pk_obj)[0] is False

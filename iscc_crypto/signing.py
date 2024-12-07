@@ -6,13 +6,13 @@ import jcs
 
 
 __all__ = [
-    "sign_document",
+    "sign_doc",
     "sign_raw",
     "create_signature_payload",
 ]
 
 
-def sign_document(doc, keypair, created=None):
+def sign_doc(doc, keypair, created=None):
     # type: (dict, KeyPair, str|None) -> dict
     """
     Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.

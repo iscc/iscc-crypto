@@ -5,11 +5,11 @@ from iscc_crypto.signing import create_signature_payload
 
 __all__ = [
     "verify_raw",
-    "verify_document",
+    "verify_doc",
 ]
 
 
-def verify_document(doc, public_key):
+def verify_doc(doc, public_key):
     # type: (dict, Ed25519PublicKey) -> tuple[bool, dict|None]
     """
     Verify a Data Integrity Proof on a JSON document using EdDSA and JCS canonicalization.

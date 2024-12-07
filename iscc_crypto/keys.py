@@ -14,9 +14,9 @@ __all__ = [
     "keypair_generate",
     "keypair_from_secret",
     "keypair_from_env",
-    "encode_public_key",
-    "encode_secret_key",
-    "pubkey_from_doc",
+    "public_key_encode",
+    "secret_key_encode",
+    "public_key_from_doc",
 ]
 
 
@@ -75,8 +75,8 @@ def keypair_generate(controller=None, key_id=None):
     public_key = secret_key.public_key()
 
     # Encode keys
-    secret_multibase = encode_secret_key(secret_key)
-    public_multibase = encode_public_key(public_key)
+    secret_multibase = secret_key_encode(secret_key)
+    public_multibase = public_key_encode(public_key)
 
     return KeyPair(
         public_key=public_multibase,
@@ -116,7 +116,7 @@ def keypair_from_secret(secret_key, controller=None, key_id=None):
         raise ValueError(f"Invalid secret key bytes: {e}")
 
     # Get and encode the public key
-    public_multibase = encode_public_key(private_key.public_key())
+    public_multibase = public_key_encode(private_key.public_key())
 
     return KeyPair(
         public_key=public_multibase,
@@ -151,7 +151,7 @@ def keypair_from_env():
     )
 
 
-def encode_public_key(public_key):
+def public_key_encode(public_key):
     # type: (ed25519.Ed25519PublicKey) -> str
     """
     Encode a public key in multikey format.
@@ -166,7 +166,7 @@ def encode_public_key(public_key):
     return "z" + base58.b58encode(prefixed_public).decode("utf-8")
 
 
-def encode_secret_key(secret_key):
+def secret_key_encode(secret_key):
     # type: (ed25519.Ed25519PrivateKey) -> str
     """
     Encode a secret key in multikey format.
@@ -183,7 +183,7 @@ def encode_secret_key(secret_key):
     return "z" + base58.b58encode(prefixed_secret).decode("utf-8")
 
 
-def pubkey_from_doc(doc):
+def public_key_from_doc(doc):
     # type: (dict) -> ed25519.Ed25519PublicKey
     """
     Extract Ed25519PublicKey from a document with DataIntegrityProof.

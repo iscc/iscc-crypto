@@ -70,33 +70,33 @@ def test_spec_vector_signing():
 
 
 def test_spec_vector_object_signing():
-    signed_credential = icr.sign_document(TEST_CREDENTIAL, TEST_KEY, TEST_TIME)
+    signed_credential = icr.sign_doc(TEST_CREDENTIAL, TEST_KEY, TEST_TIME)
     assert signed_credential == EXPECTED_SIGNED_CREDENTIAL
 
 
 def test_context_injection():
     # Test string context gets converted to array
     obj = {"@context": "https://example.com/context"}
-    signed = icr.sign_document(obj, TEST_KEY)
+    signed = icr.sign_doc(obj, TEST_KEY)
     assert isinstance(signed["@context"], list)
     assert signed["@context"][0] == "https://example.com/context"
     assert "https://w3id.org/security/data-integrity/v2" in signed["@context"]
 
     # Test data integrity context not injected when v2 credentials present
     obj = {"@context": ["https://www.w3.org/ns/credentials/v2"]}
-    signed = icr.sign_document(obj, TEST_KEY)
+    signed = icr.sign_doc(obj, TEST_KEY)
     assert len(signed["@context"]) == 1
 
     # Test data integrity context not duplicated
     obj = {"@context": ["https://w3id.org/security/data-integrity/v2"]}
-    signed = icr.sign_document(obj, TEST_KEY)
+    signed = icr.sign_doc(obj, TEST_KEY)
     assert signed["@context"].count("https://w3id.org/security/data-integrity/v2") == 1
 
 
 def test_input_not_modified():
     # Test original input dict not modified
     original = {"foo": "bar"}
-    signed = icr.sign_document(original, TEST_KEY)
+    signed = icr.sign_doc(original, TEST_KEY)
     assert "proof" in signed
     assert "proof" not in original
     assert original == {"foo": "bar"}
@@ -104,18 +104,18 @@ def test_input_not_modified():
 
 def test_created_timestamp():
     # Test custom created time
-    signed = icr.sign_document({}, TEST_KEY, created="2024-01-01T00:00:00Z")
+    signed = icr.sign_doc({}, TEST_KEY, created="2024-01-01T00:00:00Z")
     assert signed["proof"]["created"] == "2024-01-01T00:00:00Z"
 
     # Test auto-generated timestamp format
-    signed = icr.sign_document({}, TEST_KEY)
+    signed = icr.sign_doc({}, TEST_KEY)
     created = signed["proof"]["created"]
     assert len(created) == 20  # Check ISO format length
     assert created.endswith("Z")  # Check UTC timezone marker
 
 
 def test_proof_structure():
-    signed = icr.sign_document({}, TEST_KEY)
+    signed = icr.sign_doc({}, TEST_KEY)
     proof = signed["proof"]
 
     # Check required proof properties
