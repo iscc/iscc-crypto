@@ -16,6 +16,7 @@ __all__ = [
     "keypair_from_env",
     "encode_public_key",
     "encode_secret_key",
+    "pubkey_from_doc",
 ]
 
 
@@ -180,3 +181,48 @@ def encode_secret_key(secret_key):
     )
     prefixed_secret = PREFIX_SECRET_KEY + secret_bytes
     return "z" + base58.b58encode(prefixed_secret).decode("utf-8")
+
+
+def pubkey_from_doc(doc):
+    # type: (dict) -> ed25519.Ed25519PublicKey
+    """
+    Extract Ed25519PublicKey from a document with DataIntegrityProof.
+
+    :param doc: Document with DataIntegrityProof containing did:key verificationMethod
+    :return: Ed25519PublicKey object
+    :raises ValueError: If proof or verificationMethod is invalid
+    """
+    if not isinstance(doc, dict):
+        raise ValueError("Document must be a dictionary")
+
+    proof = doc.get("proof")
+    if proof is None or not isinstance(proof, dict):
+        raise ValueError("Proof must be a dictionary")
+
+    if proof.get("type") != "DataIntegrityProof":
+        raise ValueError("Proof type must be DataIntegrityProof")
+
+    verification_method = proof.get("verificationMethod")
+    if verification_method is None or not isinstance(verification_method, str):
+        raise ValueError("verificationMethod must be a string")
+
+    if not verification_method.startswith("did:key:"):
+        raise ValueError("verificationMethod must start with did:key:")
+
+    # Extract the public key part after did:key:
+    pubkey_part = verification_method.split("#")[0].replace("did:key:", "")
+    if not pubkey_part.startswith("z"):
+        raise ValueError("Public key must start with z (base58btc multibase prefix)")
+
+    try:
+        pubkey_bytes = base58.b58decode(pubkey_part[1:])
+    except Exception as e:
+        raise ValueError(f"Invalid base58 encoding: {e}")
+
+    if not pubkey_bytes.startswith(PREFIX_PUBLIC_KEY):
+        raise ValueError("Invalid public key prefix")
+
+    try:
+        return ed25519.Ed25519PublicKey.from_public_bytes(pubkey_bytes[2:])
+    except Exception as e:
+        raise ValueError(f"Invalid public key bytes: {e}")

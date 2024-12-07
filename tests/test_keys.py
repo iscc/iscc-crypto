@@ -187,6 +187,97 @@ def test_encode_secret_key():
     assert len(decoded) == 34
 
 
+def test_pubkey_from_doc():
+    # type: () -> None
+    """Test extracting public key from document with DataIntegrityProof."""
+    # Create a test document with a valid proof
+    kp = keypair_generate()
+    doc = {
+        "proof": {
+            "type": "DataIntegrityProof",
+            "verificationMethod": f"did:key:{kp.public_key}#{kp.public_key}",
+        }
+    }
+    # Extract and verify the public key
+    pk = pubkey_from_doc(doc)
+    assert isinstance(pk, Ed25519PublicKey)
+    assert encode_public_key(pk) == kp.public_key
+
+
+def test_pubkey_from_doc_invalid():
+    # type: () -> None
+    """Test error handling for invalid documents."""
+    # Test invalid document type
+    with pytest.raises(ValueError, match="must be a dictionary"):
+        pubkey_from_doc("not a dict")
+
+    # Test missing proof
+    with pytest.raises(ValueError, match="must be a dictionary"):
+        pubkey_from_doc({"no": "proof"})
+
+    # Test invalid proof type
+    with pytest.raises(ValueError, match="type must be DataIntegrityProof"):
+        pubkey_from_doc({"proof": {"type": "WrongType"}})
+
+    # Test missing verificationMethod
+    with pytest.raises(ValueError, match="must be a string"):
+        pubkey_from_doc({"proof": {"type": "DataIntegrityProof"}})
+
+    # Test invalid verificationMethod format
+    with pytest.raises(ValueError, match="must start with did:key:"):
+        pubkey_from_doc(
+            {"proof": {"type": "DataIntegrityProof", "verificationMethod": "wrong:format"}}
+        )
+
+    # Test invalid public key format
+    with pytest.raises(ValueError, match="must start with z"):
+        pubkey_from_doc(
+            {
+                "proof": {
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "did:key:wrongformat",
+                }
+            }
+        )
+
+    # Test invalid base58 encoding
+    with pytest.raises(ValueError, match="Invalid base58 encoding"):
+        pubkey_from_doc(
+            {
+                "proof": {
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": "did:key:z!!!invalid!!!",
+                }
+            }
+        )
+
+    # Test invalid public key prefix
+    invalid_bytes = b"wrong" + b"\x00" * 32
+    invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
+    with pytest.raises(ValueError, match="Invalid public key prefix"):
+        pubkey_from_doc(
+            {
+                "proof": {
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": f"did:key:{invalid_key}",
+                }
+            }
+        )
+
+    # Test invalid public key bytes
+    invalid_bytes = PREFIX_PUBLIC_KEY + b"\x00" * 16  # Too short
+    invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
+    with pytest.raises(ValueError, match="Invalid public key bytes"):
+        pubkey_from_doc(
+            {
+                "proof": {
+                    "type": "DataIntegrityProof",
+                    "verificationMethod": f"did:key:{invalid_key}",
+                }
+            }
+        )
+
+
 def test_encode_public_key():
     # type: () -> None
     """Test encoding of Ed25519 public key to multikey format."""
