@@ -19,6 +19,14 @@ TEST_CREDENTIAL = {
     "credentialSubject": {"id": "did:example:abcdefgh", "alumniOf": "The School of Examples"},
 }
 
+TEST_PROOF_OPTIONS = {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2023-02-24T23:36:38Z",
+    "verificationMethod": "did:key:z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2#z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
+    "proofPurpose": "assertionMethod",
+}
+
 EXPECTED_SIGNED_CREDENTIAL = {
     "@context": [
         "https://www.w3.org/ns/credentials/v2",
@@ -40,6 +48,10 @@ EXPECTED_SIGNED_CREDENTIAL = {
         "proofValue": "zboydVv31kj6jP37GMBZwYyjbvrqr9MWeY9NCEfYUwLcKwkdqAcB44dqEcqaMi8mfdvT2Vbnvdrv6XRaYzgpuPWn",
     },
 }
+
+EXPEXTED_SIGNATURE_PAYLOAD = bytes.fromhex(
+    "c46b3487ab7087c4f426b546c449094ff57b8fefa6fd85e83f1b31e24c230da859b7cb6251b8991add1ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
+)
 
 EXPECTED_SIGNATURE = (
     "zboydVv31kj6jP37GMBZwYyjbvrqr9MWeY9NCEfYUwLcKwkdqAcB44dqEcqaMi8mfdvT2Vbnvdrv6XRaYzgpuPWn"
@@ -117,3 +129,13 @@ def test_proof_structure():
     # Check verification method format
     assert proof["verificationMethod"].startswith("did:key:")
     assert "#" in proof["verificationMethod"]
+
+
+def test_create_signature_payload():
+    # Create payload and verify it matches expected test vector
+    payload = icr.create_signature_payload(TEST_CREDENTIAL, TEST_PROOF_OPTIONS)
+    assert payload == EXPEXTED_SIGNATURE_PAYLOAD
+
+    # Test with empty document and options
+    empty_payload = icr.create_signature_payload({}, {})
+    assert len(empty_payload) == 64  # Should still produce 64 bytes
