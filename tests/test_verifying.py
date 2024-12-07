@@ -1,4 +1,3 @@
-import pytest
 from iscc_crypto.keys import create_keypair
 from iscc_crypto.signing import create_signature
 from iscc_crypto.verifying import verify_signature
