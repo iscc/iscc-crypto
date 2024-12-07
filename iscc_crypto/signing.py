@@ -12,8 +12,22 @@ __all__ = [
 
 
 def sign_json(obj, keypair, created=None):
-    # type: (dict, KeyPair, str) -> dict
-    """Sign object in conformance with https://www.w3.org/TR/vc-di-eddsa"""
+    # type: (dict, KeyPair, str|None) -> dict
+    """
+    Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.
+
+    Creates a proof that follows the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
+    The proof is added as a 'proof' property to a copy of the input object. The signing process:
+    1. Canonicalizes the input object and proof options using JCS
+    2. Creates a composite hash of both canonicalized values
+    3. Signs the hash with the provided Ed25519 key
+    4. Encodes the signature in multibase format
+
+    :param obj: JSON-compatible dictionary to be signed
+    :param keypair: Ed25519 KeyPair for signing
+    :param created: Optional ISO timestamp string (default: current UTC time)
+    :return: Copy of input object with added 'proof' property containing the signature
+    """
 
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
