@@ -11,9 +11,9 @@ __all__ = [
     "PREFIX_PUBLIC_KEY",
     "PREFIX_SECRET_KEY",
     "KeyPair",
-    "create_keypair",
-    "from_secret",
-    "from_env",
+    "keypair_generate",
+    "keypair_from_secret",
+    "keypair_from_env",
     "encode_public_key",
     "encode_secret_key",
 ]
@@ -56,7 +56,7 @@ class KeyPair:
         return ed25519.Ed25519PublicKey.from_public_bytes(public_bytes)
 
 
-def create_keypair(controller=None, key_id=None):
+def keypair_generate(controller=None, key_id=None):
     # type: (str|None, str|None) -> KeyPair
     """
     Create a new Ed25519 key pair for signing in accordance with https://www.w3.org/TR/vc-di-eddsa/.
@@ -85,7 +85,7 @@ def create_keypair(controller=None, key_id=None):
     )
 
 
-def from_secret(secret_key, controller=None, key_id=None):
+def keypair_from_secret(secret_key, controller=None, key_id=None):
     # type: (str, str|None, str|None) -> KeyPair
     """
     Create a KeyPair from an existing Ed25519 secret key in multikey format.
@@ -125,7 +125,7 @@ def from_secret(secret_key, controller=None, key_id=None):
     )
 
 
-def from_env():
+def keypair_from_env():
     # type: () -> KeyPair
     """
     Create a KeyPair from environment variables.
@@ -143,7 +143,7 @@ def from_env():
     if not secret_key:
         raise ValueError("ISCC_CRYPTO_SECRET_KEY environment variable is required")
 
-    return from_secret(
+    return keypair_from_secret(
         secret_key=secret_key,
         controller=os.getenv("ISCC_CRYPTO_CONTROLLER"),
         key_id=os.getenv("ISCC_CRYPTO_KEY_ID"),

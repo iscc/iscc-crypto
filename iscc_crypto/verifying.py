@@ -4,12 +4,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
 
 __all__ = [
-    "verify_signature",
-    "verify_json",
+    "verify_bytes",
+    "verify_document",
 ]
 
 
-def verify_json(document, public_key):
+def verify_document(doc, public_key):
     # type: (dict, Ed25519PublicKey) -> tuple[bool, dict|None]
     """
     Verify a Data Integrity Proof on a JSON document using EdDSA and JCS canonicalization.
@@ -21,15 +21,15 @@ def verify_json(document, public_key):
     3. Creates a composite hash of both canonicalized values
     4. Verifies the signature against the hash using the provided Ed25519 key
 
-    :param document: JSON document with proof to verify
+    :param doc: JSON document with proof to verify
     :param public_key: Ed25519PublicKey for verification
     :return: Tuple of (verified, document without proof) or (False, None) if invalid
     """
-    if not isinstance(document, dict):
+    if not isinstance(doc, dict):
         return False, None
 
     # Extract and validate proof
-    proof = document.get("proof")
+    proof = doc.get("proof")
     if not isinstance(proof, dict):
         return False, None
 
@@ -43,7 +43,7 @@ def verify_json(document, public_key):
         return False, None
 
     # Create copy without proof for verification
-    doc_without_proof = document.copy()
+    doc_without_proof = doc.copy()
     del doc_without_proof["proof"]
 
     # Create proof options without proofValue
@@ -52,12 +52,12 @@ def verify_json(document, public_key):
 
     # Create verification payload and verify signature
     verification_payload = create_signature_payload(doc_without_proof, proof_options)
-    if verify_signature(verification_payload, proof["proofValue"], public_key):
+    if verify_bytes(verification_payload, proof["proofValue"], public_key):
         return True, doc_without_proof
     return False, None
 
 
-def verify_signature(payload, signature, public_key):
+def verify_bytes(payload, signature, public_key):
     # type: (bytes, str, Ed25519PublicKey) -> bool
     """
     Verify an EdDSA signature over raw bytes. The signature must be encoded according to

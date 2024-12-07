@@ -6,13 +6,13 @@ import jcs
 
 
 __all__ = [
-    "sign_json",
-    "create_signature",
+    "sign_document",
+    "sign_bytes",
     "create_signature_payload",
 ]
 
 
-def sign_json(result, keypair, created=None):
+def sign_document(doc, keypair, created=None):
     # type: (dict, KeyPair, str|None) -> dict
     """
     Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.
@@ -30,13 +30,13 @@ def sign_json(result, keypair, created=None):
     - Context injection may be skipped for non-JSON-LD processing
     - If no @context is present, no extensions to the spec are allowed
 
-    :param result: JSON-compatible dictionary to be signed
+    :param doc: JSON-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
     :param created: Optional ISO timestamp string (default: current UTC time)
     :return: Copy of input object with added 'proof' property containing the signature
     """
     # Make a copy to avoid modifying input
-    result = result.copy()
+    result = doc.copy()
 
     # Handle context injection per spec section 2.4.2
     if "@context" in result:
@@ -65,7 +65,7 @@ def sign_json(result, keypair, created=None):
     }
 
     verification_payload = create_signature_payload(result, proof_options)
-    signature = create_signature(verification_payload, keypair)
+    signature = sign_bytes(verification_payload, keypair)
 
     proof_options["proofValue"] = signature
     result["proof"] = proof_options
@@ -73,7 +73,7 @@ def sign_json(result, keypair, created=None):
     return result
 
 
-def create_signature(payload, keypair):
+def sign_bytes(payload, keypair):
     # type: (bytes, KeyPair) -> str
     """
     Create a detached EdDSA signature over raw bytes. The signature is produced according to

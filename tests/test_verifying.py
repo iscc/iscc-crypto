@@ -1,58 +1,58 @@
-from iscc_crypto.keys import create_keypair
-from iscc_crypto.signing import create_signature
-from iscc_crypto.verifying import verify_signature, verify_json
+from iscc_crypto.keys import keypair_generate
+from iscc_crypto.signing import sign_bytes
+from iscc_crypto.verifying import verify_bytes, verify_document
 
 
 def test_valid_signature():
     """Test verification of a valid signature"""
-    kp = create_keypair()
+    kp = keypair_generate()
     payload = b"test data"
-    sig = create_signature(payload, kp)
-    assert verify_signature(payload, sig, kp.pk_obj) is True
+    sig = sign_bytes(payload, kp)
+    assert verify_bytes(payload, sig, kp.pk_obj) is True
 
 
 def test_invalid_signature():
     """Test rejection of an invalid signature"""
-    kp = create_keypair()
+    kp = keypair_generate()
     payload = b"test data"
-    sig = create_signature(payload, kp)
+    sig = sign_bytes(payload, kp)
     wrong_payload = b"wrong data"
-    assert verify_signature(wrong_payload, sig, kp.pk_obj) is False
+    assert verify_bytes(wrong_payload, sig, kp.pk_obj) is False
 
 
 def test_wrong_public_key():
     """Test rejection when using wrong public key"""
-    kp1 = create_keypair()
-    kp2 = create_keypair()
+    kp1 = keypair_generate()
+    kp2 = keypair_generate()
     payload = b"test data"
-    sig = create_signature(payload, kp1)
-    assert verify_signature(payload, sig, kp2.pk_obj) is False
+    sig = sign_bytes(payload, kp1)
+    assert verify_bytes(payload, sig, kp2.pk_obj) is False
 
 
 def test_malformed_signature():
     """Test handling of malformed signatures"""
-    kp = create_keypair()
+    kp = keypair_generate()
     payload = b"test data"
 
     # Missing z-prefix
-    sig = create_signature(payload, kp)[1:]
-    assert verify_signature(payload, sig, kp.pk_obj) is False
+    sig = sign_bytes(payload, kp)[1:]
+    assert verify_bytes(payload, sig, kp.pk_obj) is False
 
     # Invalid base58
-    assert verify_signature(payload, "z!!!invalid!!!", kp.pk_obj) is False
+    assert verify_bytes(payload, "z!!!invalid!!!", kp.pk_obj) is False
 
 
 def test_empty_inputs():
     """Test handling of empty inputs"""
-    kp = create_keypair()
-    assert verify_signature(b"", "", kp.pk_obj) is False
-    assert verify_signature(b"data", "", kp.pk_obj) is False
-    assert verify_signature(b"", "z123", kp.pk_obj) is False
+    kp = keypair_generate()
+    assert verify_bytes(b"", "", kp.pk_obj) is False
+    assert verify_bytes(b"data", "", kp.pk_obj) is False
+    assert verify_bytes(b"", "z123", kp.pk_obj) is False
 
 
 def test_verify_json_valid():
     """Test verification of a valid JSON document with proof"""
-    kp = create_keypair()
+    kp = keypair_generate()
 
     # Create a document with valid proof
     document = {
@@ -82,37 +82,37 @@ def test_verify_json_valid():
     options_digest = sha256(jcs.canonicalize(proof_options)).digest()
     verification_payload = options_digest + doc_digest
 
-    from iscc_crypto.signing import create_signature
+    from iscc_crypto.signing import sign_bytes
 
-    signature = create_signature(verification_payload, kp)
+    signature = sign_bytes(verification_payload, kp)
     document["proof"]["proofValue"] = signature
 
     # Verify
-    verified, extracted_doc = verify_json(document, kp.pk_obj)
+    verified, extracted_doc = verify_document(document, kp.pk_obj)
     assert verified is True
     assert extracted_doc == doc_without_proof
 
 
 def test_verify_json_invalid_inputs():
     """Test verification with invalid inputs"""
-    kp = create_keypair()
+    kp = keypair_generate()
 
     # Test non-dict input
-    assert verify_json("not a dict", kp.pk_obj) == (False, None)
-    assert verify_json(None, kp.pk_obj) == (False, None)
+    assert verify_document("not a dict", kp.pk_obj) == (False, None)
+    assert verify_document(None, kp.pk_obj) == (False, None)
 
     # Test missing proof
     doc_no_proof = {"content": "test"}
-    assert verify_json(doc_no_proof, kp.pk_obj) == (False, None)
+    assert verify_document(doc_no_proof, kp.pk_obj) == (False, None)
 
     # Test invalid proof type
     doc_invalid_proof = {"content": "test", "proof": "not a dict"}
-    assert verify_json(doc_invalid_proof, kp.pk_obj) == (False, None)
+    assert verify_document(doc_invalid_proof, kp.pk_obj) == (False, None)
 
 
 def test_verify_json_invalid_proof_properties():
     """Test verification with invalid proof properties"""
-    kp = create_keypair()
+    kp = keypair_generate()
 
     # Base document
     doc = {
@@ -127,27 +127,27 @@ def test_verify_json_invalid_proof_properties():
     # Test wrong type
     wrong_type = doc.copy()
     wrong_type["proof"]["type"] = "WrongType"
-    assert verify_json(wrong_type, kp.pk_obj) == (False, None)
+    assert verify_document(wrong_type, kp.pk_obj) == (False, None)
 
     # Test wrong cryptosuite
     wrong_suite = doc.copy()
     wrong_suite["proof"]["cryptosuite"] = "wrong-suite"
-    assert verify_json(wrong_suite, kp.pk_obj) == (False, None)
+    assert verify_document(wrong_suite, kp.pk_obj) == (False, None)
 
     # Test missing proofValue
     no_proof_value = doc.copy()
     del no_proof_value["proof"]["proofValue"]
-    assert verify_json(no_proof_value, kp.pk_obj) == (False, None)
+    assert verify_document(no_proof_value, kp.pk_obj) == (False, None)
 
     # Test invalid proofValue prefix
     wrong_prefix = doc.copy()
     wrong_prefix["proof"]["proofValue"] = "x123"  # Should start with 'z'
-    assert verify_json(wrong_prefix, kp.pk_obj) == (False, None)
+    assert verify_document(wrong_prefix, kp.pk_obj) == (False, None)
 
 
 def test_verify_json_tampered_document():
     """Test verification of a tampered document"""
-    kp = create_keypair()
+    kp = keypair_generate()
 
     # Create original document with valid proof
     original = {
@@ -172,15 +172,15 @@ def test_verify_json_tampered_document():
     options_digest = sha256(jcs.canonicalize(proof_options)).digest()
     verification_payload = options_digest + doc_digest
 
-    from iscc_crypto.signing import create_signature
+    from iscc_crypto.signing import sign_bytes
 
-    signature = create_signature(verification_payload, kp)
+    signature = sign_bytes(verification_payload, kp)
     original["proof"]["proofValue"] = signature
 
     # Verify original
-    assert verify_json(original, kp.pk_obj)[0] is True
+    assert verify_document(original, kp.pk_obj)[0] is True
 
     # Tamper with content
     tampered = original.copy()
     tampered["content"] = "tampered"
-    assert verify_json(tampered, kp.pk_obj)[0] is False
+    assert verify_document(tampered, kp.pk_obj)[0] is False
