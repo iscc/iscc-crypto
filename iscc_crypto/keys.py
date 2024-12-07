@@ -14,6 +14,8 @@ __all__ = [
     "create_keypair",
     "from_secret",
     "from_env",
+    "encode_public_key",
+    "encode_secret_key",
 ]
 
 
@@ -71,16 +73,8 @@ def create_keypair(controller=None, key_id=None):
     secret_key = ed25519.Ed25519PrivateKey.generate()
     public_key = secret_key.public_key()
 
-    # Get and encode the secret key
-    secret_bytes = secret_key.private_bytes(
-        encoding=serialization.Encoding.Raw,
-        format=serialization.PrivateFormat.Raw,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-    prefixed_secret = PREFIX_SECRET_KEY + secret_bytes
-    secret_multibase = "z" + base58.b58encode(prefixed_secret).decode("utf-8")
-
-    # Get and encode the public key
+    # Encode keys
+    secret_multibase = encode_secret_key(secret_key)
     public_multibase = encode_public_key(public_key)
 
     return KeyPair(
@@ -169,3 +163,20 @@ def encode_public_key(public_key):
     )
     prefixed_public = PREFIX_PUBLIC_KEY + public_bytes
     return "z" + base58.b58encode(prefixed_public).decode("utf-8")
+
+
+def encode_secret_key(secret_key):
+    # type: (ed25519.Ed25519PrivateKey) -> str
+    """
+    Encode a secret key in multikey format.
+
+    :param secret_key: Ed25519 private key object
+    :return: Multikey encoded secret key string
+    """
+    secret_bytes = secret_key.private_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PrivateFormat.Raw,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    prefixed_secret = PREFIX_SECRET_KEY + secret_bytes
+    return "z" + base58.b58encode(prefixed_secret).decode("utf-8")
