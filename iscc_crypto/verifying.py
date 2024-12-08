@@ -3,11 +3,20 @@ from copy import deepcopy
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
+from iscc_crypto.keys import pubkey_encode
 
 __all__ = [
     "verify_raw",
     "verify_vc",
+    "verify_json",
+    "VerificationError",
 ]
+
+
+class VerificationError(Exception):
+    """Raised when signature verification fails"""
+
+    pass
 
 
 def verify_vc(doc, public_key):
@@ -75,3 +84,48 @@ def verify_raw(payload, signature, public_key):
         return True
     except (ValueError, InvalidSignature):
         return False
+
+
+def verify_json(obj):
+    # type: (dict) -> dict
+    """
+    Verify an EdDSA signature on a JSON object using JCS canonicalization.
+
+    Verifies signatures created by sign_json(). The verification process:
+    1. Extracts signature and declarer fields from the document
+    2. Creates a canonicalized hash of the document without signature fields
+    3. Verifies the signature using the public key from declarer field
+
+    :param obj: JSON object with signature to verify
+    :return: Document without signature fields
+    :raises VerificationError: If signature verification fails
+    """
+    try:
+        signature = obj["signature"]
+        declarer = obj["declarer"]
+    except KeyError as e:
+        raise VerificationError(f"Missing required field: {e.args[0]}")
+
+    if not signature.startswith("z"):
+        raise VerificationError("Invalid signature format - must start with 'z'")
+
+    try:
+        public_key = pubkey_encode(declarer)
+    except ValueError:
+        raise VerificationError("Invalid declarer format")
+
+    # Create copy without signature fields
+    doc_without_sig = deepcopy(obj)
+    del doc_without_sig["signature"]
+    del doc_without_sig["declarer"]
+
+    try:
+        from hashlib import sha256
+        import jcs
+
+        verification_payload = sha256(jcs.canonicalize(doc_without_sig)).digest()
+        if not verify_raw(verification_payload, signature, public_key):
+            raise VerificationError("Invalid signature")
+        return doc_without_sig
+    except Exception as e:
+        raise VerificationError(f"Verification failed: {str(e)}")
