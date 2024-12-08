@@ -1,9 +1,10 @@
 import base58
 from copy import deepcopy
+from hashlib import sha256
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
-from iscc_crypto.keys import pubkey_encode
+import jcs
 
 __all__ = [
     "verify_raw",
@@ -110,8 +111,9 @@ def verify_json(obj):
         raise VerificationError("Invalid signature format - must start with 'z'")
 
     try:
-        public_key = pubkey_encode(declarer)
-    except ValueError:
+        raw_key = base58.b58decode(declarer[1:])  # Remove 'z' prefix
+        public_key = Ed25519PublicKey.from_public_bytes(raw_key)
+    except (ValueError, IndexError):
         raise VerificationError("Invalid declarer format")
 
     # Create copy without signature fields
@@ -120,9 +122,6 @@ def verify_json(obj):
     del doc_without_sig["declarer"]
 
     try:
-        from hashlib import sha256
-        import jcs
-
         verification_payload = sha256(jcs.canonicalize(doc_without_sig)).digest()
         if not verify_raw(verification_payload, signature, public_key):
             raise VerificationError("Invalid signature")
