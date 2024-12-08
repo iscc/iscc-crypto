@@ -69,7 +69,7 @@ def test_sign_raw():
     assert icr.sign_raw(payload, TEST_KEY) == EXPECTED_SIGNATURE
 
 
-def test_sign_doc():
+def test_sign_vc():
     signed_credential = icr.sign_vc(TEST_CREDENTIAL, TEST_KEY, TEST_PROOF_OPTIONS)
     assert signed_credential == EXPECTED_SIGNED_CREDENTIAL
 

@@ -25,13 +25,13 @@ def sign_vc(doc, keypair, options=None):
     :return: Copy of input object with added 'proof' property containing the signature
     """
     # Make a copy to avoid modifying input
-    signed = doc.copy()
+    signed = deepcopy(doc)
 
     # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
     proof_options = (
-        options.copy()
+        deepcopy(options)
         if options
         else {
             "type": "DataIntegrityProof",

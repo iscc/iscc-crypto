@@ -1,4 +1,5 @@
 import base58
+from copy import deepcopy
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
@@ -43,11 +44,11 @@ def verify_vc(doc, public_key):
         return False, None
 
     # Create copy without proof for verification
-    doc_without_proof = doc.copy()
+    doc_without_proof = deepcopy(doc)
     del doc_without_proof["proof"]
 
     # Create proof options without proofValue
-    proof_options = proof.copy()
+    proof_options = deepcopy(proof)
     del proof_options["proofValue"]
 
     # Create verification payload and verify signature
