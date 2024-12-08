@@ -13,6 +13,46 @@ __all__ = [
 ]
 
 
+def sign_raw(payload, keypair):
+    # type: (bytes, KeyPair) -> str
+    """
+    Create a detached EdDSA signature over raw bytes. The signature is produced according to
+    [RFC8032] and encoded using the base-58-btc header and alphabet conformant with eddsa-jcs-2022.
+
+    :param payload: Bytes to sign
+    :param keypair: KeyPair containing the signing key
+    :return: Multibase encoded signature (z-base58-btc)
+    """
+    # Sign the payload using cached private key
+    signature = keypair.sk_obj.sign(payload)
+
+    # Encode signature in multibase format
+    return "z" + base58.b58encode(signature).decode("utf-8")
+
+
+def sign_json(obj, keypair):
+    # type: (dict, KeyPair) -> dict
+    """
+    Sign any JSON serializable object using EdDSA and JCS canonicalization.
+
+    Creates a copy of the input object, adds the public key as 'declarer',
+    and appends an EdDSA signature as 'signature' property.
+
+    :param obj: JSON-compatible dictionary to be signed
+    :param keypair: Ed25519 KeyPair for signing
+    :return: Copy of input object with added 'declarer' and 'signature' properties
+    """
+    if "declarer" in obj or "signature" in obj:
+        raise ValueError("Input must not contain 'declarer' or 'signature' fields")
+
+    signed = deepcopy(obj)
+    payload = sha256(jcs.canonicalize(signed)).digest()
+    signature = sign_raw(payload, keypair)
+
+    signed.update({"declarer": keypair.public_key, "signature": signature})
+    return signed
+
+
 def sign_vc(doc, keypair, options=None):
     # type: (dict, KeyPair, dict|None) -> dict
     """
@@ -48,46 +88,6 @@ def sign_vc(doc, keypair, options=None):
     signed["proof"] = proof_options
 
     return signed
-
-
-def sign_json(obj, keypair):
-    # type: (dict, KeyPair) -> dict
-    """
-    Sign any JSON serializable object using EdDSA and JCS canonicalization.
-
-    Creates a copy of the input object, adds the public key as 'declarer',
-    and appends an EdDSA signature as 'signature' property.
-
-    :param obj: JSON-compatible dictionary to be signed
-    :param keypair: Ed25519 KeyPair for signing
-    :return: Copy of input object with added 'declarer' and 'signature' properties
-    """
-    if "declarer" in obj or "signature" in obj:
-        raise ValueError("Input must not contain 'declarer' or 'signature' fields")
-
-    signed = deepcopy(obj)
-    payload = sha256(jcs.canonicalize(signed)).digest()
-    signature = sign_raw(payload, keypair)
-
-    signed.update({"declarer": keypair.public_key, "signature": signature})
-    return signed
-
-
-def sign_raw(payload, keypair):
-    # type: (bytes, KeyPair) -> str
-    """
-    Create a detached EdDSA signature over raw bytes. The signature is produced according to
-    [RFC8032] and encoded using the base-58-btc header and alphabet conformant with eddsa-jcs-2022.
-
-    :param payload: Bytes to sign
-    :param keypair: KeyPair containing the signing key
-    :return: Multibase encoded signature (z-base58-btc)
-    """
-    # Sign the payload using cached private key
-    signature = keypair.sk_obj.sign(payload)
-
-    # Encode signature in multibase format
-    return "z" + base58.b58encode(signature).decode("utf-8")
 
 
 def create_signature_payload(doc, options):

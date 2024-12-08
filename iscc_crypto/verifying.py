@@ -8,9 +8,9 @@ from iscc_crypto.keys import PREFIX_PUBLIC_KEY
 import jcs
 
 __all__ = [
-    "verify_raw",
     "verify_vc",
     "verify_json",
+    "verify_raw",
     "VerificationError",
 ]
 
@@ -19,54 +19,6 @@ class VerificationError(Exception):
     """Raised when signature verification fails"""
 
     pass
-
-
-def verify_vc(doc, public_key):
-    # type: (dict, Ed25519PublicKey) -> tuple[bool, dict|None]
-    """
-    Verify a Data Integrity Proof on a JSON document using EdDSA and JCS canonicalization.
-
-    Verifies proofs that follow the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
-    The verification process:
-    1. Extracts and validates the proof from the document
-    2. Canonicalizes both document and proof options using JCS
-    3. Creates a composite hash of both canonicalized values
-    4. Verifies the signature against the hash using the provided Ed25519 key
-
-    :param doc: JSON document with proof to verify
-    :param public_key: Ed25519PublicKey for verification
-    :return: Tuple of (verified, document without proof) or (False, None) if invalid
-    """
-    if not isinstance(doc, dict):
-        return False, None
-
-    # Extract and validate proof
-    proof = doc.get("proof")
-    if not isinstance(proof, dict):
-        return False, None
-
-    # Validate proof properties
-    if (
-        proof.get("type") != "DataIntegrityProof"
-        or proof.get("cryptosuite") != "eddsa-jcs-2022"
-        or not isinstance(proof.get("proofValue"), str)
-        or not proof["proofValue"].startswith("z")
-    ):
-        return False, None
-
-    # Create copy without proof for verification
-    doc_without_proof = deepcopy(doc)
-    del doc_without_proof["proof"]
-
-    # Create proof options without proofValue
-    proof_options = deepcopy(proof)
-    del proof_options["proofValue"]
-
-    # Create verification payload and verify signature
-    verification_payload = create_signature_payload(doc_without_proof, proof_options)
-    if verify_raw(verification_payload, proof["proofValue"], public_key):
-        return True, doc_without_proof
-    return False, None
 
 
 def verify_raw(payload, signature, public_key):
@@ -131,3 +83,51 @@ def verify_json(obj):
         return doc_without_sig
     except Exception as e:
         raise VerificationError(f"Verification failed: {str(e)}")
+
+
+def verify_vc(doc, public_key):
+    # type: (dict, Ed25519PublicKey) -> tuple[bool, dict|None]
+    """
+    Verify a Data Integrity Proof on a JSON document using EdDSA and JCS canonicalization.
+
+    Verifies proofs that follow the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
+    The verification process:
+    1. Extracts and validates the proof from the document
+    2. Canonicalizes both document and proof options using JCS
+    3. Creates a composite hash of both canonicalized values
+    4. Verifies the signature against the hash using the provided Ed25519 key
+
+    :param doc: JSON document with proof to verify
+    :param public_key: Ed25519PublicKey for verification
+    :return: Tuple of (verified, document without proof) or (False, None) if invalid
+    """
+    if not isinstance(doc, dict):
+        return False, None
+
+    # Extract and validate proof
+    proof = doc.get("proof")
+    if not isinstance(proof, dict):
+        return False, None
+
+    # Validate proof properties
+    if (
+        proof.get("type") != "DataIntegrityProof"
+        or proof.get("cryptosuite") != "eddsa-jcs-2022"
+        or not isinstance(proof.get("proofValue"), str)
+        or not proof["proofValue"].startswith("z")
+    ):
+        return False, None
+
+    # Create copy without proof for verification
+    doc_without_proof = deepcopy(doc)
+    del doc_without_proof["proof"]
+
+    # Create proof options without proofValue
+    proof_options = deepcopy(proof)
+    del proof_options["proofValue"]
+
+    # Create verification payload and verify signature
+    verification_payload = create_signature_payload(doc_without_proof, proof_options)
+    if verify_raw(verification_payload, proof["proofValue"], public_key):
+        return True, doc_without_proof
+    return False, None
