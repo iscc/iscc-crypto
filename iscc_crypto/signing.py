@@ -30,11 +30,15 @@ def sign_doc(doc, keypair, options=None):
     # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
-    proof_options = options or {
-        "type": "DataIntegrityProof",
-        "cryptosuite": "eddsa-jcs-2022",
-        "verificationMethod": did_key,
-    }
+    proof_options = (
+        options.copy()
+        if options
+        else {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "verificationMethod": did_key,
+        }
+    )
 
     verification_payload = create_signature_payload(signed, proof_options)
     signature = sign_raw(verification_payload, keypair)
@@ -62,15 +66,15 @@ def sign_raw(payload, keypair):
     return "z" + base58.b58encode(signature).decode("utf-8")
 
 
-def create_signature_payload(document_data, proof_options):
+def create_signature_payload(doc, options):
     # type: (dict, dict) -> bytes
     """
     Create a signature payload from document data and proof options.
 
-    :param document_data: Document data without proof
-    :param proof_options: Proof options without proofValue
+    :param doc: Document data without proof
+    :param options: Proof options without proofValue
     :return: Signature payload bytes
     """
-    options_digest = sha256(jcs.canonicalize(proof_options)).digest()
-    doc_digest = sha256(jcs.canonicalize(document_data)).digest()
+    doc_digest = sha256(jcs.canonicalize(doc)).digest()
+    options_digest = sha256(jcs.canonicalize(options)).digest()
     return options_digest + doc_digest
