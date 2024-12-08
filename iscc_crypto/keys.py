@@ -19,7 +19,6 @@ __all__ = [
     "pubkey_from_proof",
 ]
 
-
 PREFIX_PUBLIC_KEY = bytes.fromhex("ED01")
 PREFIX_SECRET_KEY = bytes.fromhex("8026")
 
@@ -35,7 +34,7 @@ class KeyPair:
     """The private/secret key encoded as a multibase string."""
 
     controller: str | None = None
-    """Optional URL for the controlling authority in DID Web format (did:web:example.com)."""
+    """Optional URL for the controlling authority (controller document URL)."""
 
     key_id: str | None = None
     """Optional key identifier within the controller document (e.g. did:web:example.com#key-0)."""
@@ -59,7 +58,7 @@ class KeyPair:
     @cached_property
     def pubkey_multikey(self):
         # type: () -> dict
-        """Multikey Serialized Public Key"""
+        """Multikey formated public key object"""
         if not all([self.controller, self.key_id]):
             raise ValueError("MultiKey requires Controller and key ID")
         return dict(
@@ -68,6 +67,16 @@ class KeyPair:
             controller=self.controller,
             publicKeyMultibase=self.public_key,
         )
+
+    @cached_property
+    def controller_document(self):
+        # type: () -> dict
+        """Get controller document as defined in https://www.w3.org/TR/controller-document/"""
+        return {
+            "@context": "https://www.w3.org/ns/controller/v1",
+            "id": self.controller,
+            "assertionMethod": [self.pubkey_multikey],
+        }
 
 
 def key_generate(controller=None, key_id=None):

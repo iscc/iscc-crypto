@@ -295,6 +295,27 @@ def test_keypair_pubkey_multikey():
         _ = kp_incomplete.pubkey_multikey
 
 
+def test_keypair_controller_document():
+    # type: () -> None
+    """Test KeyPair.controller_document property."""
+    # Test with all required fields
+    kp = key_generate(controller="did:web:example.com", key_id="key-0")
+    doc = kp.controller_document
+
+    # Verify document structure
+    assert doc["@context"] == "https://www.w3.org/ns/controller/v1"
+    assert doc["id"] == "did:web:example.com"
+    assert isinstance(doc["assertionMethod"], list)
+    assert len(doc["assertionMethod"]) == 1
+
+    # Verify assertionMethod contains the multikey
+    multikey = doc["assertionMethod"][0]
+    assert multikey["id"] == "did:web:example.com#key-0"
+    assert multikey["type"] == "Multikey"
+    assert multikey["controller"] == "did:web:example.com"
+    assert multikey["publicKeyMultibase"] == kp.public_key
+
+
 def test_encode_public_key():
     # type: () -> None
     """Test encoding of Ed25519 public key to multikey format."""
