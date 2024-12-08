@@ -278,6 +278,23 @@ def test_pubkey_from_doc_invalid():
         )
 
 
+def test_keypair_pubkey_multikey():
+    # type: () -> None
+    """Test KeyPair.pubkey_multikey property."""
+    # Test with all required fields
+    kp = key_generate(controller="did:web:example.com", key_id="key-0")
+    multikey = kp.pubkey_multikey
+    assert multikey["id"] == "did:web:example.com#key-0"
+    assert multikey["type"] == "Multikey"
+    assert multikey["controller"] == "did:web:example.com"
+    assert multikey["publicKeyMultibase"] == kp.public_key
+
+    # Test error when missing required fields
+    kp_incomplete = key_generate()
+    with pytest.raises(ValueError, match="MultiKey requires Controller and key ID"):
+        _ = kp_incomplete.pubkey_multikey
+
+
 def test_encode_public_key():
     # type: () -> None
     """Test encoding of Ed25519 public key to multikey format."""

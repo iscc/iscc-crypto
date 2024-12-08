@@ -56,6 +56,19 @@ class KeyPair:
         public_bytes = base58.b58decode(self.public_key[1:])[2:]  # Skip multikey prefix
         return ed25519.Ed25519PublicKey.from_public_bytes(public_bytes)
 
+    @cached_property
+    def pubkey_multikey(self):
+        # type: () -> dict
+        """Multikey Serialized Public Key"""
+        if not all([self.controller, self.key_id]):
+            raise ValueError("MultiKey requires Controller and key ID")
+        return dict(
+            id=f"{self.controller}#{self.key_id}",
+            type="Multikey",
+            controller=self.controller,
+            publicKeyMultibase=self.public_key,
+        )
+
 
 def key_generate(controller=None, key_id=None):
     # type: (str|None, str|None) -> KeyPair
