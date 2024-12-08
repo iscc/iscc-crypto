@@ -52,6 +52,13 @@ def sign_json(obj, keypair):
     # type: (dict, KeyPair) -> dict
     """
     Sign any JSON serializable object using EdDSA and JCS canonicalization.
+
+    Creates a copy of the input object, adds the public key as 'declarer',
+    and appends an EdDSA signature as 'signature' property.
+
+    :param obj: JSON-compatible dictionary to be signed
+    :param keypair: Ed25519 KeyPair for signing
+    :return: Copy of input object with added 'declarer' and 'signature' properties
     """
     signed = obj.copy()
     signed["declarer"] = keypair.public_key
