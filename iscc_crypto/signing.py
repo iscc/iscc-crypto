@@ -7,6 +7,7 @@ import jcs
 
 __all__ = [
     "sign_vc",
+    "sign_json",
     "sign_raw",
     "create_signature_payload",
 ]

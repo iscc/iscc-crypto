@@ -1,3 +1,4 @@
+import pytest
 import iscc_crypto as icr
 
 TEST_KEY = icr.KeyPair(
@@ -87,3 +88,31 @@ def test_create_signature_payload():
     """Test signature payload creation matches spec vector"""
     payload = icr.create_signature_payload(TEST_CREDENTIAL, TEST_PROOF_OPTIONS)
     assert payload == EXPECTED_SIGNATURE_PAYLOAD
+
+
+def test_sign_json():
+    """Test basic json signing functionality"""
+    # Test basic signing
+    obj = {"message": "hello"}
+    signed = icr.sign_json(obj, TEST_KEY)
+    assert "declarer" in signed
+    assert "signature" in signed
+    assert signed["message"] == "hello"
+    assert signed["declarer"] == TEST_KEY.public_key
+
+    # Test input validation
+    with pytest.raises(ValueError):
+        icr.sign_json({"declarer": "exists"}, TEST_KEY)
+    with pytest.raises(ValueError):
+        icr.sign_json({"signature": "exists"}, TEST_KEY)
+
+    # Test deep copy with nested structure
+    nested = {"data": {"nested": [1, 2, 3]}}
+    signed = icr.sign_json(nested, TEST_KEY)
+    signed["data"]["nested"][0] = 99
+    assert nested["data"]["nested"][0] == 1  # Original unchanged
+
+    # Test original input remains unchanged
+    original = {"foo": "bar"}
+    signed = icr.sign_json(original, TEST_KEY)
+    assert original == {"foo": "bar"}
