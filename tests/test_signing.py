@@ -70,14 +70,14 @@ def test_sign_raw():
 
 
 def test_sign_doc():
-    signed_credential = icr.sign_doc(TEST_CREDENTIAL, TEST_KEY, TEST_PROOF_OPTIONS)
+    signed_credential = icr.sign_vc(TEST_CREDENTIAL, TEST_KEY, TEST_PROOF_OPTIONS)
     assert signed_credential == EXPECTED_SIGNED_CREDENTIAL
 
 
 def test_input_not_modified():
     # Test original input dict not modified
     original = {"foo": "bar"}
-    signed = icr.sign_doc(original, TEST_KEY)
+    signed = icr.sign_vc(original, TEST_KEY)
     assert "proof" in signed
     assert "proof" not in original
     assert original == {"foo": "bar"}

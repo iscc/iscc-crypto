@@ -1,4 +1,3 @@
-from datetime import datetime, UTC
 from hashlib import sha256
 import base58
 from iscc_crypto.keys import KeyPair
@@ -6,13 +5,13 @@ import jcs
 
 
 __all__ = [
-    "sign_doc",
+    "sign_vc",
     "sign_raw",
     "create_signature_payload",
 ]
 
 
-def sign_doc(doc, keypair, options=None):
+def sign_vc(doc, keypair, options=None):
     # type: (dict, KeyPair, dict|None) -> dict
     """
     Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.
@@ -46,6 +45,19 @@ def sign_doc(doc, keypair, options=None):
     proof_options["proofValue"] = signature
     signed["proof"] = proof_options
 
+    return signed
+
+
+def sign_json(obj, keypair):
+    # type: (dict, KeyPair) -> dict
+    """
+    Sign any JSON serializable object using EdDSA and JCS canonicalization.
+    """
+    signed = obj.copy()
+    signed["declarer"] = keypair.public_key
+    payload = sha256(jcs.canonicalize(signed)).digest()
+    signature = sign_raw(payload, keypair)
+    signed["signature"] = signature
     return signed
 
 
