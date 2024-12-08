@@ -1,3 +1,4 @@
+from copy import deepcopy
 from hashlib import sha256
 import base58
 from iscc_crypto.keys import KeyPair
@@ -60,11 +61,14 @@ def sign_json(obj, keypair):
     :param keypair: Ed25519 KeyPair for signing
     :return: Copy of input object with added 'declarer' and 'signature' properties
     """
-    signed = obj.copy()
-    signed["declarer"] = keypair.public_key
+    if "declarer" in obj or "signature" in obj:
+        raise ValueError("Input must not contain 'declarer' or 'signature' fields")
+
+    signed = deepcopy(obj)
     payload = sha256(jcs.canonicalize(signed)).digest()
     signature = sign_raw(payload, keypair)
-    signed["signature"] = signature
+
+    signed.update({"declarer": keypair.public_key, "signature": signature})
     return signed
 
 
