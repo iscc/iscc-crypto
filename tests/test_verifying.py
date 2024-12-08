@@ -1,6 +1,8 @@
+import base58
+import pytest
 from iscc_crypto.keys import key_generate
 from iscc_crypto.signing import sign_raw
-from iscc_crypto.verifying import verify_raw, verify_vc
+from iscc_crypto.verifying import verify_raw, verify_vc, verify_json, VerificationError
 
 
 def test_valid_signature():
@@ -184,3 +186,52 @@ def test_verify_json_tampered_document():
     tampered = original.copy()
     tampered["content"] = "tampered"
     assert verify_vc(tampered, kp.pk_obj)[0] is False
+
+
+def test_verify_json():
+    """Test verification of JSON documents with signatures"""
+    from iscc_crypto.signing import sign_json
+
+    # Generate test key pair
+    kp = key_generate()
+
+    # Test successful verification
+    original = {"message": "test data"}
+    signed = sign_json(original, kp)
+    verified = verify_json(signed)
+    assert verified == original
+
+    # Test missing signature field
+    doc_no_sig = {"message": "test", "declarer": signed["declarer"]}
+    with pytest.raises(VerificationError, match="Missing required field: signature"):
+        verify_json(doc_no_sig)
+
+    # Test missing declarer field
+    doc_no_declarer = {"message": "test", "signature": signed["signature"]}
+    with pytest.raises(VerificationError, match="Missing required field: declarer"):
+        verify_json(doc_no_declarer)
+
+    # Test invalid signature format
+    doc_bad_sig = signed.copy()
+    doc_bad_sig["signature"] = "not-z-prefixed"
+    with pytest.raises(VerificationError, match="Invalid signature format"):
+        verify_json(doc_bad_sig)
+
+    # Test invalid declarer format
+    doc_bad_declarer = signed.copy()
+    doc_bad_declarer["declarer"] = "invalid-key"
+    with pytest.raises(VerificationError, match="Invalid declarer format"):
+        verify_json(doc_bad_declarer)
+
+    # Test invalid public key prefix
+    doc_bad_prefix = signed.copy()
+    # Create a z-base58 string without ED01 prefix
+    doc_bad_prefix["declarer"] = "z" + base58.b58encode(b"wrong prefix" + b"\x00" * 20).decode()
+    with pytest.raises(VerificationError, match="Invalid declarer format"):
+        verify_json(doc_bad_prefix)
+
+    # Test tampered content
+    tampered = signed.copy()
+    tampered["message"] = "modified"
+    with pytest.raises(VerificationError, match="Invalid signature"):
+        verify_json(tampered)
