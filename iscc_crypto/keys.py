@@ -159,7 +159,7 @@ def key_from_env():
     - ISCC_CRYPTO_KEY_ID: Optional key identifier
 
     :return: KeyPair constructed from environment variables
-    :raises ValueError: If ISCCCRYPTO__SECRET_KEY is missing or invalid
+    :raises ValueError: If ISCC_CRYPTO_SECRET_KEY is missing or invalid
     """
     load_dotenv()
     secret_key = os.getenv("ISCC_CRYPTO_SECRET_KEY")
