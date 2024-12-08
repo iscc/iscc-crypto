@@ -12,65 +12,37 @@ __all__ = [
 ]
 
 
-def sign_doc(doc, keypair, created=None):
-    # type: (dict, KeyPair, str|None) -> dict
+def sign_doc(doc, keypair, options=None):
+    # type: (dict, KeyPair, dict|None) -> dict
     """
     Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.
 
     Creates a proof that follows the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
-    The proof is added as a 'proof' property to a copy of the input object. The signing process:
-    1. Optionally injects context for JSON-LD processing if @context exists
-    2. Canonicalizes the input object and proof options using JCS
-    3. Creates a composite hash of both canonicalized values
-    4. Signs the hash with the provided Ed25519 key
-    5. Encodes the signature in multibase format
-
-    Context injection follows section 2.4.2 of the spec:
-    - If @context exists and Data Integrity terms are used, injects data integrity context
-    - Context injection may be skipped for non-JSON-LD processing
-    - If no @context is present, no extensions to the spec are allowed
 
     :param doc: JSON-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
-    :param created: Optional ISO timestamp string (default: current UTC time)
+    :param options: Optional custom proof options
     :return: Copy of input object with added 'proof' property containing the signature
     """
     # Make a copy to avoid modifying input
-    result = doc.copy()
-
-    # Handle context injection per spec section 2.4.2
-    if "@context" in result:
-        # Convert string context to array
-        if isinstance(result["@context"], str):
-            result["@context"] = [result["@context"]]
-
-        # Only inject if neither data integrity nor v2 credentials context present
-        has_di_context = "https://w3id.org/security/data-integrity/v2" in result["@context"]
-        has_vc_context = "https://www.w3.org/ns/credentials/v2" in result["@context"]
-
-        if not (has_di_context or has_vc_context):
-            # Context injection is optional for non-JSON-LD processing
-            # We inject it since we're using Data Integrity terms (proof, proofValue)
-            result["@context"].append("https://w3id.org/security/data-integrity/v2")
+    signed = doc.copy()
 
     # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
-    proof_options = {
+    proof_options = options or {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": created or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "verificationMethod": did_key,
-        "proofPurpose": "assertionMethod",
     }
 
-    verification_payload = create_signature_payload(result, proof_options)
+    verification_payload = create_signature_payload(signed, proof_options)
     signature = sign_raw(verification_payload, keypair)
 
     proof_options["proofValue"] = signature
-    result["proof"] = proof_options
+    signed["proof"] = proof_options
 
-    return result
+    return signed
 
 
 def sign_raw(payload, keypair):
@@ -99,6 +71,6 @@ def create_signature_payload(document_data, proof_options):
     :param proof_options: Proof options without proofValue
     :return: Signature payload bytes
     """
-    doc_digest = sha256(jcs.canonicalize(document_data)).digest()
     options_digest = sha256(jcs.canonicalize(proof_options)).digest()
+    doc_digest = sha256(jcs.canonicalize(document_data)).digest()
     return options_digest + doc_digest
