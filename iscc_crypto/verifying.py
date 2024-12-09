@@ -62,8 +62,8 @@ def verify_raw(payload, signature, public_key, raise_on_error=True):
         return VerificationResult(is_valid=False, message=msg)
 
 
-def verify_json(obj):
-    # type: (dict) -> bool
+def verify_json(obj, raise_on_error=True):
+    # type: (dict, bool) -> VerificationResult
     """
     Verify an EdDSA signature on a JSON object using JCS canonicalization.
 
@@ -73,36 +73,53 @@ def verify_json(obj):
     3. Verifies the signature using the public key from declarer field
 
     :param obj: JSON object with signature to verify
-    :return: True if signature is valid
-    :raises VerificationError: If signature verification fails
+    :param raise_on_error: Raise VerificationError on failure instead of returning result
+    :return: VerificationResult with status and optional error message
+    :raises VerificationError: If signature verification fails and raise_on_error=True
     """
+    # Extract required fields
     try:
         signature = obj["signature"]
         declarer = obj["declarer"]
     except KeyError as e:
-        raise VerificationError(f"Missing required field: {e.args[0]}")
+        msg = f"Missing required field: {e.args[0]}"
+        if raise_on_error:
+            raise VerificationError(msg)
+        return VerificationResult(is_valid=False, message=msg)
 
+    # Validate signature format
     if not signature.startswith("z"):
-        raise VerificationError("Invalid signature format - must start with 'z'")
+        msg = "Invalid signature format - must start with 'z'"
+        if raise_on_error:
+            raise VerificationError(msg)
+        return VerificationResult(is_valid=False, message=msg)
 
+    # Parse and validate public key
     try:
         raw_key = base58.b58decode(declarer[1:])  # Remove 'z' prefix
         if not raw_key.startswith(PREFIX_PUBLIC_KEY):
             raise ValueError("Invalid public key prefix")
         public_key = Ed25519PublicKey.from_public_bytes(raw_key[2:])  # Remove ED01 prefix
-    except (ValueError, IndexError):
-        raise VerificationError("Invalid declarer format")
+    except (ValueError, IndexError) as e:
+        msg = f"Invalid declarer format: {str(e)}"
+        if raise_on_error:
+            raise VerificationError(msg)
+        return VerificationResult(is_valid=False, message=msg)
 
     # Create copy without signature fields
     doc_without_sig = deepcopy(obj)
     del doc_without_sig["signature"]
     del doc_without_sig["declarer"]
 
+    # Verify signature
     try:
         verification_payload = sha256(jcs.canonicalize(doc_without_sig)).digest()
-        return verify_raw(verification_payload, signature, public_key)
+        return verify_raw(verification_payload, signature, public_key, raise_on_error)
     except Exception as e:
-        raise VerificationError(f"Verification failed: {str(e)}")
+        msg = f"Verification failed: {str(e)}"
+        if raise_on_error:
+            raise VerificationError(msg)
+        return VerificationResult(is_valid=False, message=msg)
 
 
 def verify_vc(doc, public_key):
