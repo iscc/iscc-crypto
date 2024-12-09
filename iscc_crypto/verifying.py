@@ -6,13 +6,25 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
 from iscc_crypto.keys import PREFIX_PUBLIC_KEY
 import jcs
+from dataclasses import dataclass
+
 
 __all__ = [
     "verify_vc",
     "verify_json",
     "verify_raw",
     "VerificationError",
+    "VerificationResult",
 ]
+
+
+@dataclass(frozen=True)
+class VerificationResult:
+    """Container for verification results"""
+
+    is_valid: bool
+    message: str | None = None
+    document: dict | None = None
 
 
 class VerificationError(Exception):
@@ -21,8 +33,8 @@ class VerificationError(Exception):
     pass
 
 
-def verify_raw(payload, signature, public_key):
-    # type: (bytes, str, Ed25519PublicKey) -> bool
+def verify_raw(payload, signature, public_key, raise_on_error=True):
+    # type: (bytes, str, Ed25519PublicKey, bool) -> VerificationResult
     """
     Verify an EdDSA signature over raw bytes. The signature must be encoded according to
     [RFC8032] with base-58-btc header and alphabet conformant with eddsa-jcs-2022.
@@ -30,18 +42,29 @@ def verify_raw(payload, signature, public_key):
     :param payload: Original signed bytes
     :param signature: Multibase encoded signature (z-base58-btc)
     :param public_key: Base58 encoded public key
-    :return: True if signature is valid, False otherwise
+    :param raise_on_error: Raise VerificationError on failure instead of returning result
+    :return: VerificationResult with status and optional error message
+    :raises VerificationError: If signature verification fails and raise_on_error=True
     """
     try:
+        if not signature.startswith("z"):
+            msg = "Invalid signature format - must start with 'z'"
+            if raise_on_error:
+                raise VerificationError(msg)
+            return VerificationResult(is_valid=False, message=msg)
+
         raw_signature = base58.b58decode(signature[1:])
         public_key.verify(raw_signature, payload)
-        return True
-    except (ValueError, InvalidSignature):
-        return False
+        return VerificationResult(is_valid=True)
+    except (ValueError, InvalidSignature) as e:
+        msg = f"Signature verification failed: {str(e)}"
+        if raise_on_error:
+            raise VerificationError(msg)
+        return VerificationResult(is_valid=False, message=msg)
 
 
 def verify_json(obj):
-    # type: (dict) -> dict
+    # type: (dict) -> bool
     """
     Verify an EdDSA signature on a JSON object using JCS canonicalization.
 
@@ -51,7 +74,7 @@ def verify_json(obj):
     3. Verifies the signature using the public key from declarer field
 
     :param obj: JSON object with signature to verify
-    :return: Document without signature fields
+    :return: True if signature is valid
     :raises VerificationError: If signature verification fails
     """
     try:
@@ -78,9 +101,7 @@ def verify_json(obj):
 
     try:
         verification_payload = sha256(jcs.canonicalize(doc_without_sig)).digest()
-        if not verify_raw(verification_payload, signature, public_key):
-            raise VerificationError("Invalid signature")
-        return doc_without_sig
+        return verify_raw(verification_payload, signature, public_key)
     except Exception as e:
         raise VerificationError(f"Verification failed: {str(e)}")
 

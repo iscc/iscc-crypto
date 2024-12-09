@@ -13,7 +13,7 @@ jcs = "*"
 loguru = "*"
 blake3 = "*"
 base58 = "*"
-python-dotenv = "^1.0.1"
+python-dotenv = "*"
 
 
 [tool.poetry.group.test.dependencies]
