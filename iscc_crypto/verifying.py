@@ -124,7 +124,7 @@ def verify_vc(doc, raise_on_error=True):
     Verify a Data Integrity Proof on a JSON document using EdDSA and JCS canonicalization.
 
     Note:
-        This function only support offline verification for ISCC Notary credentials.
+        This function only supports offline verification for ISCC Notary credentials.
         It does NOT support generic verification of Verifiable Credentials.
 
     Verifies proofs that follow the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
