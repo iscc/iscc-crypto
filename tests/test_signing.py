@@ -26,6 +26,10 @@ TEST_PROOF_OPTIONS = {
     "created": "2023-02-24T23:36:38Z",
     "verificationMethod": "did:key:z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2#z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
     "proofPurpose": "assertionMethod",
+    "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://www.w3.org/ns/credentials/examples/v2",
+    ],
 }
 
 EXPECTED_SIGNED_CREDENTIAL = {
@@ -46,16 +50,20 @@ EXPECTED_SIGNED_CREDENTIAL = {
         "created": "2023-02-24T23:36:38Z",
         "verificationMethod": "did:key:z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2#z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2",
         "proofPurpose": "assertionMethod",
-        "proofValue": "zboydVv31kj6jP37GMBZwYyjbvrqr9MWeY9NCEfYUwLcKwkdqAcB44dqEcqaMi8mfdvT2Vbnvdrv6XRaYzgpuPWn",
+        "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://www.w3.org/ns/credentials/examples/v2",
+        ],
+        "proofValue": "z2HnFSSPPBzR36zdDgK8PbEHeXbR56YF24jwMpt3R1eHXQzJDMWS93FCzpvJpwTWd3GAVFuUfjoJdcnTMuVor51aX",
     },
 }
 
 EXPECTED_SIGNATURE_PAYLOAD = bytes.fromhex(
-    "c46b3487ab7087c4f426b546c449094ff57b8fefa6fd85e83f1b31e24c230da859b7cb6251b8991add1ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
+    "66ab154f5c2890a140cb8388a22a160454f80575f6eae09e5a097cabe539a1db59b7cb6251b8991add1ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
 )
 
 EXPECTED_SIGNATURE = (
-    "zboydVv31kj6jP37GMBZwYyjbvrqr9MWeY9NCEfYUwLcKwkdqAcB44dqEcqaMi8mfdvT2Vbnvdrv6XRaYzgpuPWn"
+    "z2HnFSSPPBzR36zdDgK8PbEHeXbR56YF24jwMpt3R1eHXQzJDMWS93FCzpvJpwTWd3GAVFuUfjoJdcnTMuVor51aX"
 )
 
 TEST_TIME = "2023-02-24T23:36:38Z"
@@ -63,11 +71,7 @@ TEST_TIME = "2023-02-24T23:36:38Z"
 
 def test_sign_raw():
     """Test vectors from https://www.w3.org/TR/vc-di-eddsa/#representation-eddsa-jcs-2022"""
-    payload = bytes.fromhex(
-        "c46b3487ab7087c4f426b546c449094ff57b8fefa6fd85e83f1b31e24c230da859b7cb6251b8991add1"
-        "ce0bc83107e3db9dbbab5bd2c28f687db1a03abc92f19"
-    )
-    assert icr.sign_raw(payload, TEST_KEY) == EXPECTED_SIGNATURE
+    assert icr.sign_raw(EXPECTED_SIGNATURE_PAYLOAD, TEST_KEY) == EXPECTED_SIGNATURE
 
 
 def test_sign_vc():
