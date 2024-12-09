@@ -182,6 +182,23 @@ def verify_vc(doc, raise_on_error=True):
         proof_options = deepcopy(proof)
         del proof_options["proofValue"]
 
+        # Validate @context if present
+        if "@context" in proof_options:
+            try:
+                doc_context = doc.get("@context", [])
+                proof_context = proof_options["@context"]
+                # Try list operations - will raise TypeError if not lists
+                proof_len = len(proof_context)
+                doc_prefix = doc_context[:proof_len]
+                if doc_prefix != proof_context:
+                    msg = (
+                        "Document @context must start with all proof @context values in same order"
+                    )
+                    return raise_or_return(msg, raise_on_error)
+            except (TypeError, AttributeError):
+                msg = "Invalid @context format - must be lists"
+                return raise_or_return(msg, raise_on_error)
+
         # Create verification payload and verify signature
         verification_payload = create_signature_payload(doc_without_proof, proof_options)
         return verify_raw(verification_payload, proof_value, public_key, raise_on_error)

@@ -86,6 +86,10 @@ def sign_vc(vc, keypair, options=None):
         }
     )
 
+    # Copy @context if present
+    if "@context" in signed:
+        proof_options["@context"] = signed["@context"]
+
     verification_payload = create_signature_payload(signed, proof_options)
     signature = sign_raw(verification_payload, keypair)
 
