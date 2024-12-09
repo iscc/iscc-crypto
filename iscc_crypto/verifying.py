@@ -40,7 +40,7 @@ def verify_raw(payload, signature, public_key, raise_on_error=True):
 
     :param payload: Original signed bytes
     :param signature: Multibase encoded signature (z-base58-btc)
-    :param public_key: Base58 encoded public key
+    :param public_key: Ed25519PublicKey for verification
     :param raise_on_error: Raise VerificationError on failure instead of returning result
     :return: VerificationResult with status and optional error message
     :raises VerificationError: If signature verification fails and raise_on_error=True
@@ -48,18 +48,23 @@ def verify_raw(payload, signature, public_key, raise_on_error=True):
     try:
         if not signature.startswith("z"):
             msg = "Invalid signature format - must start with 'z'"
-            if raise_on_error:
-                raise VerificationError(msg)
-            return VerificationResult(is_valid=False, message=msg)
+            return raise_or_return(msg, raise_on_error)
 
-        raw_signature = base58.b58decode(signature[1:])
-        public_key.verify(raw_signature, payload)
-        return VerificationResult(is_valid=True)
-    except (ValueError, InvalidSignature) as e:
-        msg = f"Signature verification failed: {str(e)}"
-        if raise_on_error:
-            raise VerificationError(msg)
-        return VerificationResult(is_valid=False, message=msg)
+        try:
+            raw_signature = base58.b58decode(signature[1:])
+        except Exception:
+            msg = "Invalid base58 signature encoding"
+            return raise_or_return(msg, raise_on_error)
+
+        try:
+            public_key.verify(raw_signature, payload)
+            return VerificationResult(is_valid=True, message=None)
+        except InvalidSignature:
+            msg = "Invalid signature for payload"
+            return raise_or_return(msg, raise_on_error)
+    except Exception as e:
+        msg = f"Verification failed: {str(e)}"
+        return raise_or_return(msg, raise_on_error)
 
 
 def verify_json(obj, raise_on_error=True):
@@ -168,3 +173,18 @@ def verify_vc(doc, public_key):
     if verify_raw(verification_payload, proof["proofValue"], public_key):
         return True, doc_without_proof
     return False, None
+
+
+def raise_or_return(msg, raise_on_error):
+    # type: (str, bool) -> VerificationResult
+    """
+    Helper function to handle verification errors consistently.
+
+    :param msg: Error message
+    :param raise_on_error: Whether to raise exception or return result
+    :return: VerificationResult with is_valid=False and error message
+    :raises VerificationError: If raise_on_error is True
+    """
+    if raise_on_error:
+        raise VerificationError(msg)
+    return VerificationResult(is_valid=False, message=msg)

@@ -9,7 +9,7 @@
 - Always add a correct PEP 484 style type comment as the first line after the function definition!
 - Use built-in collection types as generic types for annotations (PEP 585)!
 - Use the | (pipe) operator for writing union types (PEP 604)!
-- Avoid the use of `isinstance` for performance reasons
+- Avoid the use of `isinstance` at all cost!
 - Verification failures should always raise an error with a helpfull message
 
 Example function with type annotations and docstring:
