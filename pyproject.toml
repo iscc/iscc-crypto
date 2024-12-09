@@ -5,13 +5,30 @@ description = "ISCC - Crypto"
 authors = ["Titusz <tp@py7.de>"]
 license = "Apache-2.0"
 readme = "README.md"
+homepage = "https://iscc.codes"
+keywords=["iscc", "cryptography", "EdDSA", "jsc", "verifiable credentials", "content identification"]
+classifiers=[
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Video",
+]
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
 cryptography = "*"
 jcs = "*"
-loguru = "*"
-blake3 = "*"
 base58 = "*"
 python-dotenv = "*"
 
@@ -31,7 +48,7 @@ mdformat-tables = "*"
 mdformat_admon = "*"
 
 [tool.poetry.group.docs.dependencies]
-mkdocs-material = "<=9.5.46"
+mkdocs-material = "*"
 
 [tool.ruff]
 line-length = 100
