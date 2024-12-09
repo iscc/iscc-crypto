@@ -1,3 +1,4 @@
+import base58
 import pytest
 from iscc_crypto.keys import key_generate
 from iscc_crypto.signing import sign_json
@@ -47,6 +48,17 @@ def test_verify_json_invalid_declarer_format():
     """Test verification fails with invalid declarer format."""
     doc = {"signature": "zsig", "declarer": "invalid"}
     with pytest.raises(VerificationError, match="Invalid declarer format"):
+        verify_json(doc)
+
+
+def test_verify_json_invalid_public_key_prefix():
+    """Test verification fails when public key has invalid prefix."""
+    # Create a declarer with invalid prefix (not ED01)
+    invalid_key = "z" + base58.b58encode(bytes.fromhex("0000") + bytes(32)).decode()
+    doc = {"signature": "zsig", "declarer": invalid_key}
+    with pytest.raises(
+        VerificationError, match="Invalid declarer format: Invalid public key prefix"
+    ):
         verify_json(doc)
 
 
