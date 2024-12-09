@@ -1,5 +1,6 @@
 import base58
 import pytest
+from unittest.mock import patch
 from iscc_crypto.keys import key_generate
 from iscc_crypto.signing import sign_json
 from iscc_crypto.verifying import verify_json, VerificationError
@@ -103,3 +104,12 @@ def test_verify_json_empty_object(test_keypair):
     signed = sign_json(doc, test_keypair)
     result = verify_json(signed)
     assert result.is_valid is True
+
+
+def test_verify_json_canonicalization_error(signed_doc):
+    """Test verification fails when canonicalization raises an error."""
+    with patch("jcs.canonicalize") as mock_canonicalize:
+        mock_canonicalize.side_effect = Exception("Canonicalization failed")
+        result = verify_json(signed_doc, raise_on_error=False)
+        assert result.is_valid is False
+        assert result.message == "Verification failed: Canonicalization failed"
