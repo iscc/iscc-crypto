@@ -3,7 +3,7 @@ from copy import deepcopy
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
-from iscc_crypto.keys import PREFIX_PUBLIC_KEY
+from iscc_crypto.keys import PREFIX_PUBLIC_KEY, pubkey_decode
 import jcs
 from dataclasses import dataclass
 
@@ -96,11 +96,8 @@ def verify_json(obj, raise_on_error=True):
 
     # Parse and validate public key
     try:
-        raw_key = base58.b58decode(declarer[1:])  # Remove 'z' prefix
-        if not raw_key.startswith(PREFIX_PUBLIC_KEY):
-            raise ValueError("Invalid public key prefix")
-        public_key = Ed25519PublicKey.from_public_bytes(raw_key[2:])  # Remove ED01 prefix
-    except (ValueError, IndexError) as e:
+        public_key = pubkey_decode(declarer)
+    except ValueError as e:
         msg = f"Invalid declarer format: {str(e)}"
         return raise_or_return(msg, raise_on_error)
 
