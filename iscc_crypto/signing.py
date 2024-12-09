@@ -64,7 +64,11 @@ def sign_vc(vc, keypair, options=None):
     :param keypair: Ed25519 KeyPair for signing
     :param options: Optional custom proof options
     :return: Copy of input object with added 'proof' property containing the signature
+    :raises ValueError: If input already contains a 'proof' field
     """
+    if "proof" in vc:
+        raise ValueError("Input must not contain 'proof' field")
+
     # Make a copy to avoid modifying input
     signed = deepcopy(vc)
 
@@ -78,6 +82,7 @@ def sign_vc(vc, keypair, options=None):
             "type": "DataIntegrityProof",
             "cryptosuite": "eddsa-jcs-2022",
             "verificationMethod": did_key,
+            "proofPurpose": "assertionMethod",
         }
     )
 
