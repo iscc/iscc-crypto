@@ -1,10 +1,5 @@
 # ISCC - Crypto
 
-[![Build](https://github.com/iscc/iscc-crypto/actions/workflows/tests.yml/badge.svg)](https://github.com/iscc/iscc-crypto/actions/workflows/tests.yml)
-[![Version](https://img.shields.io/pypi/v/iscc-crypto.svg)](https://pypi.python.org/pypi/iscc-crypto/)
-[![Coverage](https://codecov.io/gh/iscc/iscc-crypto/branch/main/graph/badge.svg)](https://codecov.io/gh/iscc/iscc-crypto)
-[![Downloads](https://pepy.tech/badge/iscc-crypto)](https://pepy.tech/project/iscc-crypto)
-
 `iscc-crypto` is the cryptographic signing and verification module for the
 [ISCC](https://iscc.codes) (*International Standard Content Code*) Framework.
 
