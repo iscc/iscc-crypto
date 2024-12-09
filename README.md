@@ -1,5 +1,7 @@
 # ISCC - Crypto
 
+[![Tests](https://github.com/iscc/iscc-crypto/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/iscc/iscc-crypto/actions/workflows/test.yml)
+
 `iscc-crypto` is the cryptographic signing and verification module for the
 [ISCC](https://iscc.codes) (*International Standard Content Code*) Framework.
 
