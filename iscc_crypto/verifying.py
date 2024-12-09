@@ -24,7 +24,6 @@ class VerificationResult:
 
     is_valid: bool
     message: str | None = None
-    document: dict | None = None
 
 
 class VerificationError(Exception):
