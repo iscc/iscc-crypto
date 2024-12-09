@@ -118,52 +118,83 @@ def verify_json(obj, raise_on_error=True):
         return raise_or_return(msg, raise_on_error)
 
 
-def verify_vc(doc, public_key):
-    # type: (dict, Ed25519PublicKey) -> tuple[bool, dict|None]
+def verify_vc(doc, raise_on_error=True):
+    # type: (dict, bool) -> VerificationResult
     """
     Verify a Data Integrity Proof on a JSON document using EdDSA and JCS canonicalization.
 
+    Note:
+        This function only support offline verification for ISCC Notary credentials.
+        It does NOT support generic verification of Verifiable Credentials.
+
     Verifies proofs that follow the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
     The verification process:
+
     1. Extracts and validates the proof from the document
-    2. Canonicalizes both document and proof options using JCS
-    3. Creates a composite hash of both canonicalized values
-    4. Verifies the signature against the hash using the provided Ed25519 key
+    2. Extracts the public key from the verificationMethod
+    3. Canonicalizes both document and proof options using JCS
+    4. Creates a composite hash of both canonicalized values
+    5. Verifies the signature against the hash
 
     :param doc: JSON document with proof to verify
-    :param public_key: Ed25519PublicKey for verification
-    :return: Tuple of (verified, document without proof) or (False, None) if invalid
+    :param raise_on_error: Raise VerificationError on failure instead of returning result
+    :return: VerificationResult with status and optional error message
+    :raises VerificationError: If signature verification fails and raise_on_error=True
     """
-    if not isinstance(doc, dict):
-        return False, None
+    try:
+        # Extract required proof
+        try:
+            proof = doc["proof"]
+        except KeyError as e:
+            msg = "Missing required field: proof"
+            return raise_or_return(msg, raise_on_error)
 
-    # Extract and validate proof
-    proof = doc.get("proof")
-    if not isinstance(proof, dict):
-        return False, None
+        # Validate proof properties
+        if proof.get("type") != "DataIntegrityProof":
+            msg = "Invalid proof type - must be DataIntegrityProof"
+            return raise_or_return(msg, raise_on_error)
 
-    # Validate proof properties
-    if (
-        proof.get("type") != "DataIntegrityProof"
-        or proof.get("cryptosuite") != "eddsa-jcs-2022"
-        or not isinstance(proof.get("proofValue"), str)
-        or not proof["proofValue"].startswith("z")
-    ):
-        return False, None
+        if proof.get("cryptosuite") != "eddsa-jcs-2022":
+            msg = "Invalid cryptosuite - must be eddsa-jcs-2022"
+            return raise_or_return(msg, raise_on_error)
 
-    # Create copy without proof for verification
-    doc_without_proof = deepcopy(doc)
-    del doc_without_proof["proof"]
+        proof_value = proof.get("proofValue")
+        if not proof_value or not proof_value.startswith("z"):
+            msg = "Invalid proofValue format - must start with 'z'"
+            return raise_or_return(msg, raise_on_error)
 
-    # Create proof options without proofValue
-    proof_options = deepcopy(proof)
-    del proof_options["proofValue"]
+        # Extract and validate verification method
+        verification_method = proof.get("verificationMethod")
+        if not verification_method or not verification_method.startswith("did:key:"):
+            msg = "Invalid verificationMethod - must start with did:key:"
+            return raise_or_return(msg, raise_on_error)
 
-    # Create verification payload and verify signature
-    verification_payload = create_signature_payload(doc_without_proof, proof_options)
-    if verify_raw(verification_payload, proof["proofValue"], public_key):
-        return True, doc_without_proof
-    return False, None
+        # Extract public key from verification method
+        try:
+            pubkey_part = verification_method.split("#")[0].replace("did:key:", "")
+            raw_key = base58.b58decode(pubkey_part[1:])
+            if not raw_key.startswith(PREFIX_PUBLIC_KEY):
+                raise ValueError("Invalid public key prefix")
+            public_key = Ed25519PublicKey.from_public_bytes(raw_key[2:])
+        except Exception as e:
+            msg = f"Invalid public key in verificationMethod: {str(e)}"
+            return raise_or_return(msg, raise_on_error)
+
+        # Create copy without proof for verification
+        doc_without_proof = deepcopy(doc)
+        del doc_without_proof["proof"]
+
+        # Create proof options without proofValue
+        proof_options = deepcopy(proof)
+        del proof_options["proofValue"]
+
+        # Create verification payload and verify signature
+        verification_payload = create_signature_payload(doc_without_proof, proof_options)
+        return verify_raw(verification_payload, proof_value, public_key, raise_on_error)
+
+    except Exception as e:
+        msg = f"Verification failed: {str(e)}"
+        return raise_or_return(msg, raise_on_error)
 
 
 def raise_or_return(msg, raise_on_error):

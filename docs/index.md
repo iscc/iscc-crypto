@@ -9,7 +9,7 @@
 - JSON canonicalization and signing
 - W3C Verifiable Credentials Data Integrity proofs
 - Multibase and multikey support
-- Zero external dependencies for core cryptographic operations
+- Minimal external dependencies for core cryptographic operations
 
 ## Installation
 
