@@ -75,20 +75,22 @@ def sign_vc(vc, keypair, options=None):
     # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
-    proof_options = (
-        deepcopy(options)
-        if options
-        else {
-            "type": "DataIntegrityProof",
-            "cryptosuite": "eddsa-jcs-2022",
-            "verificationMethod": did_key,
-            "proofPurpose": "assertionMethod",
-        }
-    )
-
-    # Copy @context if present
-    if "@context" in signed:
-        proof_options["@context"] = signed["@context"]
+    if options:
+        proof_options = deepcopy(options)
+    else:
+        # Copy @context if present
+        if "@context" in signed:
+            proof_options = {"@context": signed["@context"]}
+        else:
+            proof_options = {}
+        proof_options.update(
+            {
+                "type": "DataIntegrityProof",
+                "cryptosuite": "eddsa-jcs-2022",
+                "verificationMethod": did_key,
+                "proofPurpose": "assertionMethod",
+            }
+        )
 
     verification_payload = create_signature_payload(signed, proof_options)
     signature = sign_raw(verification_payload, keypair)

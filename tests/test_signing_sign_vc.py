@@ -98,3 +98,13 @@ def test_sign_vc_minimal_options():
     signed = sign_vc(vc, keypair, options)
     assert signed["proof"]["type"] == "MinimalProof"
     assert "proofValue" in signed["proof"]
+
+
+def test_sign_vc_with_context():
+    # type: () -> None
+    """Test that @context from input document is copied to proof options"""
+    keypair = key_generate()
+    vc = {"@context": ["https://www.w3.org/2018/credentials/v1"], "type": "VerifiableCredential"}
+    signed = sign_vc(vc, keypair)
+    assert signed["@context"] == ["https://www.w3.org/2018/credentials/v1"]
+    assert signed["proof"]["@context"] == ["https://www.w3.org/2018/credentials/v1"]
