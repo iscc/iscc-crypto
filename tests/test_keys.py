@@ -187,6 +187,42 @@ def test_encode_secret_key():
     assert len(decoded) == 34
 
 
+def test_pubkey_decode():
+    # type: () -> None
+    """Test decoding of public key from multikey format."""
+    # Create a keypair to get a valid public key
+    kp = key_generate()
+    # Decode the public key
+    pk = pubkey_decode(kp.public_key)
+    # Verify we get back an Ed25519PublicKey
+    assert isinstance(pk, Ed25519PublicKey)
+    # Verify the decoded key matches the original
+    assert pubkey_encode(pk) == kp.public_key
+
+    # Test error cases
+    # Test missing z prefix
+    with pytest.raises(ValueError, match="Invalid key format"):
+        pubkey_decode("invalid")
+
+    # Test invalid base58 encoding
+    with pytest.raises(ValueError, match="Invalid character '!'"):
+        pubkey_decode("z!!!!")
+
+    # Test invalid key prefix
+    invalid_bytes = b"wrong" + b"\x00" * 32
+    invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
+    with pytest.raises(ValueError, match="Invalid public key prefix"):
+        pubkey_decode(invalid_key)
+
+    # Test invalid key length
+    invalid_bytes = PREFIX_PUBLIC_KEY + b"\x00" * 16  # Too short
+    invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
+    with pytest.raises(
+        ValueError, match="Invalid public key bytes: An Ed25519 public key is 32 bytes long"
+    ):
+        pubkey_decode(invalid_key)
+
+
 def test_pubkey_from_doc():
     # type: () -> None
     """Test extracting public key from document with DataIntegrityProof."""

@@ -16,6 +16,7 @@ __all__ = [
     "key_from_env",
     "pubkey_encode",
     "seckey_encode",
+    "pubkey_decode",
     "pubkey_from_proof",
 ]
 
@@ -203,6 +204,27 @@ def seckey_encode(secret_key):
     )
     prefixed_secret = PREFIX_SECRET_KEY + secret_bytes
     return "z" + base58.b58encode(prefixed_secret).decode("utf-8")
+
+
+def pubkey_decode(encoded_key):
+    # type: (str) -> ed25519.Ed25519PublicKey
+    """
+    Decode a public key from multikey format.
+
+    :param encoded_key: z-base58 encoded public key string
+    :return: Ed25519PublicKey object
+    :raises ValueError: If key format is invalid
+    """
+    if not encoded_key.startswith("z"):
+        raise ValueError("Invalid key format - must start with 'z'")
+
+    raw_key = base58.b58decode(encoded_key[1:])
+    if not raw_key.startswith(PREFIX_PUBLIC_KEY):
+        raise ValueError("Invalid public key prefix")
+    try:
+        return ed25519.Ed25519PublicKey.from_public_bytes(raw_key[2:])
+    except ValueError as e:
+        raise ValueError(f"Invalid public key bytes: {e}")
 
 
 def pubkey_from_proof(doc):
