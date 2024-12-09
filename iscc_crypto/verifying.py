@@ -3,7 +3,7 @@ from copy import deepcopy
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
-from iscc_crypto.keys import PREFIX_PUBLIC_KEY, pubkey_decode
+from iscc_crypto.keys import pubkey_decode
 import jcs
 from dataclasses import dataclass
 
@@ -169,11 +169,8 @@ def verify_vc(doc, raise_on_error=True):
         # Extract public key from verification method
         try:
             pubkey_part = verification_method.split("#")[0].replace("did:key:", "")
-            raw_key = base58.b58decode(pubkey_part[1:])
-            if not raw_key.startswith(PREFIX_PUBLIC_KEY):
-                raise ValueError("Invalid public key prefix")
-            public_key = Ed25519PublicKey.from_public_bytes(raw_key[2:])
-        except Exception as e:
+            public_key = pubkey_decode(pubkey_part)
+        except ValueError as e:
             msg = f"Invalid public key in verificationMethod: {str(e)}"
             return raise_or_return(msg, raise_on_error)
 
