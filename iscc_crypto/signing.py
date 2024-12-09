@@ -46,7 +46,7 @@ def sign_json(obj, keypair):
         raise ValueError("Input must not contain 'declarer' or 'signature' fields")
 
     signed = deepcopy(obj)
-    payload = sha256(jcs.canonicalize(signed)).digest()
+    payload = jcs.canonicalize(signed)
     signature = sign_raw(payload, keypair)
 
     signed.update({"declarer": keypair.public_key, "signature": signature})

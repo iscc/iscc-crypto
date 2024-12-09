@@ -1,6 +1,5 @@
 import base58
 from copy import deepcopy
-from hashlib import sha256
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from iscc_crypto.signing import create_signature_payload
@@ -88,16 +87,12 @@ def verify_json(obj, raise_on_error=True):
         declarer = obj["declarer"]
     except KeyError as e:
         msg = f"Missing required field: {e.args[0]}"
-        if raise_on_error:
-            raise VerificationError(msg)
-        return VerificationResult(is_valid=False, message=msg)
+        return raise_or_return(msg, raise_on_error)
 
     # Validate signature format
     if not signature.startswith("z"):
         msg = "Invalid signature format - must start with 'z'"
-        if raise_on_error:
-            raise VerificationError(msg)
-        return VerificationResult(is_valid=False, message=msg)
+        return raise_or_return(msg, raise_on_error)
 
     # Parse and validate public key
     try:
@@ -107,9 +102,7 @@ def verify_json(obj, raise_on_error=True):
         public_key = Ed25519PublicKey.from_public_bytes(raw_key[2:])  # Remove ED01 prefix
     except (ValueError, IndexError) as e:
         msg = f"Invalid declarer format: {str(e)}"
-        if raise_on_error:
-            raise VerificationError(msg)
-        return VerificationResult(is_valid=False, message=msg)
+        return raise_or_return(msg, raise_on_error)
 
     # Create copy without signature fields
     doc_without_sig = deepcopy(obj)
@@ -118,13 +111,11 @@ def verify_json(obj, raise_on_error=True):
 
     # Verify signature
     try:
-        verification_payload = sha256(jcs.canonicalize(doc_without_sig)).digest()
+        verification_payload = jcs.canonicalize(doc_without_sig)
         return verify_raw(verification_payload, signature, public_key, raise_on_error)
     except Exception as e:
         msg = f"Verification failed: {str(e)}"
-        if raise_on_error:
-            raise VerificationError(msg)
-        return VerificationResult(is_valid=False, message=msg)
+        return raise_or_return(msg, raise_on_error)
 
 
 def verify_vc(doc, public_key):
