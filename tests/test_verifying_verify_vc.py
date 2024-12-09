@@ -183,3 +183,126 @@ def test_verify_vc_invalid_public_key_prefix():
     result = verify_vc(doc, raise_on_error=False)
     assert result.is_valid is False
     assert "Invalid public key prefix" in result.message
+
+
+def test_verify_vc_valid_context():
+    # type: () -> None
+    """Test verification succeeds with matching @context values."""
+    keypair = key_generate()
+    doc = {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://w3id.org/security/data-integrity/v1",
+        ],
+        "test": "data",
+    }
+    signed = sign_vc(
+        doc,
+        keypair,
+        {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "@context": ["https://www.w3.org/2018/credentials/v1"],
+            "verificationMethod": f"did:key:{keypair.public_key}",
+        },
+    )
+    result = verify_vc(signed)
+    assert result.is_valid is True
+    assert result.message is None
+
+
+def test_verify_vc_invalid_context():
+    # type: () -> None
+    """Test verification fails with mismatched @context values."""
+    doc = {
+        "@context": ["https://different.org/context"],
+        "test": "data",
+        "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "verificationMethod": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "proofValue": "z123",
+            "@context": ["https://w3id.org/security/data-integrity/v1"],
+        },
+    }
+    with pytest.raises(
+        VerificationError, match="Document @context must start with all proof @context values"
+    ):
+        verify_vc(doc)
+    result = verify_vc(doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert "Document @context must start with all proof @context values" in result.message
+
+
+def test_verify_vc_invalid_context_type():
+    # type: () -> None
+    """Test verification fails with invalid @context type."""
+    doc = {
+        "@context": "not-a-list",
+        "test": "data",
+        "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "verificationMethod": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "proofValue": "z123",
+            "@context": ["https://w3id.org/security/data-integrity/v1"],
+        },
+    }
+    with pytest.raises(
+        VerificationError, match="Document @context must start with all proof @context values"
+    ):
+        verify_vc(doc)
+    result = verify_vc(doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert (
+        "Document @context must start with all proof @context values in same order"
+        in result.message
+    )
+
+
+def test_verify_vc_invalid_proof_context_type():
+    # type: () -> None
+    """Test verification fails when proof @context is not a list."""
+    doc = {
+        "@context": ["https://w3id.org/security/data-integrity/v1"],
+        "test": "data",
+        "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "verificationMethod": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "proofValue": "z123",
+            "@context": "not-a-list",
+        },
+    }
+    with pytest.raises(
+        VerificationError,
+        match="Document @context must start with all proof @context values in same order",
+    ):
+        verify_vc(doc)
+    result = verify_vc(doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert (
+        "Document @context must start with all proof @context values in same order"
+        in result.message
+    )
+
+
+def test_verify_vc_none_context():
+    # type: () -> None
+    """Test verification fails when @context is None."""
+    doc = {
+        "@context": None,  # This will raise AttributeError on slice operation
+        "test": "data",
+        "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "verificationMethod": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            "proofValue": "z123",
+            "@context": ["https://w3id.org/security/data-integrity/v1"],
+        },
+    }
+    with pytest.raises(VerificationError, match="Invalid @context format - must be lists"):
+        verify_vc(doc)
+    result = verify_vc(doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert "Invalid @context format - must be lists" in result.message

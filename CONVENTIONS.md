@@ -10,6 +10,7 @@
 - Use built-in collection types as generic types for annotations (PEP 585)!
 - Use the | (pipe) operator for writing union types (PEP 604)!
 - Avoid the use of `isinstance` at all cost!
+- NEVER USE `isinstance` IN PYTHON CODE!!!
 - Verification failures should always raise an error with a helpfull message
 
 Example function with type annotations and docstring:
