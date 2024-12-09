@@ -58,7 +58,7 @@ Documentation is published at <https://crypto.iscc.codes>
 
 **Requirements**
 
-- [Python 3.9](https://www.python.org/) or higher
+- [Python 3.10](https://www.python.org/) or higher
 - [Poetry](https://python-poetry.org/) for dependency management
 
 **Development Setup**
