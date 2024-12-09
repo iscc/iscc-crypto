@@ -53,20 +53,20 @@ def sign_json(obj, keypair):
     return signed
 
 
-def sign_vc(doc, keypair, options=None):
+def sign_vc(vc, keypair, options=None):
     # type: (dict, KeyPair, dict|None) -> dict
     """
-    Create a Data Integrity Proof for a JSON object using EdDSA and JCS canonicalization.
+    Sign a Verifiable Credential using a Data Integrity Proof with cryptosuite eddsa-jcs-2022.
 
     Creates a proof that follows the W3C VC Data Integrity spec (https://www.w3.org/TR/vc-di-eddsa).
 
-    :param doc: JSON-compatible dictionary to be signed
+    :param vc: JSON/VC-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
     :param options: Optional custom proof options
     :return: Copy of input object with added 'proof' property containing the signature
     """
     # Make a copy to avoid modifying input
-    signed = deepcopy(doc)
+    signed = deepcopy(vc)
 
     # Create DID key URL for verification method
     did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
