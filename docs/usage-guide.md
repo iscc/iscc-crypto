@@ -19,10 +19,22 @@ pip install iscc-crypto
 ```python
 from iscc_crypto import key_generate
 
-# Generate a new Ed25519 keypair
+# Generate a simple Ed25519 keypair without controller info
 keypair = key_generate()
-print(keypair.public_key)  # z-base58 encoded public key
-print(keypair.secret_key)  # z-base58 encoded secret key
+print(keypair.public_key)    # z-base58 encoded public key
+print(keypair.secret_key)    # z-base58 encoded secret key
+
+
+# Generate a new Ed25519 keypair with controller and key ID
+keypair = key_generate(
+    controller="https://example.com",
+    key_id="key-1"
+)
+print(keypair.controller)    # https://example.com
+print(keypair.key_id)       # key-1
+
+# Access the controller document
+print(keypair.controller_document)  # W3C controller document
 ```
 
 ### Load Existing Keys
@@ -30,8 +42,27 @@ print(keypair.secret_key)  # z-base58 encoded secret key
 ```python
 from iscc_crypto import key_from_secret
 
-# Load keypair from existing secret key
-keypair = key_from_secret("z...")  # z-base58 encoded secret key
+# Load keypair without controller info
+keypair = key_from_secret("z...")
+
+# Load keypair from existing secret key with controller info
+keypair = key_from_secret(
+    secret_key="z...",  # z-base58 encoded secret key
+    controller="https://example.com",
+    key_id="key-1"
+)
+```
+
+### Load Keys from Environment
+
+```python
+from iscc_crypto import key_from_env
+
+# Load keypair from environment variables:
+# - ISCC_CRYPTO_SECRET_KEY: Required z-base58 encoded secret key
+# - ISCC_CRYPTO_CONTROLLER: Optional controller URL
+# - ISCC_CRYPTO_KEY_ID: Optional key identifier
+keypair = key_from_env()
 ```
 
 ## Signing Operations
