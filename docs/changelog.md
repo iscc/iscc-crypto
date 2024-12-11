@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.0] - Unreleased
+
+- Added usage guide
+
 ## [0.2.0] - 2024-12-09
 
 - Added https://www.w3.org/TR/vc-di-eddsa/ context injection
