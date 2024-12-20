@@ -8,7 +8,7 @@ def convert_lf():  # pragma: no cover
     """Convert line endings to LF"""
     crlf = b"\r\n"
     lf = b"\n"
-    extensions = {".py", ".toml", ".lock", ".txt", ".yml", ".sh", ".md"}
+    extensions = {".py", ".toml", ".lock", ".txt", ".yml", ".sh", ".md", ".html"}
     n = 0
     for fp in HERE.parent.glob("**/*"):
         if fp.suffix in extensions:

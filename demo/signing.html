@@ -66,6 +66,64 @@
         const keyPair = nacl.sign.keyPair();
         
         // Base58 alphabet
+        // JCS canonicalization function
+        var canonicalize = function(object) {
+            var buffer = '';
+            serialize(object);
+            return buffer;
+
+            function serialize(object) {
+                if (object === null || typeof object !== 'object' ||
+                    object.toJSON != null) {
+                    /////////////////////////////////////////////////
+                    // Primitive type or toJSON - Use ES6/JSON     //
+                    /////////////////////////////////////////////////
+                    buffer += JSON.stringify(object);
+
+                } else if (Array.isArray(object)) {
+                    /////////////////////////////////////////////////
+                    // Array - Maintain element order              //
+                    /////////////////////////////////////////////////
+                    buffer += '[';
+                    let next = false;
+                    object.forEach((element) => {
+                        if (next) {
+                            buffer += ',';
+                        }
+                        next = true;
+                        /////////////////////////////////////////
+                        // Array element - Recursive expansion //
+                        /////////////////////////////////////////
+                        serialize(element);
+                    });
+                    buffer += ']';
+
+                } else {
+                    /////////////////////////////////////////////////
+                    // Object - Sort properties before serializing //
+                    /////////////////////////////////////////////////
+                    buffer += '{';
+                    let next = false;
+                    Object.keys(object).sort().forEach((property) => {
+                        if (next) {
+                            buffer += ',';
+                        }
+                        next = true;
+                        ///////////////////////////////////////////////
+                        // Property names are strings - Use ES6/JSON //
+                        ///////////////////////////////////////////////
+                        buffer += JSON.stringify(property);
+                        buffer += ':';
+                        //////////////////////////////////////////
+                        // Property value - Recursive expansion //
+                        //////////////////////////////////////////
+                        serialize(object[property]);
+                    });
+                    buffer += '}';
+                }
+            }
+        };
+
         const B58_MAP = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
         
         // Constants for key prefixes
@@ -130,10 +188,10 @@
                     throw new Error("Input must not contain 'declarer' or 'signature' fields");
                 }
 
-                // Create canonical form
-                const canonicalJson = JSON.stringify(jsonObj);
+                // Create canonical form using JCS
+                const canonicalJson = canonicalize(jsonObj);
                 
-                // Sign the canonical form
+                // Sign the canonicalized form
                 const signature = nacl.sign.detached(
                     new TextEncoder().encode(canonicalJson),
                     keyPair.secretKey
