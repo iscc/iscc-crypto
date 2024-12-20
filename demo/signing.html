@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISCC Crypto Demo - JSON Signing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .key-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ISCC Crypto Demo - JSON Signing</h1>
+        
+        <div class="key-info">
+            <h3>Generated KeyPair:</h3>
+            <div>Public Key: <span id="publicKey"></span></div>
+            <div>Secret Key: <span id="secretKey"></span></div>
+        </div>
+
+        <div>
+            <h3>Input JSON:</h3>
+            <textarea id="jsonInput" placeholder="Paste your JSON here..."></textarea>
+            <div id="jsonError" class="error">Invalid JSON input</div>
+        </div>
+
+        <button onclick="signJson()">Sign JSON</button>
+
+        <div>
+            <h3>Signed Result:</h3>
+            <textarea id="signedOutput" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Generate keypair on page load
+        const keyPair = nacl.sign.keyPair();
+        
+        // Base58 alphabet
+        const B58_MAP = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        
+        // Constants for key prefixes
+        const PREFIX_PUBLIC_KEY = new Uint8Array([0xED, 0x01]);
+        const PREFIX_SECRET_KEY = new Uint8Array([0x80, 0x26]);
+
+        // Base58 encoding function
+        function to_b58(B) {
+            var d = [], s = "", i, j, c, n;
+            for(i in B) {
+                j = 0, c = B[i];
+                s += c || s.length^i ? "" : 1;
+                while(j in d || c) {
+                    n = d[j];
+                    n = n ? n * 256 + c : c;
+                    c = n / 58 | 0;
+                    d[j] = n % 58;
+                    j++
+                }
+            }
+            while(j--) s += B58_MAP[d[j]];
+            return s;
+        }
+
+        // Concatenate Uint8Arrays
+        function concat(arrays) {
+            let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
+            let result = new Uint8Array(totalLength);
+            let length = 0;
+            arrays.forEach(array => {
+                result.set(array, length);
+                length += array.length;
+            });
+            return result;
+        }
+
+        // Encode keys and signatures in multibase format
+        function encodeKey(keyBytes, prefix) {
+            const prefixedKey = concat([prefix, keyBytes]);
+            return 'z' + to_b58(prefixedKey);
+        }
+        
+        // Extract private key bytes (first 32 bytes) from the 64-byte secret key
+        const privateKeyBytes = keyPair.secretKey.slice(0, 32);
+
+        // Encode and display keys
+        document.getElementById('publicKey').textContent = encodeKey(keyPair.publicKey, PREFIX_PUBLIC_KEY);
+        document.getElementById('secretKey').textContent = encodeKey(privateKeyBytes, PREFIX_SECRET_KEY);
+
+        function signJson() {
+            const jsonInput = document.getElementById('jsonInput');
+            const signedOutput = document.getElementById('signedOutput');
+            const errorDiv = document.getElementById('jsonError');
+            
+            try {
+                // Parse and validate JSON
+                const jsonObj = JSON.parse(jsonInput.value);
+                errorDiv.style.display = 'none';
+
+                // Check for reserved fields
+                if (jsonObj.declarer || jsonObj.signature) {
+                    throw new Error("Input must not contain 'declarer' or 'signature' fields");
+                }
+
+                // Create canonical form
+                const canonicalJson = JSON.stringify(jsonObj);
+                
+                // Sign the canonical form
+                const signature = nacl.sign.detached(
+                    new TextEncoder().encode(canonicalJson),
+                    keyPair.secretKey
+                );
+
+                // Create signed object
+                const signedObj = {
+                    ...jsonObj,
+                    declarer: document.getElementById('publicKey').textContent,
+                    signature: 'z' + to_b58(signature)
+                };
+
+                // Display result
+                signedOutput.value = JSON.stringify(signedObj, null, 2);
+            } catch (e) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = e.message;
+                signedOutput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
