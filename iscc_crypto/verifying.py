@@ -72,9 +72,9 @@ def verify_json(obj, raise_on_error=True):
     Verify an EdDSA signature on a JSON object using JCS canonicalization.
 
     Verifies signatures created by sign_json(). The verification process:
-    1. Extracts signature and declarer fields from the document
+    1. Extracts signature and pubkey fields from the document
     2. Creates a canonicalized hash of the document without signature fields
-    3. Verifies the signature using the public key from declarer field
+    3. Verifies the signature using the public key from pubkey field
 
     :param obj: JSON object with signature to verify
     :param raise_on_error: Raise VerificationError on failure instead of returning result
@@ -84,7 +84,7 @@ def verify_json(obj, raise_on_error=True):
     # Extract required fields
     try:
         signature = obj["signature"]
-        declarer = obj["declarer"]
+        pubkey = obj["pubkey"]
     except KeyError as e:
         msg = f"Missing required field: {e.args[0]}"
         return raise_or_return(msg, raise_on_error)
@@ -96,15 +96,15 @@ def verify_json(obj, raise_on_error=True):
 
     # Parse and validate public key
     try:
-        public_key = pubkey_decode(declarer)
+        public_key = pubkey_decode(pubkey)
     except ValueError as e:
-        msg = f"Invalid declarer format: {str(e)}"
+        msg = f"Invalid pubkey format: {str(e)}"
         return raise_or_return(msg, raise_on_error)
 
     # Create copy without signature fields
     doc_without_sig = deepcopy(obj)
     del doc_without_sig["signature"]
-    del doc_without_sig["declarer"]
+    del doc_without_sig["pubkey"]
 
     # Verify signature
     try:

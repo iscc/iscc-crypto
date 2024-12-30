@@ -99,14 +99,14 @@ def test_sign_json():
     # Test basic signing
     obj = {"message": "hello"}
     signed = icr.sign_json(obj, TEST_KEY)
-    assert "declarer" in signed
+    assert "pubkey" in signed
     assert "signature" in signed
     assert signed["message"] == "hello"
-    assert signed["declarer"] == TEST_KEY.public_key
+    assert signed["pubkey"] == TEST_KEY.public_key
 
     # Test input validation
     with pytest.raises(ValueError):
-        icr.sign_json({"declarer": "exists"}, TEST_KEY)
+        icr.sign_json({"pubkey": "exists"}, TEST_KEY)
     with pytest.raises(ValueError):
         icr.sign_json({"signature": "exists"}, TEST_KEY)
 

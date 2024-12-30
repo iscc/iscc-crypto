@@ -9,9 +9,9 @@ def test_sign_json_basic():
     keypair = key_generate()
     data = {"test": "value"}
     signed = sign_json(data, keypair)
-    assert "declarer" in signed
+    assert "pubkey" in signed
     assert "signature" in signed
-    assert signed["declarer"] == keypair.public_key
+    assert signed["pubkey"] == keypair.public_key
     assert signed["signature"].startswith("z")
     assert signed["test"] == "value"
 
@@ -25,7 +25,7 @@ def test_sign_json_nested():
     assert signed["b"]["c"] == [1, 2, 3]
     assert signed["b"]["d"]["e"] is None
     assert "signature" in signed
-    assert "declarer" in signed
+    assert "pubkey" in signed
 
 
 def test_sign_json_empty():
@@ -36,7 +36,7 @@ def test_sign_json_empty():
     signed = sign_json(data, keypair)
     assert len(signed) == 2
     assert "signature" in signed
-    assert "declarer" in signed
+    assert "pubkey" in signed
 
 
 def test_sign_json_special_chars():
@@ -54,9 +54,9 @@ def test_sign_json_existing_fields():
     # type: () -> None
     """Test that signing fails if reserved fields exist"""
     keypair = key_generate()
-    with pytest.raises(ValueError, match="must not contain 'declarer' or 'signature'"):
-        sign_json({"declarer": "test"}, keypair)
-    with pytest.raises(ValueError, match="must not contain 'declarer' or 'signature'"):
+    with pytest.raises(ValueError, match="must not contain 'pubkey' or 'signature'"):
+        sign_json({"pubkey": "test"}, keypair)
+    with pytest.raises(ValueError, match="must not contain 'pubkey' or 'signature'"):
         sign_json({"signature": "test"}, keypair)
 
 

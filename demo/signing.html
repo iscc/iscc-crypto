@@ -40,7 +40,7 @@
 <body>
     <div class="container">
         <h1>ISCC Crypto Demo - JSON Signing</h1>
-        
+
         <div class="key-info">
             <h3>Generated KeyPair:</h3>
             <div>Public Key: <span id="publicKey"></span></div>
@@ -64,7 +64,7 @@
     <script>
         // Generate keypair on page load
         const keyPair = nacl.sign.keyPair();
-        
+
         // Base58 alphabet
         // JCS canonicalization function
         var canonicalize = function(object) {
@@ -125,7 +125,7 @@
         };
 
         const B58_MAP = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-        
+
         // Constants for key prefixes
         const PREFIX_PUBLIC_KEY = new Uint8Array([0xED, 0x01]);
         const PREFIX_SECRET_KEY = new Uint8Array([0x80, 0x26]);
@@ -165,7 +165,7 @@
             const prefixedKey = concat([prefix, keyBytes]);
             return 'z' + to_b58(prefixedKey);
         }
-        
+
         // Extract private key bytes (first 32 bytes) from the 64-byte secret key
         const privateKeyBytes = keyPair.secretKey.slice(0, 32);
 
@@ -177,20 +177,20 @@
             const jsonInput = document.getElementById('jsonInput');
             const signedOutput = document.getElementById('signedOutput');
             const errorDiv = document.getElementById('jsonError');
-            
+
             try {
                 // Parse and validate JSON
                 const jsonObj = JSON.parse(jsonInput.value);
                 errorDiv.style.display = 'none';
 
                 // Check for reserved fields
-                if (jsonObj.declarer || jsonObj.signature) {
-                    throw new Error("Input must not contain 'declarer' or 'signature' fields");
+                if (jsonObj.pubkey || jsonObj.signature) {
+                    throw new Error("Input must not contain 'pubkey' or 'signature' fields");
                 }
 
                 // Create canonical form using JCS
                 const canonicalJson = canonicalize(jsonObj);
-                
+
                 // Sign the canonicalized form
                 const signature = nacl.sign.detached(
                     new TextEncoder().encode(canonicalJson),
@@ -200,7 +200,7 @@
                 // Create signed object
                 const signedObj = {
                     ...jsonObj,
-                    declarer: document.getElementById('publicKey').textContent,
+                    pubkey: document.getElementById('publicKey').textContent,
                     signature: 'z' + to_b58(signature)
                 };
 

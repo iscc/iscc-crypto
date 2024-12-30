@@ -26,40 +26,38 @@ def test_verify_json_valid_signature(signed_doc):
 
 def test_verify_json_missing_signature():
     """Test verification fails when signature field is missing."""
-    doc = {"declarer": "some_key"}
+    doc = {"pubkey": "some_key"}
     with pytest.raises(VerificationError, match="Missing required field: signature"):
         verify_json(doc)
 
 
-def test_verify_json_missing_declarer():
-    """Test verification fails when declarer field is missing."""
+def test_verify_json_missing_pubkey():
+    """Test verification fails when pubkey field is missing."""
     doc = {"signature": "zsig"}
-    with pytest.raises(VerificationError, match="Missing required field: declarer"):
+    with pytest.raises(VerificationError, match="Missing required field: pubkey"):
         verify_json(doc)
 
 
 def test_verify_json_invalid_signature_format():
     """Test verification fails with invalid signature format."""
-    doc = {"signature": "invalid", "declarer": "zkey"}
+    doc = {"signature": "invalid", "pubkey": "zkey"}
     with pytest.raises(VerificationError, match="Invalid signature format"):
         verify_json(doc)
 
 
-def test_verify_json_invalid_declarer_format():
-    """Test verification fails with invalid declarer format."""
-    doc = {"signature": "zsig", "declarer": "invalid"}
-    with pytest.raises(VerificationError, match="Invalid declarer format"):
+def test_verify_json_invalid_pubkey_format():
+    """Test verification fails with invalid pubkey format."""
+    doc = {"signature": "zsig", "pubkey": "invalid"}
+    with pytest.raises(VerificationError, match="Invalid pubkey format"):
         verify_json(doc)
 
 
 def test_verify_json_invalid_public_key_prefix():
     """Test verification fails when public key has invalid prefix."""
-    # Create a declarer with invalid prefix (not ED01)
+    # Create a pubkey with invalid prefix (not ED01)
     invalid_key = "z" + base58.b58encode(bytes.fromhex("0000") + bytes(32)).decode()
-    doc = {"signature": "zsig", "declarer": invalid_key}
-    with pytest.raises(
-        VerificationError, match="Invalid declarer format: Invalid public key prefix"
-    ):
+    doc = {"signature": "zsig", "pubkey": invalid_key}
+    with pytest.raises(VerificationError, match="Invalid pubkey format: Invalid public key prefix"):
         verify_json(doc)
 
 
@@ -77,7 +75,7 @@ def test_verify_json_wrong_key(test_keypair):
     signed = sign_json(doc, test_keypair)
     # Generate different keypair
     other_keypair = key_generate()
-    signed["declarer"] = other_keypair.public_key
+    signed["pubkey"] = other_keypair.public_key
     result = verify_json(signed, raise_on_error=False)
     assert result.is_valid is False
 
