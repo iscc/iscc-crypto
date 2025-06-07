@@ -141,4 +141,5 @@ cython_debug/
 .aider*
 
 .idea
-.context
+
+CLAUDE.md
