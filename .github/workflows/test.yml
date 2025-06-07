@@ -23,27 +23,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
-        uses: abatilo/actions-poetry@v2
+      - name: Install UV
+        uses: astral-sh/setup-uv@v4
         with:
-          poetry-version: 1.8.5
-
-      - name: Setup Venv
-        run: |
-          poetry config virtualenvs.create true --local
-          poetry config virtualenvs.in-project true --local
+          enable-cache: true
 
       - name: Cache Project Dependencies
         uses: actions/cache@v4
         with:
           path: ./.venv
-          key: venv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+          key: venv-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
 
       - name: Install Dependencies
-        run: poetry install
+        run: uv sync
 
       - name: Security Check
-        run: poetry run bandit -r iscc_crypto -q
+        run: uv run bandit -r iscc_crypto -q
 
       - name: Run Tests
-        run: poetry run pytest --cov=iscc_crypto --cov-report=xml -v tests
+        run: uv run pytest --cov=iscc_crypto --cov-report=xml -v tests
