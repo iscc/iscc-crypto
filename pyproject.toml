@@ -1,13 +1,20 @@
-[tool.poetry]
+[project]
 name = "iscc-crypto"
 version = "0.3.0"
 description = "ISCC-CRYPTO - cryptographic operations for the International Standard Content Code"
-authors = ["Titusz <tp@py7.de>"]
-license = "Apache-2.0"
+authors = [{ name = "Titusz", email = "tp@py7.de" }]
+requires-python = "~=3.10"
 readme = "README.md"
-homepage = "https://iscc.codes"
-keywords=["iscc", "cryptography", "EdDSA", "jsc", "verifiable credentials", "content identification"]
-classifiers=[
+license = "Apache-2.0"
+keywords = [
+    "iscc",
+    "cryptography",
+    "EdDSA",
+    "jsc",
+    "verifiable credentials",
+    "content identification",
+]
+classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
@@ -23,32 +30,43 @@ classifiers=[
     "Topic :: Multimedia :: Sound/Audio",
     "Topic :: Multimedia :: Video",
 ]
+dependencies = [
+    "cryptography",
+    "jcs",
+    "base58",
+    "python-dotenv",
+]
 
+[project.urls]
+Homepage = "https://iscc.codes"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-cryptography = "*"
-jcs = "*"
-base58 = "*"
-python-dotenv = "*"
+[dependency-groups]
+test = [
+    "pytest",
+    "bandit",
+    "coverage",
+    "pytest-cov",
+]
+dev = [
+    "poethepoet",
+    "ruff",
+    "black",
+    "mdformat",
+    "mdformat-tables",
+    "mdformat_admon",
+]
+docs = ["mkdocs-material"]
 
+[tool.uv]
+default-groups = [
+    "test",
+    "dev",
+    "docs",
+]
 
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-bandit = "*"
-coverage = "*"
-pytest-cov = "*"
-
-[tool.poetry.group.dev.dependencies]
-poethepoet = "*"
-ruff = "*"
-black = "*"
-mdformat = "*"
-mdformat-tables = "*"
-mdformat_admon = "*"
-
-[tool.poetry.group.docs.dependencies]
-mkdocs-material = "*"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
@@ -64,14 +82,10 @@ target-version = ['py310']
 
 [tool.poe.tasks]
 build-docs = { script = "tests.build_docs:main", help = "Copy README & CHANGELOG to /docs" }
-format-code = { cmd = "poetry run ruff format", help = "Code style formating with ruff" }
+format-code = { cmd = "uv run ruff format", help = "Code style formating with ruff" }
 format-markdown = { cmd = "mdformat --wrap 100 --end-of-line lf docs README.md CHANGELOG.md ", help = "Markdown formating with mdformat" }
 convert-lf = { script = "tests.lf:convert_lf", help = "Convert line endings to LF"}
-run-tests = { cmd = "poetry run pytest --cov=iscc_crypto --cov-fail-under=100", help = "Run tests with coverage" }
-test-security = { cmd = "poetry run bandit -r iscc_crypto -q", help = "Run security check with bandit" }
+run-tests = { cmd = "uv run pytest --cov=iscc_crypto --cov-fail-under=100", help = "Run tests with coverage" }
+test-security = { cmd = "uv run bandit -r iscc_crypto -q", help = "Run security check with bandit" }
 format = ["format-code", "format-markdown", "convert-lf"]
 all = ["build-docs ", "format-code", "format-markdown", "convert-lf", "test-security", "run-tests"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
