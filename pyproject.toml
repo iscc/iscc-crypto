@@ -82,6 +82,13 @@ preview = true
 enable-unstable-feature = ["string_processing"]
 target-version = ['py310']
 
+[tool.pytest.ini_options]
+addopts = "-p no:warnings"
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
 [tool.poe.tasks]
 build-docs = { script = "tests.build_docs:main", help = "Copy README & CHANGELOG to /docs" }
 format-code = { cmd = "uv run ruff format", help = "Code style formating with ruff" }

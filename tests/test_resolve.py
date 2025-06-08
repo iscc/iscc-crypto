@@ -11,6 +11,8 @@ from iscc_crypto.resolve import (
     resolve_did_web,
     resolve_url,
     validate_cid,
+    build_did_web_url,
+    validate_did_document,
     InvalidURIError,
     NetworkError,
     InvalidDocumentError,
@@ -371,6 +373,183 @@ def test_validate_cid_complex_valid_document():
 
     # Should not raise any exception
     validate_cid(document, canonical_url)
+
+
+# Tests for build_did_web_url() function
+def test_build_did_web_url_simple_domain():
+    """Test build_did_web_url with simple domain."""
+    did_web = "did:web:example.com"
+    expected_url = "https://example.com/.well-known/did.json"
+
+    result = build_did_web_url(did_web)
+    assert result == expected_url
+
+
+def test_build_did_web_url_domain_with_path():
+    """Test build_did_web_url with domain and path."""
+    did_web = "did:web:example.com:path:to:document"
+    expected_url = "https://example.com/path/to/document/did.json"
+
+    result = build_did_web_url(did_web)
+    assert result == expected_url
+
+
+def test_build_did_web_url_domain_with_port():
+    """Test build_did_web_url with domain and port."""
+    did_web = "did:web:example.com%3A8080"
+    expected_url = "https://example.com:8080/.well-known/did.json"
+
+    result = build_did_web_url(did_web)
+    assert result == expected_url
+
+
+def test_build_did_web_url_domain_with_port_and_path():
+    """Test build_did_web_url with domain, port, and path."""
+    did_web = "did:web:example.com%3A8080:user:alice"
+    expected_url = "https://example.com:8080/user/alice/did.json"
+
+    result = build_did_web_url(did_web)
+    assert result == expected_url
+
+
+def test_build_did_web_url_subdomain():
+    """Test build_did_web_url with subdomain."""
+    did_web = "did:web:identity.example.com"
+    expected_url = "https://identity.example.com/.well-known/did.json"
+
+    result = build_did_web_url(did_web)
+    assert result == expected_url
+
+
+def test_build_did_web_url_complex_path():
+    """Test build_did_web_url with complex path structure."""
+    did_web = "did:web:example.com:users:alice:credentials"
+    expected_url = "https://example.com/users/alice/credentials/did.json"
+
+    result = build_did_web_url(did_web)
+    assert result == expected_url
+
+
+def test_build_did_web_url_invalid_prefix():
+    """Test build_did_web_url raises error for invalid prefix."""
+    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+        build_did_web_url("did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK")
+
+
+def test_build_did_web_url_empty_identifier():
+    """Test build_did_web_url raises error for empty method-specific identifier."""
+    with pytest.raises(InvalidURIError, match="Empty method-specific identifier"):
+        build_did_web_url("did:web:")
+
+
+def test_build_did_web_url_no_prefix():
+    """Test build_did_web_url raises error when missing did:web prefix."""
+    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+        build_did_web_url("example.com")
+
+
+def test_build_did_web_url_wrong_scheme():
+    """Test build_did_web_url raises error for wrong DID method."""
+    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+        build_did_web_url("did:example:123456")
+
+
+# Tests for validate_did_document() function
+def test_validate_did_document_valid():
+    """Test validate_did_document with matching document ID."""
+    did_document = {
+        "id": "did:web:example.com",
+        "@context": ["https://www.w3.org/ns/did/v1"],
+        "verificationMethod": [],
+    }
+    expected_did = "did:web:example.com"
+
+    # Should not raise any exception
+    validate_did_document(did_document, expected_did)
+
+
+def test_validate_did_document_mismatched_id():
+    """Test validate_did_document raises error for mismatched document ID."""
+    did_document = {"id": "did:web:different.com", "@context": ["https://www.w3.org/ns/did/v1"]}
+    expected_did = "did:web:example.com"
+
+    with pytest.raises(
+        InvalidDocumentError,
+        match="DID document ID 'did:web:different.com' does not match requested DID 'did:web:example.com'",
+    ):
+        validate_did_document(did_document, expected_did)
+
+
+def test_validate_did_document_missing_id():
+    """Test validate_did_document raises error when document lacks 'id' property."""
+    did_document = {"@context": ["https://www.w3.org/ns/did/v1"], "verificationMethod": []}
+    expected_did = "did:web:example.com"
+
+    with pytest.raises(
+        InvalidDocumentError,
+        match="DID document ID 'None' does not match requested DID 'did:web:example.com'",
+    ):
+        validate_did_document(did_document, expected_did)
+
+
+def test_validate_did_document_none_id():
+    """Test validate_did_document raises error when document ID is None."""
+    did_document = {"id": None, "@context": ["https://www.w3.org/ns/did/v1"]}
+    expected_did = "did:web:example.com"
+
+    with pytest.raises(
+        InvalidDocumentError,
+        match="DID document ID 'None' does not match requested DID 'did:web:example.com'",
+    ):
+        validate_did_document(did_document, expected_did)
+
+
+def test_validate_did_document_empty_id():
+    """Test validate_did_document raises error when document ID is empty string."""
+    did_document = {"id": "", "@context": ["https://www.w3.org/ns/did/v1"]}
+    expected_did = "did:web:example.com"
+
+    with pytest.raises(
+        InvalidDocumentError,
+        match="DID document ID '' does not match requested DID 'did:web:example.com'",
+    ):
+        validate_did_document(did_document, expected_did)
+
+
+def test_validate_did_document_non_string_id():
+    """Test validate_did_document raises error when document ID is not a string."""
+    did_document = {"id": 12345, "@context": ["https://www.w3.org/ns/did/v1"]}
+    expected_did = "did:web:example.com"
+
+    with pytest.raises(
+        InvalidDocumentError,
+        match="DID document ID '12345' does not match requested DID 'did:web:example.com'",
+    ):
+        validate_did_document(did_document, expected_did)
+
+
+def test_validate_did_document_complex_valid():
+    """Test validate_did_document with complex valid DID document."""
+    did_document = {
+        "id": "did:web:example.com:users:alice",
+        "@context": [
+            "https://www.w3.org/ns/did/v1",
+            "https://w3id.org/security/suites/ed25519-2020/v1",
+        ],
+        "verificationMethod": [
+            {
+                "id": "did:web:example.com:users:alice#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "did:web:example.com:users:alice",
+                "publicKeyMultibase": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            }
+        ],
+        "authentication": ["did:web:example.com:users:alice#key1"],
+    }
+    expected_did = "did:web:example.com:users:alice"
+
+    # Should not raise any exception
+    validate_did_document(did_document, expected_did)
 
 
 # Additional resolve_did_web() tests

@@ -27,6 +27,8 @@ __all__ = [
     "resolve",
     "resolve_async",
     "validate_cid",
+    "build_did_web_url",
+    "validate_did_document",
 ]
 
 
@@ -170,6 +172,40 @@ async def resolve_did_web(did_web):
        secure HTTPS connection.
     7. Verify that the ID of the resolved DID document matches the Web DID being resolved.
     """
+    # Build the HTTPS URL from the did:web identifier
+    https_url = build_did_web_url(did_web)
+
+    # Fetch the DID document
+    try:
+        response = await niquests.aget(https_url)
+        response.raise_for_status()
+        did_document = response.json()
+    except niquests.JSONDecodeError as e:
+        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")
+    except niquests.RequestException as e:
+        raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
+    except ValueError as e:
+        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")
+
+    # Validate that the document ID matches the original did:web identifier
+    validate_did_document(did_document, did_web)
+
+    return did_document
+
+
+def build_did_web_url(did_web):
+    # type: (str) -> str
+    """Build HTTPS URL from did:web identifier per W3C spec.
+
+    Args:
+        did_web: The did:web identifier to convert
+
+    Returns:
+        The HTTPS URL for fetching the DID document
+
+    Raises:
+        InvalidURIError: If did_web format is invalid
+    """
     if not did_web.startswith("did:web:"):
         raise InvalidURIError(f"Invalid did:web format: {did_web}")
 
@@ -197,25 +233,24 @@ async def resolve_did_web(did_web):
     # Step 5: Append /did.json
     https_url += "/did.json"
 
-    # Fetch the DID document
-    try:
-        response = await niquests.aget(https_url)
-        response.raise_for_status()
-        did_document = response.json()
-    except niquests.JSONDecodeError as e:
-        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")
-    except niquests.RequestException as e:
-        raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
-    except ValueError as e:
-        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")
+    return https_url
 
-    # Step 6: Verify that the document ID matches the original did:web identifier
-    if did_document.get("id") != did_web:
+
+def validate_did_document(did_document, expected_did):
+    # type: (dict, str) -> None
+    """Validate that DID document ID matches the expected DID.
+
+    Args:
+        did_document: The parsed DID document to validate
+        expected_did: The DID that should match the document's 'id' property
+
+    Raises:
+        InvalidDocumentError: If document ID doesn't match expected DID
+    """
+    if did_document.get("id") != expected_did:
         raise InvalidDocumentError(
-            f"DID document ID '{did_document.get('id')}' does not match requested DID '{did_web}'"
+            f"DID document ID '{did_document.get('id')}' does not match requested DID '{expected_did}'"
         )
-
-    return did_document
 
 
 class ResolutionError(Exception):
