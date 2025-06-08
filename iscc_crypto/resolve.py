@@ -75,7 +75,6 @@ async def resolve_url(url):
             f"Invalid JSON response from {url}: {e}"
         )  # pragma: no cover
 
-    # Validate the retrieved document per CID specification
     validate_cid(document, url)
 
     return document  # pragma: no cover
@@ -85,15 +84,11 @@ def validate_cid(document, canonical_url):
     # type: (dict, str) -> None
     """Validate a Controlled Identifier Document per W3C CID specification.
 
-    Args:
-        document: The parsed JSON document to validate
-        canonical_url: The canonical URL that should match the document's 'id' property
-
-    Raises:
-        InvalidControlledIdentifierDocument: If document structure is invalid
-        InvalidControlledIdentifierDocumentId: If document 'id' property is invalid
+    :param document: The parsed JSON document to validate
+    :param canonical_url: The canonical URL that should match the document's 'id' property
+    :raises InvalidControlledIdentifierDocument: If document structure is invalid
+    :raises InvalidControlledIdentifierDocumentId: If document 'id' property is invalid
     """
-    # CID specification requirement: document MUST contain an 'id' property
     if not isinstance(document, dict) or "id" not in document:
         raise InvalidControlledIdentifierDocument(
             "Retrieved document must contain an 'id' property"
@@ -103,7 +98,6 @@ def validate_cid(document, canonical_url):
     if not isinstance(document_id, str):
         raise InvalidControlledIdentifierDocumentId("Document 'id' property must be a string")
 
-    # CID specification requirement: base identifier MUST match canonical URL
     if document_id != canonical_url:
         raise InvalidControlledIdentifierDocumentId(
             f"Document 'id' '{document_id}' does not match canonical URL '{canonical_url}'"
@@ -112,25 +106,16 @@ def validate_cid(document, canonical_url):
 
 async def resolve_did_key(did_key):
     # type: (str) -> dict
-    """
-    Generate DID document from did:key.
-
-    Extract multikey from did:key URI
-    Generate standard DID document using patterns from keys.py
-    """
+    """Generate DID document from did:key URI."""
     if not did_key.startswith("did:key:"):
         raise InvalidURIError(f"Invalid did:key format: {did_key}")
 
-    # Extract the multikey part (everything after "did:key:")
-    multikey = did_key[8:]  # Remove "did:key:" prefix
-
-    # Validate the multikey by attempting to decode it using existing function
+    multikey = did_key[8:]
     try:
         pubkey_decode(multikey)
     except ValueError as e:
         raise InvalidURIError(f"Invalid multikey: {e}")
 
-    # Generate the standard did:key document structure
     verification_method_id = f"{did_key}#{multikey}"
 
     return {
@@ -156,28 +141,8 @@ async def resolve_did_key(did_key):
 
 async def resolve_did_web(did_web):
     # type: (str) -> dict
-    """
-    Convert did:web to HTTPS URL and fetch DID document per W3C spec.
-    See: https://w3c-ccg.github.io/did-method-web/#read-resolve
-
-    2.5.2 Read (Resolve)
-
-    The following steps MUST be executed to resolve the DID document from a Web DID:
-
-    1. Replace ":" with "/" in the method specific identifier to obtain the fully qualified domain
-       name and optional path.
-    2. If the domain contains a port percent decode the colon.
-    3. Generate an HTTPS URL to the expected location of the DID document by prepending https://.
-    4. If no path has been specified in the URL, append /.well-known.
-    5. Append /did.json to complete the URL.
-    6. Perform an HTTP GET request to the URL using an agent that can successfully negotiate a
-       secure HTTPS connection.
-    7. Verify that the ID of the resolved DID document matches the Web DID being resolved.
-    """
-    # Build the HTTPS URL from the did:web identifier
+    """Convert did:web to HTTPS URL and fetch DID document per W3C spec."""
     https_url = build_did_web_url(did_web)
-
-    # Fetch the DID document
     try:
         response = await niquests.aget(https_url)
         response.raise_for_status()
@@ -193,9 +158,7 @@ async def resolve_did_web(did_web):
             f"Invalid JSON response from {https_url}: {e}"
         )  # pragma: no cover
 
-    # Validate that the document ID matches the original did:web identifier
     validate_did_doc(did_document, did_web)
-
     return did_document
 
 
@@ -203,42 +166,25 @@ def build_did_web_url(did_web):
     # type: (str) -> str
     """Build HTTPS URL from did:web identifier per W3C spec.
 
-    Args:
-        did_web: The did:web identifier to convert
-
-    Returns:
-        The HTTPS URL for fetching the DID document
-
-    Raises:
-        InvalidURIError: If did_web format is invalid
+    :param did_web: The did:web identifier to convert
+    :return: The HTTPS URL for fetching the DID document
+    :raises InvalidURIError: If did_web format is invalid
     """
     if not did_web.startswith("did:web:"):
         raise InvalidURIError(f"Invalid did:web format: {did_web}")
 
-    # Extract method-specific identifier (everything after "did:web:")
-    method_specific_id = did_web[8:]  # Remove "did:web:" prefix
-
+    method_specific_id = did_web[8:]
     if not method_specific_id:
         raise InvalidURIError("Empty method-specific identifier in did:web")
 
-    # Step 1: Replace colons with slashes
     url_path = method_specific_id.replace(":", "/")
-
-    # Step 2: Percent-decode port numbers (%3A -> :)
-    # This handles cases like example.com%3A3000 -> example.com:3000
     url_path = urllib.parse.unquote(url_path)
-
-    # Step 3: Prepend https://
     https_url = f"https://{url_path}"
 
-    # Step 4: If no path specified (only domain), append /.well-known
-    # Check if there are any path segments beyond the domain
     if "/" not in url_path or url_path.count("/") == 0:
         https_url += "/.well-known"
 
-    # Step 5: Append /did.json
     https_url += "/did.json"
-
     return https_url
 
 
@@ -246,12 +192,9 @@ def validate_did_doc(did_document, expected_did):
     # type: (dict, str) -> None
     """Validate that DID document ID matches the expected DID.
 
-    Args:
-        did_document: The parsed DID document to validate
-        expected_did: The DID that should match the document's 'id' property
-
-    Raises:
-        InvalidDocumentError: If document ID doesn't match expected DID
+    :param did_document: The parsed DID document to validate
+    :param expected_did: The DID that should match the document's 'id' property
+    :raises InvalidDocumentError: If document ID doesn't match expected DID
     """
     if did_document.get("id") != expected_did:
         raise InvalidDocumentError(
