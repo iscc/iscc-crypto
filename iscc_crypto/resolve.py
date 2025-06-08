@@ -20,6 +20,8 @@ import asyncio
 
 import niquests
 
+from iscc_crypto.keys import pubkey_decode
+
 __all__ = [
     "resolve",
     "resolve_async",
@@ -74,7 +76,41 @@ async def resolve_did_key(did_key):
     Extract multikey from did:key URI
     Generate standard DID document using patterns from keys.py
     """
-    pass
+    if not did_key.startswith("did:key:"):
+        raise InvalidURIError(f"Invalid did:key format: {did_key}")
+
+    # Extract the multikey part (everything after "did:key:")
+    multikey = did_key[8:]  # Remove "did:key:" prefix
+
+    # Validate the multikey by attempting to decode it using existing function
+    try:
+        pubkey_decode(multikey)
+    except ValueError as e:
+        raise InvalidURIError(f"Invalid multikey: {e}")
+
+    # Generate the standard did:key document structure
+    verification_method_id = f"{did_key}#{multikey}"
+
+    return {
+        "@context": [
+            "https://www.w3.org/ns/did/v1",
+            "https://w3id.org/security/suites/ed25519-2020/v1",
+            "https://w3id.org/security/suites/x25519-2020/v1",
+        ],
+        "id": did_key,
+        "verificationMethod": [
+            {
+                "id": verification_method_id,
+                "type": "Multikey",
+                "controller": did_key,
+                "publicKeyMultibase": multikey,
+            }
+        ],
+        "authentication": [verification_method_id],
+        "assertionMethod": [verification_method_id],
+        "capabilityDelegation": [verification_method_id],
+        "capabilityInvocation": [verification_method_id],
+    }
 
 
 async def resolve_did_web(did_web):
