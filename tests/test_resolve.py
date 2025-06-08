@@ -12,7 +12,7 @@ from iscc_crypto.resolve import (
     resolve_url,
     validate_cid,
     build_did_web_url,
-    validate_did_document,
+    validate_did_doc,
     InvalidURIError,
     NetworkError,
     InvalidDocumentError,
@@ -465,7 +465,7 @@ def test_validate_did_document_valid():
     expected_did = "did:web:example.com"
 
     # Should not raise any exception
-    validate_did_document(did_document, expected_did)
+    validate_did_doc(did_document, expected_did)
 
 
 def test_validate_did_document_mismatched_id():
@@ -477,7 +477,7 @@ def test_validate_did_document_mismatched_id():
         InvalidDocumentError,
         match="DID document ID 'did:web:different.com' does not match requested DID 'did:web:example.com'",
     ):
-        validate_did_document(did_document, expected_did)
+        validate_did_doc(did_document, expected_did)
 
 
 def test_validate_did_document_missing_id():
@@ -489,7 +489,7 @@ def test_validate_did_document_missing_id():
         InvalidDocumentError,
         match="DID document ID 'None' does not match requested DID 'did:web:example.com'",
     ):
-        validate_did_document(did_document, expected_did)
+        validate_did_doc(did_document, expected_did)
 
 
 def test_validate_did_document_none_id():
@@ -501,7 +501,7 @@ def test_validate_did_document_none_id():
         InvalidDocumentError,
         match="DID document ID 'None' does not match requested DID 'did:web:example.com'",
     ):
-        validate_did_document(did_document, expected_did)
+        validate_did_doc(did_document, expected_did)
 
 
 def test_validate_did_document_empty_id():
@@ -513,7 +513,7 @@ def test_validate_did_document_empty_id():
         InvalidDocumentError,
         match="DID document ID '' does not match requested DID 'did:web:example.com'",
     ):
-        validate_did_document(did_document, expected_did)
+        validate_did_doc(did_document, expected_did)
 
 
 def test_validate_did_document_non_string_id():
@@ -525,7 +525,7 @@ def test_validate_did_document_non_string_id():
         InvalidDocumentError,
         match="DID document ID '12345' does not match requested DID 'did:web:example.com'",
     ):
-        validate_did_document(did_document, expected_did)
+        validate_did_doc(did_document, expected_did)
 
 
 def test_validate_did_document_complex_valid():
@@ -549,7 +549,7 @@ def test_validate_did_document_complex_valid():
     expected_did = "did:web:example.com:users:alice"
 
     # Should not raise any exception
-    validate_did_document(did_document, expected_did)
+    validate_did_doc(did_document, expected_did)
 
 
 # Additional resolve_did_web() tests

@@ -28,7 +28,7 @@ __all__ = [
     "resolve_async",
     "validate_cid",
     "build_did_web_url",
-    "validate_did_document",
+    "validate_did_doc",
 ]
 
 
@@ -194,7 +194,7 @@ async def resolve_did_web(did_web):
         )  # pragma: no cover
 
     # Validate that the document ID matches the original did:web identifier
-    validate_did_document(did_document, did_web)
+    validate_did_doc(did_document, did_web)
 
     return did_document
 
@@ -242,7 +242,7 @@ def build_did_web_url(did_web):
     return https_url
 
 
-def validate_did_document(did_document, expected_did):
+def validate_did_doc(did_document, expected_did):
     # type: (dict, str) -> None
     """Validate that DID document ID matches the expected DID.
 
