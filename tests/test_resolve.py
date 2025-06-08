@@ -11,7 +11,10 @@ async def test_resolve_did_key_valid(did_key, did_key_doc):
     result = await resolve_did_key(did_key)
 
     # Check basic structure
-    assert result["@context"] == did_key_doc["@context"]
+    assert result["@context"] == [
+        "https://www.w3.org/ns/did/v1",
+        "https://w3id.org/security/suites/ed25519-2020/v1",
+    ]
     assert result["id"] == did_key
 
     # Check verificationMethod
@@ -28,6 +31,8 @@ async def test_resolve_did_key_valid(did_key, did_key_doc):
     assert result["assertionMethod"] == [expected_ref]
     assert result["capabilityDelegation"] == [expected_ref]
     assert result["capabilityInvocation"] == [expected_ref]
+
+    assert result == did_key_doc
 
 
 @pytest.mark.asyncio

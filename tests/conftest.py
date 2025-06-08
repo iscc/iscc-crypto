@@ -2,6 +2,18 @@ import pytest
 
 
 @pytest.fixture
+def seckey_multibase():
+    """Test Vector EDDSA-JCS-2022 private key"""
+    return "z3u2en7t5LR2WtQH5PfFqMqwVHBeXouLzo6haApm8XHqvjxq"
+
+
+@pytest.fixture
+def pubkey_multibase():
+    """Test Vector EDDSA-JCS-2022 public key"""
+    return "z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2"
+
+
+@pytest.fixture
 def did_key():
     """Test Vector DID-KEY"""
     return "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
@@ -14,7 +26,6 @@ def did_key_doc():
         "@context": [
             "https://www.w3.org/ns/did/v1",
             "https://w3id.org/security/suites/ed25519-2020/v1",
-            "https://w3id.org/security/suites/x25519-2020/v1",
         ],
         "id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
         "verificationMethod": [
@@ -36,13 +47,5 @@ def did_key_doc():
         ],
         "capabilityInvocation": [
             "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK#z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"
-        ],
-        "keyAgreement": [
-            {
-                "id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK#z6LSj72tK8brWgZja8NLRwPigth2T9QRiG1uH9oKZuKjdh9p",
-                "type": "Multikey",
-                "controller": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
-                "publicKeyMultibase": "z6LSj72tK8brWgZja8NLRwPigth2T9QRiG1uH9oKZuKjdh9p",
-            }
         ],
     }

@@ -143,11 +143,9 @@ def test_from_secret_invalid():
         key_from_secret(invalid_key)
 
 
-def test_spec_vector():
+def test_spec_vector(seckey_multibase, pubkey_multibase):
     """Test against test vectors https://www.w3.org/TR/vc-di-eddsa/#representation-eddsa-jcs-2022"""
-    secure_key = "z3u2en7t5LR2WtQH5PfFqMqwVHBeXouLzo6haApm8XHqvjxq"
-    expected_public_key = "z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2"
-    assert key_from_secret(secure_key).public_key == expected_public_key
+    assert key_from_secret(seckey_multibase).public_key == pubkey_multibase
 
 
 def test_pk_obj():
