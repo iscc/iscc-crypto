@@ -46,8 +46,8 @@ signed_vc = ic.sign_vc(vc, keypair)
 print(f"Signed VC: {signed_vc}")
 
 # Verify W3C Data Integrity Proof
-verified, doc = ic.verify_vc(signed_vc, keypair.pk_obj)
-print(f"VC Verified: {verified}")
+result = ic.verify_vc(signed_vc)
+print(f"VC Verified: {result.is_valid}")
 ```
 
 ## Documentation
@@ -86,7 +86,7 @@ poetry run pytest
 Pull requests are welcome. For significant changes, please open an issue first to discuss your
 plans. Please make sure to update tests as appropriate.
 
-You may also want join our developer chat on Telegram at <https://t.me/iscc_dev>.
+You may also want to join our developer chat on Telegram at <https://t.me/iscc_dev>.
 
 ## License
 
