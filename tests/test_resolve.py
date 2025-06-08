@@ -10,6 +10,7 @@ from iscc_crypto.resolve import (
     resolve_did_key,
     resolve_did_web,
     resolve_url,
+    validate_cid,
     InvalidURIError,
     NetworkError,
     InvalidDocumentError,
@@ -234,6 +235,142 @@ async def test_resolve_url_mismatched_id():
     # Would need a mock server for this test in practice
     # For now, we'll test this scenario in integration tests
     pass  # Skip implementation as it requires mocking
+
+
+# Tests for validate_cid() function
+def test_validate_cid_valid_document():
+    """Test validate_cid with valid CID document."""
+    document = {"id": "https://example.com/doc.json", "name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    # Should not raise any exception
+    validate_cid(document, canonical_url)
+
+
+def test_validate_cid_missing_id_property():
+    """Test validate_cid raises error when document lacks 'id' property."""
+    document = {"name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocument,
+        match="Retrieved document must contain an 'id' property",
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_non_dict_document():
+    """Test validate_cid raises error when document is not a dict."""
+    document = "not a dict"
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocument,
+        match="Retrieved document must contain an 'id' property",
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_list_document():
+    """Test validate_cid raises error when document is a list."""
+    document = [{"id": "https://example.com/doc.json"}]
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocument,
+        match="Retrieved document must contain an 'id' property",
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_none_document():
+    """Test validate_cid raises error when document is None."""
+    document = None
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocument,
+        match="Retrieved document must contain an 'id' property",
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_non_string_id():
+    """Test validate_cid raises error when 'id' property is not a string."""
+    document = {"id": 12345, "name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_none_id():
+    """Test validate_cid raises error when 'id' property is None."""
+    document = {"id": None, "name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_list_id():
+    """Test validate_cid raises error when 'id' property is a list."""
+    document = {"id": ["https://example.com/doc.json"], "name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_mismatched_id():
+    """Test validate_cid raises error when document ID doesn't match canonical URL."""
+    document = {"id": "https://different.com/doc.json", "name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocumentId,
+        match="Document 'id' 'https://different.com/doc.json' does not match canonical URL 'https://example.com/doc.json'",
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_empty_id():
+    """Test validate_cid raises error when document ID is empty string."""
+    document = {"id": "", "name": "Test Document"}
+    canonical_url = "https://example.com/doc.json"
+
+    with pytest.raises(
+        InvalidControlledIdentifierDocumentId,
+        match="Document 'id' '' does not match canonical URL 'https://example.com/doc.json'",
+    ):
+        validate_cid(document, canonical_url)
+
+
+def test_validate_cid_complex_valid_document():
+    """Test validate_cid with complex valid document structure."""
+    document = {
+        "id": "https://example.com/complex-doc.json",
+        "@context": ["https://www.w3.org/ns/did/v1"],
+        "verificationMethod": [
+            {
+                "id": "https://example.com/complex-doc.json#key1",
+                "type": "Ed25519VerificationKey2020",
+                "controller": "https://example.com/complex-doc.json",
+                "publicKeyMultibase": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            }
+        ],
+        "authentication": ["https://example.com/complex-doc.json#key1"],
+    }
+    canonical_url = "https://example.com/complex-doc.json"
+
+    # Should not raise any exception
+    validate_cid(document, canonical_url)
 
 
 # Additional resolve_did_web() tests

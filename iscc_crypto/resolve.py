@@ -26,6 +26,7 @@ from iscc_crypto.keys import pubkey_decode
 __all__ = [
     "resolve",
     "resolve_async",
+    "validate_cid",
 ]
 
 
@@ -70,6 +71,24 @@ async def resolve_url(url):
     except ValueError as e:
         raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")
 
+    # Validate the retrieved document per CID specification
+    validate_cid(document, url)
+
+    return document
+
+
+def validate_cid(document, canonical_url):
+    # type: (dict, str) -> None
+    """Validate a Controlled Identifier Document per W3C CID specification.
+
+    Args:
+        document: The parsed JSON document to validate
+        canonical_url: The canonical URL that should match the document's 'id' property
+
+    Raises:
+        InvalidControlledIdentifierDocument: If document structure is invalid
+        InvalidControlledIdentifierDocumentId: If document 'id' property is invalid
+    """
     # CID specification requirement: document MUST contain an 'id' property
     if not isinstance(document, dict) or "id" not in document:
         raise InvalidControlledIdentifierDocument(
@@ -81,12 +100,10 @@ async def resolve_url(url):
         raise InvalidControlledIdentifierDocumentId("Document 'id' property must be a string")
 
     # CID specification requirement: base identifier MUST match canonical URL
-    if document_id != url:
+    if document_id != canonical_url:
         raise InvalidControlledIdentifierDocumentId(
-            f"Document 'id' '{document_id}' does not match canonical URL '{url}'"
+            f"Document 'id' '{document_id}' does not match canonical URL '{canonical_url}'"
         )
-
-    return document
 
 
 async def resolve_did_key(did_key):
