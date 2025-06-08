@@ -11,7 +11,7 @@
 - Use the | (pipe) operator for writing union types (PEP 604)!
 - Avoid the use of `isinstance` at all cost!
 - NEVER USE `isinstance` IN PYTHON CODE!!!
-- Verification failures should always raise an error with a helpfull message
+- Verification failures should always raise an error with a helpful message
 
 Example function with type annotations and docstring:
 
