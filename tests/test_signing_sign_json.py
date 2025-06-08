@@ -74,3 +74,23 @@ def test_sign_json_deterministic():
     sig1 = sign_json(data, keypair)["signature"]
     sig2 = sign_json(data, keypair)["signature"]
     assert sig1 == sig2
+
+
+def test_sign_json_with_controller():
+    # type: () -> None
+    """Test signing with keypair that has a controller"""
+    from iscc_crypto.keys import KeyPair
+
+    keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=keypair.public_key,
+        secret_key=keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id=keypair.key_id,
+    )
+    data = {"test": "value"}
+    signed = sign_json(data, keypair_with_controller)
+    assert "signature" in signed
+    assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
+    assert signed["signature"]["pubkey"] == keypair.public_key
+    assert signed["signature"]["proof"].startswith("z")
