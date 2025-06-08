@@ -2,7 +2,16 @@
 
 import pytest
 
-from iscc_crypto.resolve import resolve_did_key, InvalidURIError
+from iscc_crypto.resolve import (
+    resolve,
+    resolve_async,
+    resolve_did_key,
+    resolve_did_web,
+    resolve_url,
+    InvalidURIError,
+    NetworkError,
+    InvalidDocumentError,
+)
 
 
 @pytest.mark.asyncio
@@ -71,3 +80,8 @@ async def test_resolve_did_key_invalid_key_prefix():
         await resolve_did_key(
             "did:key:z2J9gaYxrKVpdoG9A4gRnmpnRCcxU6agDtFVVBVdn1JedouoZN7SzcyREXXzWVUmw5Cz"
         )
+
+
+@pytest.mark.asyncio
+async def test_resolve_did_web_live(did_web, did_web_doc):
+    assert await resolve_did_web(did_web) == did_web_doc

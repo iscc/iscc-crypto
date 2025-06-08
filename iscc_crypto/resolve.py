@@ -17,6 +17,7 @@ Reference:
 """
 
 import asyncio
+import urllib.parse
 
 import niquests
 
@@ -114,8 +115,68 @@ async def resolve_did_key(did_key):
 
 async def resolve_did_web(did_web):
     # type: (str) -> dict
-    """# Convert did:web to HTTPS URL per W3C spec"""
-    pass
+    """
+    Convert did:web to HTTPS URL and fetch DID document per W3C spec.
+    See: https://w3c-ccg.github.io/did-method-web/#read-resolve
+
+    2.5.2 Read (Resolve)
+
+    The following steps MUST be executed to resolve the DID document from a Web DID:
+
+    1. Replace ":" with "/" in the method specific identifier to obtain the fully qualified domain
+       name and optional path.
+    2. If the domain contains a port percent decode the colon.
+    3. Generate an HTTPS URL to the expected location of the DID document by prepending https://.
+    4. If no path has been specified in the URL, append /.well-known.
+    5. Append /did.json to complete the URL.
+    6. Perform an HTTP GET request to the URL using an agent that can successfully negotiate a
+       secure HTTPS connection.
+    7. Verify that the ID of the resolved DID document matches the Web DID being resolved.
+    """
+    if not did_web.startswith("did:web:"):
+        raise InvalidURIError(f"Invalid did:web format: {did_web}")
+
+    # Extract method-specific identifier (everything after "did:web:")
+    method_specific_id = did_web[8:]  # Remove "did:web:" prefix
+
+    if not method_specific_id:
+        raise InvalidURIError("Empty method-specific identifier in did:web")
+
+    # Step 1: Replace colons with slashes
+    url_path = method_specific_id.replace(":", "/")
+
+    # Step 2: Percent-decode port numbers (%3A -> :)
+    # This handles cases like example.com%3A3000 -> example.com:3000
+    url_path = urllib.parse.unquote(url_path)
+
+    # Step 3: Prepend https://
+    https_url = f"https://{url_path}"
+
+    # Step 4: If no path specified (only domain), append /.well-known
+    # Check if there are any path segments beyond the domain
+    if "/" not in url_path or url_path.count("/") == 0:
+        https_url += "/.well-known"
+
+    # Step 5: Append /did.json
+    https_url += "/did.json"
+
+    # Fetch the DID document
+    try:
+        response = await niquests.aget(https_url)
+        response.raise_for_status()
+        did_document = response.json()
+    except niquests.RequestException as e:
+        raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
+    except ValueError as e:
+        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")
+
+    # Step 6: Verify that the document ID matches the original did:web identifier
+    if did_document.get("id") != did_web:
+        raise InvalidDocumentError(
+            f"DID document ID '{did_document.get('id')}' does not match requested DID '{did_web}'"
+        )
+
+    return did_document
 
 
 class ResolutionError(Exception):
