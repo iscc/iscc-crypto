@@ -35,21 +35,29 @@ def sign_json(obj, keypair):
     """
     Sign any JSON serializable object using EdDSA and JCS canonicalization.
 
-    Creates a copy of the input object, adds the public key as 'pubkey',
-    and appends an EdDSA signature as 'signature' property.
+    Creates a copy of the input object, adds a `signature` property containing a JSON object with
+    `pubkey` and `proof` as required properties, and an optional `controller` property if the
+    `Keypair` has a `controller` set. The proof property will contain an EdDSA signature over
+    the entire JSON object.
 
     :param obj: JSON-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
-    :return: Copy of input object with added 'pubkey' and 'signature' properties
+    :return: Copy of the input object with added 'signature' property
     """
-    if "pubkey" in obj or "signature" in obj:
-        raise ValueError("Input must not contain 'pubkey' or 'signature' fields")
+    if "signature" in obj:
+        raise ValueError("Input must not contain a 'signature' field")
 
     signed = deepcopy(obj)
+    signed["signature"] = {}
+
+    if keypair.controller:
+        signed["signature"]["controller"] = keypair.controller
+    signed["signature"]["pubkey"] = keypair.public_key
+
     payload = jcs.canonicalize(signed)
     signature = sign_raw(payload, keypair)
 
-    signed.update({"pubkey": keypair.public_key, "signature": signature})
+    signed["signature"]["proof"] = signature
     return signed
 
 

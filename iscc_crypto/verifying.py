@@ -83,8 +83,8 @@ def verify_json(obj, raise_on_error=True):
     """
     # Extract required fields
     try:
-        signature = obj["signature"]
-        pubkey = obj["pubkey"]
+        signature = obj["signature"]["proof"]
+        pubkey = obj["signature"]["pubkey"]
     except KeyError as e:
         msg = f"Missing required field: {e.args[0]}"
         return raise_or_return(msg, raise_on_error)
@@ -101,10 +101,9 @@ def verify_json(obj, raise_on_error=True):
         msg = f"Invalid pubkey format: {str(e)}"
         return raise_or_return(msg, raise_on_error)
 
-    # Create copy without signature fields
+    # Create a copy without the proof property
     doc_without_sig = deepcopy(obj)
-    del doc_without_sig["signature"]
-    del doc_without_sig["pubkey"]
+    del doc_without_sig["signature"]["proof"]
 
     # Verify signature
     try:
