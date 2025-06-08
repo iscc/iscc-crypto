@@ -58,17 +58,35 @@ async def resolve_async(uri):
 
 async def resolve_url(url):
     # type: (str) -> dict
-    """Resolve Controlled Identifier HTTP(S) URLs."""
+    """Resolve Controlled Identifier HTTP(S) URLs per W3C CID specification."""
     try:
         response = await niquests.aget(url)
         response.raise_for_status()
-        return response.json()
+        document = response.json()
     except niquests.JSONDecodeError as e:
-        raise InvalidDocumentError(f"Invalid JSON response from {url}: {e}")
+        raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")
     except niquests.RequestException as e:
         raise NetworkError(f"Failed to fetch {url}: {e}")
     except ValueError as e:
-        raise InvalidDocumentError(f"Invalid JSON response from {url}: {e}")
+        raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")
+
+    # CID specification requirement: document MUST contain an 'id' property
+    if not isinstance(document, dict) or "id" not in document:
+        raise InvalidControlledIdentifierDocument(
+            "Retrieved document must contain an 'id' property"
+        )
+
+    document_id = document["id"]
+    if not isinstance(document_id, str):
+        raise InvalidControlledIdentifierDocumentId("Document 'id' property must be a string")
+
+    # CID specification requirement: base identifier MUST match canonical URL
+    if document_id != url:
+        raise InvalidControlledIdentifierDocumentId(
+            f"Document 'id' '{document_id}' does not match canonical URL '{url}'"
+        )
+
+    return document
 
 
 async def resolve_did_key(did_key):
@@ -197,3 +215,11 @@ class InvalidURIError(ResolutionError):
 
 class InvalidDocumentError(ResolutionError):
     """Invalid DID/CID document."""
+
+
+class InvalidControlledIdentifierDocument(ResolutionError):
+    """Invalid Controlled Identifier Document (CID specification)."""
+
+
+class InvalidControlledIdentifierDocumentId(ResolutionError):
+    """Invalid Controlled Identifier Document ID (CID specification)."""
