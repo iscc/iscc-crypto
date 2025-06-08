@@ -58,11 +58,13 @@ async def resolve_async(uri):
 
 async def resolve_url(url):
     # type: (str) -> dict
-    """Resolve HTTP(S) URLs."""
+    """Resolve Controlled Identifier HTTP(S) URLs."""
     try:
         response = await niquests.aget(url)
         response.raise_for_status()
         return response.json()
+    except niquests.JSONDecodeError as e:
+        raise InvalidDocumentError(f"Invalid JSON response from {url}: {e}")
     except niquests.RequestException as e:
         raise NetworkError(f"Failed to fetch {url}: {e}")
     except ValueError as e:
@@ -165,6 +167,8 @@ async def resolve_did_web(did_web):
         response = await niquests.aget(https_url)
         response.raise_for_status()
         did_document = response.json()
+    except niquests.JSONDecodeError as e:
+        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")
     except niquests.RequestException as e:
         raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
     except ValueError as e:

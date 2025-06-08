@@ -192,10 +192,9 @@ async def test_resolve_url_http_error():
 
 @pytest.mark.asyncio
 async def test_resolve_url_invalid_json():
-    """Test resolve_url raises NetworkError for invalid JSON (caught as niquests exception)."""
+    """Test resolve_url raises InvalidDocumentError for invalid JSON."""
     # httpbin.org/html returns HTML, not JSON
-    # niquests.JSONDecodeError inherits from niquests.RequestException, so it gets caught by NetworkError
-    with pytest.raises(NetworkError, match="Failed to fetch"):
+    with pytest.raises(InvalidDocumentError, match="Invalid JSON response"):
         await resolve_url("https://httpbin.org/html")
 
 
@@ -227,14 +226,6 @@ async def test_resolve_did_web_network_error():
     """Test resolve_did_web raises NetworkError for network failures."""
     with pytest.raises(NetworkError, match="Failed to fetch DID document"):
         await resolve_did_web("did:web:nonexistent-domain-12345.com")
-
-
-@pytest.mark.asyncio
-async def test_resolve_did_web_invalid_json():
-    """Test resolve_did_web raises InvalidDocumentError for invalid JSON."""
-    # This domain returns HTML instead of JSON
-    with pytest.raises(InvalidDocumentError, match="Invalid JSON response"):
-        await resolve_did_web("did:web:httpbin.org:html")
 
 
 @pytest.mark.asyncio
