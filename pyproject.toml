@@ -35,6 +35,7 @@ dependencies = [
     "jcs",
     "base58",
     "python-dotenv",
+    "niquests>=3.14.1",
 ]
 
 [project.urls]
@@ -46,6 +47,7 @@ test = [
     "bandit",
     "coverage",
     "pytest-cov",
+    "pytest-asyncio",
 ]
 dev = [
     "poethepoet",
