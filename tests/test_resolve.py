@@ -645,8 +645,11 @@ async def test_resolve_did_web_network_error_with_mock():
 @pytest.mark.asyncio
 async def test_niquests_http_client_json_decode_error():
     """Test NiquestsHttpClient propagates JSON decode errors."""
-    from iscc_crypto.resolve import NiquestsHttpClient
+    from iscc_crypto.resolve import NiquestsHttpClient, _cache
     import niquests
+
+    # Clear cache to avoid interference from other tests
+    _cache.clear()
 
     client = NiquestsHttpClient()
 
@@ -660,7 +663,7 @@ async def test_niquests_http_client_json_decode_error():
         def json(self):
             raise niquests.JSONDecodeError("Invalid JSON", "", 0)
 
-    async def mock_aget(url):
+    async def mock_aget(url, **kwargs):
         return MockResponse()
 
     niquests.aget = mock_aget
@@ -675,22 +678,25 @@ async def test_niquests_http_client_json_decode_error():
 @pytest.mark.asyncio
 async def test_niquests_http_client_request_error():
     """Test NiquestsHttpClient propagates request errors."""
-    from iscc_crypto.resolve import NiquestsHttpClient
+    from iscc_crypto.resolve import NiquestsHttpClient, _cache
     import niquests
+
+    # Clear cache to avoid interference from other tests
+    _cache.clear()
 
     client = NiquestsHttpClient()
 
     # Mock niquests to raise RequestException
     original_aget = niquests.aget
 
-    async def mock_aget(url):
+    async def mock_aget(url, **kwargs):
         raise niquests.RequestException("Network error")
 
     niquests.aget = mock_aget
 
     try:
         with pytest.raises(niquests.RequestException):
-            await client.get_json("https://example.com/test.json")
+            await client.get_json("https://example.com/different-url.json")
     finally:
         niquests.aget = original_aget
 
