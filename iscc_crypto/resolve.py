@@ -41,7 +41,11 @@ class HttpClient(Protocol):
 
     async def get_json(self, url):
         # type: (str) -> dict
-        """Fetch JSON from URL."""
+        """Fetch JSON from URL.
+
+        :param url: The URL to fetch JSON from
+        :return: Parsed JSON response as dictionary
+        """
         ...
 
 
@@ -50,7 +54,12 @@ class NiquestsHttpClient:
 
     async def get_json(self, url):
         # type: (str) -> dict
-        """Fetch JSON from URL using niquests."""
+        """Fetch JSON from URL using niquests.
+
+        :param url: The URL to fetch JSON from
+        :return: Parsed JSON response as dictionary
+        :raises ResolutionError: If JSON parsing fails
+        """
         try:
             response = await niquests.aget(url)
             response.raise_for_status()
@@ -64,7 +73,13 @@ class NiquestsHttpClient:
 
 def resolve(uri, http_client=None):
     # type: (str, HttpClient | None) -> dict
-    """Resolve a URI to a CID or DID document (wraps async function)."""
+    """Resolve a URI to a CID or DID document (wraps async function).
+
+    :param uri: The URI to resolve (HTTP(S), did:key, or did:web)
+    :param http_client: Optional HTTP client for dependency injection
+    :return: Resolved CID or DID document
+    :raises ResolutionError: If called from async context or resolution fails
+    """
     try:
         return asyncio.run(resolve_async(uri, http_client))
     except RuntimeError as e:
@@ -75,7 +90,13 @@ def resolve(uri, http_client=None):
 
 async def resolve_async(uri, http_client=None):
     # type: (str, HttpClient | None) -> dict
-    """Resolve a URI to a CID or DID document asynchronously."""
+    """Resolve a URI to a CID or DID document asynchronously.
+
+    :param uri: The URI to resolve (HTTP(S), did:key, or did:web)
+    :param http_client: Optional HTTP client for dependency injection
+    :return: Resolved CID or DID document
+    :raises ResolutionError: If URI scheme is unsupported
+    """
     if http_client is None:
         http_client = NiquestsHttpClient()
 
@@ -92,7 +113,14 @@ async def resolve_async(uri, http_client=None):
 
 async def resolve_url(url, http_client):
     # type: (str, HttpClient) -> dict
-    """Resolve Controlled Identifier HTTP(S) URLs per W3C CID specification."""
+    """Resolve Controlled Identifier HTTP(S) URLs per W3C CID specification.
+
+    :param url: The HTTP(S) URL to resolve
+    :param http_client: HTTP client for fetching the document
+    :return: Validated CID document
+    :raises NetworkError: If fetching fails
+    :raises ResolutionError: If document validation fails
+    """
     try:
         document = await http_client.get_json(url)
     except Exception as e:
@@ -122,7 +150,13 @@ def validate_cid(document, canonical_url):
 
 async def resolve_did_key(did_key):
     # type: (str) -> dict
-    """Generate DID document from did:key URI."""
+    """Generate DID document from did:key URI.
+
+    :param did_key: The did:key URI to resolve
+    :return: Generated DID document with verification methods
+    :raises ResolutionError: If did:key format is invalid
+    :raises ValueError: If multikey decoding fails
+    """
     if not did_key.startswith("did:key:"):
         raise ResolutionError(f"Invalid did:key format: {did_key}")
 
@@ -154,7 +188,14 @@ async def resolve_did_key(did_key):
 
 async def resolve_did_web(did_web, http_client):
     # type: (str, HttpClient) -> dict
-    """Convert did:web to HTTPS URL and fetch DID document per W3C spec."""
+    """Convert did:web to HTTPS URL and fetch DID document per W3C spec.
+
+    :param did_web: The did:web identifier to resolve
+    :param http_client: HTTP client for fetching the document
+    :return: Validated DID document
+    :raises NetworkError: If fetching fails
+    :raises ResolutionError: If document validation fails
+    """
     https_url = build_did_web_url(did_web)
     try:
         did_document = await http_client.get_json(https_url)
