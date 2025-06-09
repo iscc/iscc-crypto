@@ -2,9 +2,9 @@
 
 ## Overview
 
-ISCC-CRYPTO is a Python package for cryptographic operations related to ISCC (International Standard
-Content Code). It provides Ed25519 key management and signing capabilities for verifiable
-credentials following W3C standards.
+ISCC-CRYPTO is a Python package for cryptographic operations related to ISCC (International Standard Content
+Code). It provides Ed25519 key management and signing capabilities for verifiable credentials following W3C
+standards.
 
 ## Installation
 
@@ -106,8 +106,8 @@ All verification functions return a `VerificationResult` object with two fields:
 - `is_valid`: Boolean indicating if verification succeeded
 - `message`: Optional error message if verification failed
 
-By default, verification functions raise a `VerificationError` on failure. Pass
-`raise_on_error=False` to get a `VerificationResult` instead.
+By default, verification functions raise a `VerificationError` on failure. Pass `raise_on_error=False` to get a
+`VerificationResult` instead.
 
 ### Verify Raw Signatures
 

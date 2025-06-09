@@ -39,9 +39,7 @@ def resolve(uri):
         return asyncio.run(resolve_async(uri))
     except RuntimeError as e:
         if "cannot be called from a running event loop" in str(e):
-            raise ResolutionError(
-                "resolve() cannot be called from async context. Use resolve_async() instead."
-            )
+            raise ResolutionError("resolve() cannot be called from async context. Use resolve_async() instead.")
         raise  # pragma: no cover
 
 
@@ -71,9 +69,7 @@ async def resolve_url(url):
     except niquests.RequestException as e:
         raise NetworkError(f"Failed to fetch {url}: {e}")
     except ValueError as e:  # pragma: no cover
-        raise InvalidControlledIdentifierDocument(
-            f"Invalid JSON response from {url}: {e}"
-        )  # pragma: no cover
+        raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")  # pragma: no cover
 
     validate_cid(document, url)
 
@@ -90,9 +86,7 @@ def validate_cid(document, canonical_url):
     :raises InvalidControlledIdentifierDocumentId: If document 'id' property is invalid
     """
     if not isinstance(document, dict) or "id" not in document:
-        raise InvalidControlledIdentifierDocument(
-            "Retrieved document must contain an 'id' property"
-        )
+        raise InvalidControlledIdentifierDocument("Retrieved document must contain an 'id' property")
 
     document_id = document["id"]
     if not isinstance(document_id, str):
@@ -148,15 +142,11 @@ async def resolve_did_web(did_web):
         response.raise_for_status()
         did_document = response.json()
     except niquests.JSONDecodeError as e:  # pragma: no cover
-        raise InvalidDocumentError(
-            f"Invalid JSON response from {https_url}: {e}"
-        )  # pragma: no cover
+        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")  # pragma: no cover
     except niquests.RequestException as e:
         raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
     except ValueError as e:  # pragma: no cover
-        raise InvalidDocumentError(
-            f"Invalid JSON response from {https_url}: {e}"
-        )  # pragma: no cover
+        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")  # pragma: no cover
 
     validate_did_doc(did_document, did_web)
     return did_document

@@ -158,9 +158,7 @@ def test_pk_obj():
     # Verify the public key object matches the encoded public key
     public_bytes = base58.b58decode(kp.public_key[1:])[2:]  # Skip multikey prefix
     assert (
-        kp.pk_obj.public_bytes(
-            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-        )
+        kp.pk_obj.public_bytes(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)
         == public_bytes
     )
 
@@ -215,9 +213,7 @@ def test_pubkey_decode():
     # Test invalid key length
     invalid_bytes = PREFIX_PUBLIC_KEY + b"\x00" * 16  # Too short
     invalid_key = "z" + base58.b58encode(invalid_bytes).decode()
-    with pytest.raises(
-        ValueError, match="Invalid public key bytes: An Ed25519 public key is 32 bytes long"
-    ):
+    with pytest.raises(ValueError, match="Invalid public key bytes: An Ed25519 public key is 32 bytes long"):
         pubkey_decode(invalid_key)
 
 
@@ -259,9 +255,7 @@ def test_pubkey_from_doc_invalid():
 
     # Test invalid verificationMethod format
     with pytest.raises(ValueError, match="must start with did:key:"):
-        pubkey_from_proof(
-            {"proof": {"type": "DataIntegrityProof", "verificationMethod": "wrong:format"}}
-        )
+        pubkey_from_proof({"proof": {"type": "DataIntegrityProof", "verificationMethod": "wrong:format"}})
 
     # Test invalid public key format
     with pytest.raises(ValueError, match="must start with z"):

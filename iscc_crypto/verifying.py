@@ -190,9 +190,7 @@ def verify_vc(doc, raise_on_error=True):
                 proof_len = len(proof_context)
                 doc_prefix = doc_context[:proof_len]
                 if doc_prefix != proof_context:
-                    msg = (
-                        "Document @context must start with all proof @context values in same order"
-                    )
+                    msg = "Document @context must start with all proof @context values in same order"
                     return raise_or_return(msg, raise_on_error)
             except (TypeError, AttributeError):
                 msg = "Invalid @context format - must be lists"

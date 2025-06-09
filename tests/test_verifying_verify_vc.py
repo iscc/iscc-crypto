@@ -225,9 +225,7 @@ def test_verify_vc_invalid_context():
             "@context": ["https://w3id.org/security/data-integrity/v1"],
         },
     }
-    with pytest.raises(
-        VerificationError, match="Document @context must start with all proof @context values"
-    ):
+    with pytest.raises(VerificationError, match="Document @context must start with all proof @context values"):
         verify_vc(doc)
     result = verify_vc(doc, raise_on_error=False)
     assert result.is_valid is False
@@ -248,16 +246,11 @@ def test_verify_vc_invalid_context_type():
             "@context": ["https://w3id.org/security/data-integrity/v1"],
         },
     }
-    with pytest.raises(
-        VerificationError, match="Document @context must start with all proof @context values"
-    ):
+    with pytest.raises(VerificationError, match="Document @context must start with all proof @context values"):
         verify_vc(doc)
     result = verify_vc(doc, raise_on_error=False)
     assert result.is_valid is False
-    assert (
-        "Document @context must start with all proof @context values in same order"
-        in result.message
-    )
+    assert "Document @context must start with all proof @context values in same order" in result.message
 
 
 def test_verify_vc_invalid_proof_context_type():
@@ -281,10 +274,7 @@ def test_verify_vc_invalid_proof_context_type():
         verify_vc(doc)
     result = verify_vc(doc, raise_on_error=False)
     assert result.is_valid is False
-    assert (
-        "Document @context must start with all proof @context values in same order"
-        in result.message
-    )
+    assert "Document @context must start with all proof @context values in same order" in result.message
 
 
 def test_verify_vc_none_context():

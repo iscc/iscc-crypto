@@ -85,9 +85,7 @@ async def test_resolve_did_key_invalid_key_prefix():
     """Test resolving did:key with wrong key prefix raises InvalidURIError."""
     # Valid base58 but wrong key type prefix (this would be for a different key type)
     with pytest.raises(InvalidURIError, match="Invalid multikey"):
-        await resolve_did_key(
-            "did:key:z2J9gaYxrKVpdoG9A4gRnmpnRCcxU6agDtFVVBVdn1JedouoZN7SzcyREXXzWVUmw5Cz"
-        )
+        await resolve_did_key("did:key:z2J9gaYxrKVpdoG9A4gRnmpnRCcxU6agDtFVVBVdn1JedouoZN7SzcyREXXzWVUmw5Cz")
 
 
 @pytest.mark.asyncio
@@ -112,9 +110,7 @@ def test_resolve_from_running_event_loop():
     """Test resolve() raises appropriate error when called from async context."""
 
     async def test_inner():
-        with pytest.raises(
-            ResolutionError, match="resolve\\(\\) cannot be called from async context"
-        ):
+        with pytest.raises(ResolutionError, match="resolve\\(\\) cannot be called from async context"):
             resolve("did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK")
 
     # Run in event loop to simulate async context
@@ -302,9 +298,7 @@ def test_validate_cid_non_string_id():
     document = {"id": 12345, "name": "Test Document"}
     canonical_url = "https://example.com/doc.json"
 
-    with pytest.raises(
-        InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"
-    ):
+    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
         validate_cid(document, canonical_url)
 
 
@@ -313,9 +307,7 @@ def test_validate_cid_none_id():
     document = {"id": None, "name": "Test Document"}
     canonical_url = "https://example.com/doc.json"
 
-    with pytest.raises(
-        InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"
-    ):
+    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
         validate_cid(document, canonical_url)
 
 
@@ -324,9 +316,7 @@ def test_validate_cid_list_id():
     document = {"id": ["https://example.com/doc.json"], "name": "Test Document"}
     canonical_url = "https://example.com/doc.json"
 
-    with pytest.raises(
-        InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"
-    ):
+    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
         validate_cid(document, canonical_url)
 
 

@@ -2,8 +2,8 @@
 
 [![Tests](https://github.com/iscc/iscc-crypto/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/iscc/iscc-crypto/actions/workflows/test.yml)
 
-`iscc-crypto` is the cryptographic signing and verification module for the
-[ISCC](https://iscc.codes) (*International Standard Content Code*) Framework.
+`iscc-crypto` is the cryptographic signing and verification module for the [ISCC](https://iscc.codes)
+(*International Standard Content Code*) Framework.
 
 ## Features
 
@@ -83,8 +83,8 @@ poetry run pytest
 
 ## Contributing
 
-Pull requests are welcome. For significant changes, please open an issue first to discuss your
-plans. Please make sure to update tests as appropriate.
+Pull requests are welcome. For significant changes, please open an issue first to discuss your plans. Please
+make sure to update tests as appropriate.
 
 You may also want to join our developer chat on Telegram at <https://t.me/iscc_dev>.
 
