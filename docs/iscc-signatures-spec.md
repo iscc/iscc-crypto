@@ -56,3 +56,21 @@ This document defines the use of digital signatures to associate ISCC metadata w
     - Metadata Document Signing
     - Signature presentation to the user
     - Signature interperation by the user
+
+
+----------------------------------------------------------------------------------------------------------------
+# INSTRUCTIONS TO CLAUDE WHILE WORKING ON THIS DOKUMENT
+----------------------------------------------------------------------------------------------------------------
+
+When working on this document, make sure you consult and cross-refernce relevant existing starndards using
+deepwiki:
+
+- **ISCC ISO 24138:2024 Specification**: See deepwiki at iscc/iscc-ieps
+- **Verifiable Credentials Data Model v2.0**: See deepwiki at w3c/vc-data-model
+- **Controlled Identifiers v1.0**: See deepwiki at w3c/cid
+- **Decentralized Identifiers (DIDs) v1.0**: See deepwiki at w3c/did
+- **Verifiable Credential Data Integrity 1.0**: See deebwiki at w3c/vc-data-integrity
+- **Data Integrity EdDSA Cryptosuites v1.0**: See deepwiki at w3c/vc-di-eddsa
+- **did:web Method Specifiction**: See deepwiki at w3c-ccg/did-method-web
+- **The did:key Method v0.7**: See deepwiki at w3c-ccg/did-key-spec
+
