@@ -195,30 +195,10 @@ def _verify_identity(signature_obj, identity_doc):
             if keyid != vm_fragment and keyid != vm_id:
                 continue
 
-        # Check if public key matches
+        # Check if public key matches (only support publicKeyMultibase format)
         vm_pubkey = vm.get("publicKeyMultibase")
         if vm_pubkey == pubkey:
             return True
-
-        # Also check publicKeyBase58 format (for Ed25519VerificationKey2018)
-        vm_pubkey_b58 = vm.get("publicKeyBase58")
-        if vm_pubkey_b58:
-            # For Ed25519VerificationKey2018, publicKeyBase58 is just base58 encoded raw key bytes
-            try:
-                import base58
-                from iscc_crypto.keys import PREFIX_PUBLIC_KEY
-
-                # Extract raw bytes from our multikey pubkey
-                our_decoded = base58.b58decode(pubkey[1:])  # Remove 'z' prefix
-                our_raw_bytes = our_decoded[2:]  # Remove PREFIX_PUBLIC_KEY
-
-                # Extract raw bytes from publicKeyBase58
-                vm_raw_bytes = base58.b58decode(vm_pubkey_b58)
-
-                if our_raw_bytes == vm_raw_bytes:
-                    return True
-            except Exception:
-                continue
 
     return False
 
