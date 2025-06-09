@@ -51,18 +51,9 @@ class NiquestsHttpClient:
     async def get_json(self, url):
         # type: (str) -> dict
         """Fetch JSON from URL using niquests."""
-        try:
-            response = await niquests.aget(url)
-            response.raise_for_status()
-            return response.json()
-        except niquests.JSONDecodeError as e:
-            raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")
-        except niquests.RequestException as e:
-            raise NetworkError(f"Failed to fetch {url}: {e}")
-        except ValueError as e:  # pragma: no cover
-            raise InvalidControlledIdentifierDocument(
-                f"Invalid JSON response from {url}: {e}"
-            )  # pragma: no cover
+        response = await niquests.aget(url)
+        response.raise_for_status()
+        return response.json()
 
 
 def resolve(uri, http_client=None):
@@ -90,7 +81,7 @@ async def resolve_async(uri, http_client=None):
     elif uri.startswith("did:web:"):
         return await resolve_did_web(uri, http_client)
     else:
-        raise InvalidURIError(f"Unsupported URI scheme: {uri}")
+        raise ResolutionError(f"Unsupported URI scheme: {uri}")
 
 
 async def resolve_url(url, http_client):
@@ -107,33 +98,27 @@ def validate_cid(document, canonical_url):
 
     :param document: The parsed JSON document to validate
     :param canonical_url: The canonical URL that should match the document's 'id' property
-    :raises InvalidControlledIdentifierDocument: If document structure is invalid
-    :raises InvalidControlledIdentifierDocumentId: If document 'id' property is invalid
+    :raises ResolutionError: If document structure is invalid or ID doesn't match
     """
     if not isinstance(document, dict) or "id" not in document:
-        raise InvalidControlledIdentifierDocument("Retrieved document must contain an 'id' property")
+        raise ResolutionError("Retrieved document must contain an 'id' property")
 
     document_id = document["id"]
     if not isinstance(document_id, str):
-        raise InvalidControlledIdentifierDocumentId("Document 'id' property must be a string")
+        raise ResolutionError("Document 'id' property must be a string")
 
     if document_id != canonical_url:
-        raise InvalidControlledIdentifierDocumentId(
-            f"Document 'id' '{document_id}' does not match canonical URL '{canonical_url}'"
-        )
+        raise ResolutionError(f"Document 'id' '{document_id}' does not match canonical URL '{canonical_url}'")
 
 
 async def resolve_did_key(did_key):
     # type: (str) -> dict
     """Generate DID document from did:key URI."""
     if not did_key.startswith("did:key:"):
-        raise InvalidURIError(f"Invalid did:key format: {did_key}")
+        raise ResolutionError(f"Invalid did:key format: {did_key}")
 
     multikey = did_key[8:]
-    try:
-        pubkey_decode(multikey)
-    except ValueError as e:
-        raise InvalidURIError(f"Invalid multikey: {e}")
+    pubkey_decode(multikey)  # Let ValueError propagate
 
     verification_method_id = f"{did_key}#{multikey}"
 
@@ -162,14 +147,7 @@ async def resolve_did_web(did_web, http_client):
     # type: (str, HttpClient) -> dict
     """Convert did:web to HTTPS URL and fetch DID document per W3C spec."""
     https_url = build_did_web_url(did_web)
-    try:
-        did_document = await http_client.get_json(https_url)
-    except (InvalidControlledIdentifierDocument, NetworkError) as e:
-        # Re-raise with DID-specific error types
-        if isinstance(e, InvalidControlledIdentifierDocument):
-            raise InvalidDocumentError(str(e).replace("Invalid JSON response", "Invalid JSON response"))
-        raise NetworkError(str(e).replace("Failed to fetch", "Failed to fetch DID document from"))
-
+    did_document = await http_client.get_json(https_url)
     validate_did_doc(did_document, did_web)
     return did_document
 
@@ -180,14 +158,14 @@ def build_did_web_url(did_web):
 
     :param did_web: The did:web identifier to convert
     :return: The HTTPS URL for fetching the DID document
-    :raises InvalidURIError: If did_web format is invalid
+    :raises ResolutionError: If did_web format is invalid
     """
     if not did_web.startswith("did:web:"):
-        raise InvalidURIError(f"Invalid did:web format: {did_web}")
+        raise ResolutionError(f"Invalid did:web format: {did_web}")
 
     method_specific_id = did_web[8:]
     if not method_specific_id:
-        raise InvalidURIError("Empty method-specific identifier in did:web")
+        raise ResolutionError("Empty method-specific identifier in did:web")
 
     url_path = method_specific_id.replace(":", "/")
     url_path = urllib.parse.unquote(url_path)
@@ -206,33 +184,17 @@ def validate_did_doc(did_document, expected_did):
 
     :param did_document: The parsed DID document to validate
     :param expected_did: The DID that should match the document's 'id' property
-    :raises InvalidDocumentError: If document ID doesn't match expected DID
+    :raises ResolutionError: If document ID doesn't match expected DID
     """
     if did_document.get("id") != expected_did:
-        raise InvalidDocumentError(
+        raise ResolutionError(
             f"DID document ID '{did_document.get('id')}' does not match requested DID '{expected_did}'"
         )
 
 
 class ResolutionError(Exception):
-    """Base resolution error."""
+    """Base exception for URI resolution failures."""
 
 
 class NetworkError(ResolutionError):
-    """Network-related failure."""
-
-
-class InvalidURIError(ResolutionError):
-    """Malformed URI."""
-
-
-class InvalidDocumentError(ResolutionError):
-    """Invalid DID/CID document."""
-
-
-class InvalidControlledIdentifierDocument(ResolutionError):
-    """Invalid Controlled Identifier Document (CID specification)."""
-
-
-class InvalidControlledIdentifierDocumentId(ResolutionError):
-    """Invalid Controlled Identifier Document ID (CID specification)."""
+    """Network-related failures that might be transient (timeouts, 404s, DNS failures)."""  # pragma: no cover

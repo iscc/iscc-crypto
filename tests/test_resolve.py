@@ -24,10 +24,10 @@ class MockHttpClient:
                     from iscc_crypto.resolve import NetworkError
 
                     raise NetworkError(message)
-                elif error_type == "InvalidControlledIdentifierDocument":
-                    from iscc_crypto.resolve import InvalidControlledIdentifierDocument
+                elif error_type == "ResolutionError":
+                    from iscc_crypto.resolve import ResolutionError
 
-                    raise InvalidControlledIdentifierDocument(message)
+                    raise ResolutionError(message)
             return response
 
         # Default: raise NetworkError for unknown URLs
@@ -45,11 +45,7 @@ from iscc_crypto.resolve import (
     validate_cid,
     build_did_web_url,
     validate_did_doc,
-    InvalidURIError,
     NetworkError,
-    InvalidDocumentError,
-    InvalidControlledIdentifierDocument,
-    InvalidControlledIdentifierDocumentId,
     ResolutionError,
     NiquestsHttpClient,
 )
@@ -87,37 +83,37 @@ async def test_resolve_did_key_valid(did_key, did_key_doc):
 
 @pytest.mark.asyncio
 async def test_resolve_did_key_invalid_prefix():
-    """Test resolving invalid did:key prefix raises InvalidURIError."""
-    with pytest.raises(InvalidURIError, match="Invalid did:key format"):
+    """Test resolving invalid did:key prefix raises ResolutionError."""
+    with pytest.raises(ResolutionError, match="Invalid did:key format"):
         await resolve_did_key("did:web:example.com")
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_key_no_prefix():
-    """Test resolving URI without did:key prefix raises InvalidURIError."""
-    with pytest.raises(InvalidURIError, match="Invalid did:key format"):
+    """Test resolving URI without did:key prefix raises ResolutionError."""
+    with pytest.raises(ResolutionError, match="Invalid did:key format"):
         await resolve_did_key("z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK")
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_key_invalid_multikey_prefix():
-    """Test resolving did:key with invalid multikey prefix raises InvalidURIError."""
-    with pytest.raises(InvalidURIError, match="Invalid multikey"):
+    """Test resolving did:key with invalid multikey prefix raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid key format"):
         await resolve_did_key("did:key:x6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK")
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_key_invalid_base58():
-    """Test resolving did:key with invalid base58 encoding raises InvalidURIError."""
-    with pytest.raises(InvalidURIError, match="Invalid multikey"):
+    """Test resolving did:key with invalid base58 encoding raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid character"):
         await resolve_did_key("did:key:z0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!")
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_key_invalid_key_prefix():
-    """Test resolving did:key with wrong key prefix raises InvalidURIError."""
+    """Test resolving did:key with wrong key prefix raises ValueError."""
     # Valid base58 but wrong key type prefix (this would be for a different key type)
-    with pytest.raises(InvalidURIError, match="Invalid multikey"):
+    with pytest.raises(ValueError, match="Invalid public key prefix"):
         await resolve_did_key("did:key:z2J9gaYxrKVpdoG9A4gRnmpnRCcxU6agDtFVVBVdn1JedouoZN7SzcyREXXzWVUmw5Cz")
 
 
@@ -161,7 +157,7 @@ async def test_resolve_async_http_url():
     # httpbin.org/json returns JSON without 'id' property, should fail CID validation
     url = "https://httpbin.org/json"
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         await resolve_async(url)
@@ -174,7 +170,7 @@ async def test_resolve_async_https_url():
     # httpbin.org/json returns JSON without 'id' property, should fail CID validation
     url = "https://httpbin.org/json"
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         await resolve_async(url)
@@ -197,15 +193,15 @@ async def test_resolve_async_did_web(did_web, did_web_doc):
 
 @pytest.mark.asyncio
 async def test_resolve_async_unsupported_scheme():
-    """Test resolve_async raises InvalidURIError for unsupported schemes."""
-    with pytest.raises(InvalidURIError, match="Unsupported URI scheme"):
+    """Test resolve_async raises ResolutionError for unsupported schemes."""
+    with pytest.raises(ResolutionError, match="Unsupported URI scheme"):
         await resolve_async("ftp://example.com/file")
 
 
 @pytest.mark.asyncio
 async def test_resolve_async_unknown_scheme():
-    """Test resolve_async raises InvalidURIError for unknown schemes."""
-    with pytest.raises(InvalidURIError, match="Unsupported URI scheme"):
+    """Test resolve_async raises ResolutionError for unknown schemes."""
+    with pytest.raises(ResolutionError, match="Unsupported URI scheme"):
         await resolve_async("xyz:test")
 
 
@@ -218,7 +214,7 @@ async def test_resolve_url_valid_json():
     url = "https://httpbin.org/json"
     http_client = NiquestsHttpClient()
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         await resolve_url(url, http_client)
@@ -247,10 +243,10 @@ async def test_resolve_url_http_error():
 @pytest.mark.asyncio
 @pytest.mark.network
 async def test_resolve_url_invalid_json():
-    """Test resolve_url raises InvalidControlledIdentifierDocument for invalid JSON."""
+    """Test resolve_url raises ResolutionError for invalid JSON."""
     # httpbin.org/html returns HTML, not JSON
     http_client = NiquestsHttpClient()
-    with pytest.raises(InvalidControlledIdentifierDocument, match="Invalid JSON response"):
+    with pytest.raises(ResolutionError, match="Invalid JSON response"):
         await resolve_url("https://httpbin.org/html", http_client)
 
 
@@ -262,7 +258,7 @@ async def test_resolve_url_missing_id_property():
     url = "https://httpbin.org/json"
     http_client = NiquestsHttpClient()
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         await resolve_url(url, http_client)
@@ -273,7 +269,7 @@ async def test_resolve_url_non_string_id():
     """Test that resolve_url validates 'id' property is a string."""
     mock_client = MockHttpClient({"https://example.com/doc.json": {"id": 12345, "name": "Test"}})
 
-    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
+    with pytest.raises(ResolutionError, match="Document 'id' property must be a string"):
         await resolve_url("https://example.com/doc.json", mock_client)
 
 
@@ -285,7 +281,7 @@ async def test_resolve_url_mismatched_id():
     )
 
     with pytest.raises(
-        InvalidControlledIdentifierDocumentId,
+        ResolutionError,
         match="Document 'id' 'https://different.com/doc.json' does not match canonical URL 'https://example.com/doc.json'",
     ):
         await resolve_url("https://example.com/doc.json", mock_client)
@@ -307,7 +303,7 @@ def test_validate_cid_missing_id_property():
     canonical_url = "https://example.com/doc.json"
 
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         validate_cid(document, canonical_url)
@@ -319,7 +315,7 @@ def test_validate_cid_non_dict_document():
     canonical_url = "https://example.com/doc.json"
 
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         validate_cid(document, canonical_url)
@@ -331,7 +327,7 @@ def test_validate_cid_list_document():
     canonical_url = "https://example.com/doc.json"
 
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         validate_cid(document, canonical_url)
@@ -343,7 +339,7 @@ def test_validate_cid_none_document():
     canonical_url = "https://example.com/doc.json"
 
     with pytest.raises(
-        InvalidControlledIdentifierDocument,
+        ResolutionError,
         match="Retrieved document must contain an 'id' property",
     ):
         validate_cid(document, canonical_url)
@@ -354,7 +350,7 @@ def test_validate_cid_non_string_id():
     document = {"id": 12345, "name": "Test Document"}
     canonical_url = "https://example.com/doc.json"
 
-    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
+    with pytest.raises(ResolutionError, match="Document 'id' property must be a string"):
         validate_cid(document, canonical_url)
 
 
@@ -363,7 +359,7 @@ def test_validate_cid_none_id():
     document = {"id": None, "name": "Test Document"}
     canonical_url = "https://example.com/doc.json"
 
-    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
+    with pytest.raises(ResolutionError, match="Document 'id' property must be a string"):
         validate_cid(document, canonical_url)
 
 
@@ -372,7 +368,7 @@ def test_validate_cid_list_id():
     document = {"id": ["https://example.com/doc.json"], "name": "Test Document"}
     canonical_url = "https://example.com/doc.json"
 
-    with pytest.raises(InvalidControlledIdentifierDocumentId, match="Document 'id' property must be a string"):
+    with pytest.raises(ResolutionError, match="Document 'id' property must be a string"):
         validate_cid(document, canonical_url)
 
 
@@ -382,7 +378,7 @@ def test_validate_cid_mismatched_id():
     canonical_url = "https://example.com/doc.json"
 
     with pytest.raises(
-        InvalidControlledIdentifierDocumentId,
+        ResolutionError,
         match="Document 'id' 'https://different.com/doc.json' does not match canonical URL 'https://example.com/doc.json'",
     ):
         validate_cid(document, canonical_url)
@@ -394,7 +390,7 @@ def test_validate_cid_empty_id():
     canonical_url = "https://example.com/doc.json"
 
     with pytest.raises(
-        InvalidControlledIdentifierDocumentId,
+        ResolutionError,
         match="Document 'id' '' does not match canonical URL 'https://example.com/doc.json'",
     ):
         validate_cid(document, canonical_url)
@@ -478,25 +474,25 @@ def test_build_did_web_url_complex_path():
 
 def test_build_did_web_url_invalid_prefix():
     """Test build_did_web_url raises error for invalid prefix."""
-    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+    with pytest.raises(ResolutionError, match="Invalid did:web format"):
         build_did_web_url("did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK")
 
 
 def test_build_did_web_url_empty_identifier():
     """Test build_did_web_url raises error for empty method-specific identifier."""
-    with pytest.raises(InvalidURIError, match="Empty method-specific identifier"):
+    with pytest.raises(ResolutionError, match="Empty method-specific identifier"):
         build_did_web_url("did:web:")
 
 
 def test_build_did_web_url_no_prefix():
     """Test build_did_web_url raises error when missing did:web prefix."""
-    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+    with pytest.raises(ResolutionError, match="Invalid did:web format"):
         build_did_web_url("example.com")
 
 
 def test_build_did_web_url_wrong_scheme():
     """Test build_did_web_url raises error for wrong DID method."""
-    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+    with pytest.raises(ResolutionError, match="Invalid did:web format"):
         build_did_web_url("did:example:123456")
 
 
@@ -520,7 +516,7 @@ def test_validate_did_document_mismatched_id():
     expected_did = "did:web:example.com"
 
     with pytest.raises(
-        InvalidDocumentError,
+        ResolutionError,
         match="DID document ID 'did:web:different.com' does not match requested DID 'did:web:example.com'",
     ):
         validate_did_doc(did_document, expected_did)
@@ -532,7 +528,7 @@ def test_validate_did_document_missing_id():
     expected_did = "did:web:example.com"
 
     with pytest.raises(
-        InvalidDocumentError,
+        ResolutionError,
         match="DID document ID 'None' does not match requested DID 'did:web:example.com'",
     ):
         validate_did_doc(did_document, expected_did)
@@ -544,7 +540,7 @@ def test_validate_did_document_none_id():
     expected_did = "did:web:example.com"
 
     with pytest.raises(
-        InvalidDocumentError,
+        ResolutionError,
         match="DID document ID 'None' does not match requested DID 'did:web:example.com'",
     ):
         validate_did_doc(did_document, expected_did)
@@ -556,7 +552,7 @@ def test_validate_did_document_empty_id():
     expected_did = "did:web:example.com"
 
     with pytest.raises(
-        InvalidDocumentError,
+        ResolutionError,
         match="DID document ID '' does not match requested DID 'did:web:example.com'",
     ):
         validate_did_doc(did_document, expected_did)
@@ -568,7 +564,7 @@ def test_validate_did_document_non_string_id():
     expected_did = "did:web:example.com"
 
     with pytest.raises(
-        InvalidDocumentError,
+        ResolutionError,
         match="DID document ID '12345' does not match requested DID 'did:web:example.com'",
     ):
         validate_did_doc(did_document, expected_did)
@@ -602,8 +598,10 @@ def test_validate_did_document_complex_valid():
 @pytest.mark.asyncio
 async def test_resolve_async_uses_default_http_client():
     """Test resolve_async uses NiquestsHttpClient by default."""
-    # Test the default http_client path - this will fail but tests line 83
-    with pytest.raises(NetworkError):
+    # Test the default http_client path - this will fail with niquests ConnectionError
+    import niquests
+
+    with pytest.raises(niquests.exceptions.ConnectionError):
         await resolve_async("https://nonexistent-url-for-testing.com/doc.json")
 
 
@@ -611,7 +609,9 @@ async def test_resolve_async_uses_default_http_client():
 async def test_resolve_async_did_web_with_default_client():
     """Test resolve_async did:web path with default client."""
     # Test line 91 - did:web path in resolve_async with default client
-    with pytest.raises(NetworkError):
+    import niquests
+
+    with pytest.raises(niquests.exceptions.ConnectionError):
         await resolve_async("did:web:nonexistent-domain-12345.com")
 
 
@@ -649,13 +649,13 @@ async def test_resolve_did_web_invalid_json_with_mock():
     mock_client = MockHttpClient(
         {
             "https://example.com/.well-known/did.json": {
-                "error": "InvalidControlledIdentifierDocument",
+                "error": "ResolutionError",
                 "message": "Invalid JSON response from https://example.com/.well-known/did.json: mock error",
             }
         }
     )
 
-    with pytest.raises(InvalidDocumentError, match="Invalid JSON response"):
+    with pytest.raises(ResolutionError, match="Invalid JSON response"):
         await resolve_did_web("did:web:example.com", mock_client)
 
 
@@ -677,7 +677,7 @@ async def test_resolve_did_web_network_error_with_mock():
 
 @pytest.mark.asyncio
 async def test_niquests_http_client_json_decode_error():
-    """Test NiquestsHttpClient handles JSON decode errors."""
+    """Test NiquestsHttpClient propagates JSON decode errors."""
     from iscc_crypto.resolve import NiquestsHttpClient
     import niquests
 
@@ -699,7 +699,7 @@ async def test_niquests_http_client_json_decode_error():
     niquests.aget = mock_aget
 
     try:
-        with pytest.raises(InvalidControlledIdentifierDocument, match="Invalid JSON response"):
+        with pytest.raises(niquests.JSONDecodeError):
             await client.get_json("https://example.com/test.json")
     finally:
         niquests.aget = original_aget
@@ -707,7 +707,7 @@ async def test_niquests_http_client_json_decode_error():
 
 @pytest.mark.asyncio
 async def test_niquests_http_client_request_error():
-    """Test NiquestsHttpClient handles request errors."""
+    """Test NiquestsHttpClient propagates request errors."""
     from iscc_crypto.resolve import NiquestsHttpClient
     import niquests
 
@@ -722,7 +722,7 @@ async def test_niquests_http_client_request_error():
     niquests.aget = mock_aget
 
     try:
-        with pytest.raises(NetworkError, match="Failed to fetch"):
+        with pytest.raises(niquests.RequestException):
             await client.get_json("https://example.com/test.json")
     finally:
         niquests.aget = original_aget
@@ -747,9 +747,9 @@ async def test_http_client_protocol_method():
 # Additional resolve_did_web() tests
 @pytest.mark.asyncio
 async def test_resolve_did_web_invalid_prefix():
-    """Test resolve_did_web with invalid prefix raises InvalidURIError."""
+    """Test resolve_did_web with invalid prefix raises ResolutionError."""
     mock_client = MockHttpClient()
-    with pytest.raises(InvalidURIError, match="Invalid did:web format"):
+    with pytest.raises(ResolutionError, match="Invalid did:web format"):
         await resolve_did_web("did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK", mock_client)
 
 
@@ -757,7 +757,7 @@ async def test_resolve_did_web_invalid_prefix():
 async def test_resolve_did_web_empty_identifier():
     """Test resolve_did_web with empty method-specific identifier."""
     mock_client = MockHttpClient()
-    with pytest.raises(InvalidURIError, match="Empty method-specific identifier"):
+    with pytest.raises(ResolutionError, match="Empty method-specific identifier"):
         await resolve_did_web("did:web:", mock_client)
 
 
@@ -783,7 +783,7 @@ async def test_resolve_did_web_network_error():
 @pytest.mark.asyncio
 @pytest.mark.network
 async def test_resolve_did_web_mismatched_id():
-    """Test resolve_did_web raises InvalidDocumentError for mismatched document ID."""
+    """Test resolve_did_web raises ResolutionError for mismatched document ID."""
     # Create a test case where we know the document will have a different ID
     # We can't easily test this without a real endpoint that returns mismatched ID
     # But we can test the logic by creating a situation where it fails
@@ -797,8 +797,6 @@ async def test_resolve_did_web_mismatched_id():
 def test_resolution_error_inheritance():
     """Test that custom exceptions inherit from ResolutionError."""
     assert issubclass(NetworkError, ResolutionError)
-    assert issubclass(InvalidURIError, ResolutionError)
-    assert issubclass(InvalidDocumentError, ResolutionError)
 
 
 def test_resolution_error_is_exception():
@@ -811,12 +809,6 @@ def test_exception_messages():
     network_err = NetworkError("Network failed")
     assert str(network_err) == "Network failed"
 
-    uri_err = InvalidURIError("Invalid URI")
-    assert str(uri_err) == "Invalid URI"
-
-    doc_err = InvalidDocumentError("Invalid document")
-    assert str(doc_err) == "Invalid document"
-
     res_err = ResolutionError("Resolution failed")
     assert str(res_err) == "Resolution failed"
 
@@ -825,14 +817,14 @@ def test_exception_messages():
 @pytest.mark.asyncio
 async def test_resolve_did_key_empty_multikey():
     """Test resolve_did_key with empty multikey after prefix."""
-    with pytest.raises(InvalidURIError, match="Invalid multikey"):
+    with pytest.raises(ValueError, match="Invalid key format"):
         await resolve_did_key("did:key:")
 
 
 @pytest.mark.asyncio
 async def test_resolve_did_key_short_multikey():
     """Test resolve_did_key with too short multikey."""
-    with pytest.raises(InvalidURIError, match="Invalid multikey"):
+    with pytest.raises(ValueError, match="Invalid public key prefix"):
         await resolve_did_key("did:key:z123")
 
 
@@ -846,8 +838,8 @@ async def test_resolve_url_empty_url():
 
 
 def test_resolve_empty_string():
-    """Test resolve with empty string raises InvalidURIError."""
-    with pytest.raises(InvalidURIError, match="Unsupported URI scheme"):
+    """Test resolve with empty string raises ResolutionError."""
+    with pytest.raises(ResolutionError, match="Unsupported URI scheme"):
         resolve("")
 
 
