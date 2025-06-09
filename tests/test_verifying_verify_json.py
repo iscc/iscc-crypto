@@ -21,6 +21,8 @@ def test_verify_json_valid_signature(signed_doc):
     """Test successful verification of a valid signature."""
     result = verify_json(signed_doc)
     assert result.is_valid is True
+    assert result.signature_valid is True
+    assert result.identity_verified is None
     assert result.message is None
 
 
@@ -34,7 +36,7 @@ def test_verify_json_missing_signature():
 def test_verify_json_missing_pubkey():
     """Test verification fails when pubkey field is missing."""
     doc = {"signature": {"proof": "xyz"}}
-    with pytest.raises(VerificationError, match="Missing required field: pubkey"):
+    with pytest.raises(VerificationError, match="Missing pubkey field"):
         verify_json(doc)
 
 
@@ -66,6 +68,7 @@ def test_verify_json_tampered_content(signed_doc):
     signed_doc["test"] = "tampered"
     result = verify_json(signed_doc, raise_on_error=False)
     assert result.is_valid is False
+    assert result.signature_valid is False
     assert "Invalid signature for payload" in result.message
 
 
@@ -75,9 +78,10 @@ def test_verify_json_wrong_key(test_keypair):
     signed = sign_json(doc, test_keypair)
     # Generate different keypair
     other_keypair = key_generate()
-    signed["pubkey"] = other_keypair.public_key
+    signed["signature"]["pubkey"] = other_keypair.public_key
     result = verify_json(signed, raise_on_error=False)
     assert result.is_valid is False
+    assert result.signature_valid is False
 
 
 def test_verify_json_no_raise_mode(signed_doc):
@@ -85,6 +89,7 @@ def test_verify_json_no_raise_mode(signed_doc):
     signed_doc["test"] = "tampered"
     result = verify_json(signed_doc, raise_on_error=False)
     assert result.is_valid is False
+    assert result.signature_valid is False
     assert isinstance(result.message, str)
 
 
@@ -94,6 +99,7 @@ def test_verify_json_nested_structure(test_keypair):
     signed = sign_json(doc, test_keypair)
     result = verify_json(signed)
     assert result.is_valid is True
+    assert result.signature_valid is True
 
 
 def test_verify_json_empty_object(test_keypair):
@@ -102,6 +108,7 @@ def test_verify_json_empty_object(test_keypair):
     signed = sign_json(doc, test_keypair)
     result = verify_json(signed)
     assert result.is_valid is True
+    assert result.signature_valid is True
 
 
 def test_verify_json_canonicalization_error(signed_doc):
@@ -110,4 +117,373 @@ def test_verify_json_canonicalization_error(signed_doc):
         mock_canonicalize.side_effect = Exception("Canonicalization failed")
         result = verify_json(signed_doc, raise_on_error=False)
         assert result.is_valid is False
-        assert result.message == "Verification failed: Canonicalization failed"
+        assert result.signature_valid is False
+        assert result.message == "Signature verification failed: Canonicalization failed"
+
+
+def test_verify_json_with_identity_doc_success(test_keypair):
+    """Test successful identity verification with matching identity document."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    # Create keypair with controller
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    # Sign document
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    # Create matching identity document
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+        "authentication": ["did:example:123456789abcdefghi#key-1"],
+    }
+
+    # Verify with identity document
+    result = verify_json(signed, identity_doc)
+    assert result.is_valid is True
+    assert result.signature_valid is True
+    assert result.identity_verified is True
+    assert result.message is None
+
+
+def test_verify_json_with_identity_doc_wrong_controller():
+    """Test identity verification fails with wrong controller."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    # Identity document with different controller
+    identity_doc = {
+        "id": "did:example:different",
+        "verificationMethod": [
+            {
+                "id": "did:example:different#key-1",
+                "type": "Multikey",
+                "controller": "did:example:different",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    result = verify_json(signed, identity_doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert result.signature_valid is True
+    assert result.identity_verified is False
+    assert "Key not authorized by controller" in result.message
+
+
+def test_verify_json_with_identity_doc_wrong_pubkey():
+    """Test identity verification fails with wrong public key."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    other_keypair = key_generate()
+
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    # Identity document with different pubkey
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": other_keypair.public_key,
+            }
+        ],
+    }
+
+    result = verify_json(signed, identity_doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert result.signature_valid is True
+    assert result.identity_verified is False
+
+
+def test_verify_json_no_controller_no_identity_verification():
+    """Test that signatures without controller skip identity verification."""
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    doc = {"test": "value"}
+    signed = sign_json(doc, test_keypair, SigType.SELF_VERIFYING)
+
+    # Identity document provided but signature has no controller
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    result = verify_json(signed, identity_doc)
+    assert result.is_valid is True
+    assert result.signature_valid is True
+    assert result.identity_verified is None  # No identity verification attempted
+
+
+def test_verify_json_identity_doc_no_verification_methods():
+    """Test identity verification fails when identity doc has no verification methods."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    # Identity document with no verification methods
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [],
+    }
+
+    result = verify_json(signed, identity_doc, raise_on_error=False)
+    assert result.is_valid is False
+    assert result.signature_valid is True
+    assert result.identity_verified is False
+
+
+def test_verify_json_keyid_matching():
+    """Test identity verification with keyid matching."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="specific-key",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    # Identity document with multiple keys - should match specific one
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#other-key",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": key_generate().public_key,  # Different key
+            },
+            {
+                "id": "did:example:123456789abcdefghi#specific-key",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,  # Matching key
+            },
+        ],
+    }
+
+    result = verify_json(signed, identity_doc)
+    assert result.is_valid is True
+    assert result.signature_valid is True
+    assert result.identity_verified is True
+
+
+def test_verify_json_identity_verification_exception():
+    """Test identity verification exception handling."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    # Mock _verify_identity to raise an exception
+    with patch("iscc_crypto.verifying._verify_identity") as mock_verify:
+        mock_verify.side_effect = Exception("Verification error")
+        result = verify_json(signed, identity_doc, raise_on_error=False)
+        assert result.is_valid is False
+        assert result.signature_valid is True
+        assert result.identity_verified is False
+        assert "Identity verification failed: Verification error" in result.message
+
+
+def test_verify_json_identity_verification_exception_raises():
+    """Test identity verification exception handling with raise_on_error=True."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+    from unittest.mock import patch
+
+    test_keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    # Mock _verify_identity to raise an exception
+    with patch("iscc_crypto.verifying._verify_identity") as mock_verify:
+        mock_verify.side_effect = Exception("Verification error")
+        with pytest.raises(VerificationError, match="Identity verification failed: Verification error"):
+            verify_json(signed, identity_doc, raise_on_error=True)
+
+
+def test_verify_identity_missing_fields():
+    """Test _verify_identity with missing pubkey or controller."""
+    from iscc_crypto.verifying import _verify_identity
+
+    identity_doc = {
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+            }
+        ],
+    }
+
+    # Missing pubkey
+    sig_obj_no_pubkey = {"controller": "did:example:123456789abcdefghi"}
+    assert _verify_identity(sig_obj_no_pubkey, identity_doc) is False
+
+    # Missing controller
+    sig_obj_no_controller = {"pubkey": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"}
+    assert _verify_identity(sig_obj_no_controller, identity_doc) is False
+
+
+def test_verify_identity_publickey_base58_matching():
+    """Test identity verification with publicKeyBase58 format."""
+    from iscc_crypto.verifying import _verify_identity
+    import base58
+    from iscc_crypto.keys import PREFIX_PUBLIC_KEY
+
+    test_keypair = key_generate()
+
+    # Extract raw key bytes from multikey format for publicKeyBase58
+    decoded_multikey = base58.b58decode(test_keypair.public_key[1:])  # Remove 'z'
+    raw_key_bytes = decoded_multikey[2:]  # Remove PREFIX_PUBLIC_KEY
+    base58_key = base58.b58encode(raw_key_bytes).decode("utf-8")
+
+    # Create identity doc with publicKeyBase58 format (raw bytes only)
+    identity_doc = {
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Ed25519VerificationKey2018",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyBase58": base58_key,
+            }
+        ],
+    }
+
+    sig_obj = {
+        "pubkey": test_keypair.public_key,
+        "controller": "did:example:123456789abcdefghi",
+        "keyid": "key-1",
+    }
+
+    assert _verify_identity(sig_obj, identity_doc) is True
+
+
+def test_verify_identity_publickey_base58_exception():
+    """Test identity verification with publicKeyBase58 decode exception."""
+    from iscc_crypto.verifying import _verify_identity
+
+    test_keypair = key_generate()
+
+    # Create identity doc with invalid publicKeyBase58
+    identity_doc = {
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Ed25519VerificationKey2018",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyBase58": "invalid-base58",  # Invalid format
+            }
+        ],
+    }
+
+    sig_obj = {
+        "pubkey": test_keypair.public_key,
+        "controller": "did:example:123456789abcdefghi",
+        "keyid": "key-1",
+    }
+
+    # Should handle exception and return False
+    assert _verify_identity(sig_obj, identity_doc) is False

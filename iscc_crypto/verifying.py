@@ -19,10 +19,18 @@ __all__ = [
 
 @dataclass(frozen=True)
 class VerificationResult:
-    """Container for verification results"""
+    """Container for verification results with separate integrity and identity validation"""
 
-    is_valid: bool
+    signature_valid: bool
+    identity_verified: bool | None = None
     message: str | None = None
+
+    @property
+    def is_valid(self) -> bool:
+        """Overall validation status - both signature and identity (if checked) must be valid"""
+        if self.identity_verified is None:
+            return self.signature_valid
+        return self.signature_valid and self.identity_verified
 
 
 class VerificationError(Exception):
@@ -57,7 +65,7 @@ def verify_raw(payload, signature, public_key, raise_on_error=True):
 
         try:
             public_key.verify(raw_signature, payload)
-            return VerificationResult(is_valid=True, message=None)
+            return VerificationResult(signature_valid=True, message=None)
         except InvalidSignature:
             msg = "Invalid signature for payload"
             return raise_or_return(msg, raise_on_error)
@@ -66,27 +74,37 @@ def verify_raw(payload, signature, public_key, raise_on_error=True):
         return raise_or_return(msg, raise_on_error)
 
 
-def verify_json(obj, raise_on_error=True):
-    # type: (dict, bool) -> VerificationResult
+def verify_json(obj, identity_doc=None, raise_on_error=True):
+    # type: (dict, dict|None, bool) -> VerificationResult
     """
     Verify an EdDSA signature on a JSON object using JCS canonicalization.
 
-    Verifies signatures created by sign_json(). The verification process:
+    - Verifies cryptographic signature (always)
+    - Optionally verifies identity ownership (when identity_doc provided)
+
+    The verification process:
     1. Extracts signature and pubkey fields from the document
-    2. Creates a canonicalized hash of the document without signature fields
+    2. Creates a canonicalized hash of the document without the `proof` field
     3. Verifies the signature using the public key from pubkey field
+    4. If identity_doc provided and signature has controller, verifies key ownership
 
     :param obj: JSON object with signature to verify
+    :param identity_doc: Optional identity document (DID document or CID) for controller verification
     :param raise_on_error: Raise VerificationError on failure instead of returning result
-    :return: VerificationResult with status and optional error message
+    :return: VerificationResult with signature and identity verification status
     :raises VerificationError: If signature verification fails and raise_on_error=True
     """
     # Extract required fields
     try:
         signature = obj["signature"]["proof"]
-        pubkey = obj["signature"]["pubkey"]
     except KeyError as e:
         msg = f"Missing required field: {e.args[0]}"
+        return raise_or_return(msg, raise_on_error)
+
+    # Check if we have pubkey for offline verification
+    pubkey = obj.get("signature", {}).get("pubkey")
+    if not pubkey:
+        msg = "Missing pubkey field - cannot verify signature offline"
         return raise_or_return(msg, raise_on_error)
 
     # Validate signature format
@@ -105,13 +123,104 @@ def verify_json(obj, raise_on_error=True):
     doc_without_sig = deepcopy(obj)
     del doc_without_sig["signature"]["proof"]
 
-    # Verify signature
+    # Verify cryptographic signature
     try:
         verification_payload = jcs.canonicalize(doc_without_sig)
-        return verify_raw(verification_payload, signature, public_key, raise_on_error)
+        signature_result = verify_raw(verification_payload, signature, public_key, raise_on_error)
+
+        if not signature_result.signature_valid:
+            return signature_result
+
     except Exception as e:
-        msg = f"Verification failed: {str(e)}"
+        msg = f"Signature verification failed: {str(e)}"
         return raise_or_return(msg, raise_on_error)
+
+    # If no identity document provided, return signature verification result
+    if identity_doc is None:
+        return VerificationResult(signature_valid=True, identity_verified=None, message=None)
+
+    # Check if signature has controller for identity verification
+    controller = obj.get("signature", {}).get("controller")
+    if not controller:
+        # No controller in signature, can't do identity verification
+        return VerificationResult(signature_valid=True, identity_verified=None, message=None)
+
+    # Perform identity verification
+    try:
+        identity_verified = _verify_identity(obj["signature"], identity_doc)
+        return VerificationResult(
+            signature_valid=True,
+            identity_verified=identity_verified,
+            message=None if identity_verified else "Key not authorized by controller",
+        )
+    except Exception as e:
+        msg = f"Identity verification failed: {str(e)}"
+        if raise_on_error:
+            raise VerificationError(msg)
+        return VerificationResult(signature_valid=True, identity_verified=False, message=msg)
+
+
+def _verify_identity(signature_obj, identity_doc):
+    # type: (dict, dict) -> bool
+    """
+    Verify that the signing key is authorized by the identity document.
+
+    :param signature_obj: Signature object containing pubkey, controller, and optional keyid
+    :param identity_doc: Identity document (DID document or CID) containing verification methods
+    :return: True if key is authorized, False otherwise
+    """
+    pubkey = signature_obj.get("pubkey")
+    controller = signature_obj.get("controller")
+    keyid = signature_obj.get("keyid")
+
+    if not pubkey or not controller:
+        return False
+
+    # Get verification methods from identity document
+    verification_methods = identity_doc.get("verificationMethod", [])
+    if not verification_methods:
+        return False
+
+    # Look for matching verification method
+    for vm in verification_methods:
+        # Check if controller matches
+        if vm.get("controller") != controller:
+            continue
+
+        # If keyid is specified, check if it matches the verification method id
+        if keyid:
+            vm_id = vm.get("id", "")
+            # Extract fragment after # for comparison
+            vm_fragment = vm_id.split("#")[-1] if "#" in vm_id else vm_id
+            if keyid != vm_fragment and keyid != vm_id:
+                continue
+
+        # Check if public key matches
+        vm_pubkey = vm.get("publicKeyMultibase")
+        if vm_pubkey == pubkey:
+            return True
+
+        # Also check publicKeyBase58 format (for Ed25519VerificationKey2018)
+        vm_pubkey_b58 = vm.get("publicKeyBase58")
+        if vm_pubkey_b58:
+            # For Ed25519VerificationKey2018, publicKeyBase58 is just base58 encoded raw key bytes
+            try:
+                import base58
+                from iscc_crypto.keys import PREFIX_PUBLIC_KEY
+
+                # Extract raw bytes from our multikey pubkey
+                our_decoded = base58.b58decode(pubkey[1:])  # Remove 'z' prefix
+                our_raw_bytes = our_decoded[2:]  # Remove PREFIX_PUBLIC_KEY
+
+                # Extract raw bytes from publicKeyBase58
+                vm_raw_bytes = base58.b58decode(vm_pubkey_b58)
+
+                if our_raw_bytes == vm_raw_bytes:
+                    return True
+            except Exception:
+                continue
+
+    return False
 
 
 def verify_vc(doc, raise_on_error=True):
@@ -212,9 +321,9 @@ def raise_or_return(msg, raise_on_error):
 
     :param msg: Error message
     :param raise_on_error: Whether to raise exception or return result
-    :return: VerificationResult with is_valid=False and error message
+    :return: VerificationResult with signature_valid=False and error message
     :raises VerificationError: If raise_on_error is True
     """
     if raise_on_error:
         raise VerificationError(msg)
-    return VerificationResult(is_valid=False, message=msg)
+    return VerificationResult(signature_valid=False, message=msg)
