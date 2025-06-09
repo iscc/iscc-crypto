@@ -2,22 +2,23 @@
 
 ## Foreword
 
-This document has been prepared by Technical Committee ISO/TC 46, Information and documentation, Subcommittee SC
-9, Identification and description.
+This document has been prepared by Technical Committee ISO/TC 46, Information and documentation,
+Subcommittee SC 9, Identification and description.
 
 ## Introduction
 
 The first edition of ISO 24138:2024 specifies the syntax, structure, and initial algorithms for the
-International Standard Content Code (ISCC). An ISCC is a deterministic data descriptor that applies to a
-specific digital asset. Anyone can generate an ISCC using the open-source reference implementation or any other
-application conforming to the provisions of ISO 24138:2024.
+International Standard Content Code (ISCC). An ISCC is a deterministic data descriptor that applies
+to a specific digital asset. Anyone can generate an ISCC using the open-source reference
+implementation or any other application conforming to the provisions of ISO 24138:2024.
 
-However, an ISCC aplies only to the digital asset itself. It makes no assumptions about any associated actors or
-metadata. Additionally, ISO 24138:2024 does not define any methods for the interoperable discovery of actors or
-metadata associated with a digital asset.
+However, an ISCC aplies only to the digital asset itself. It makes no assumptions about any
+associated actors or metadata. Additionally, ISO 24138:2024 does not define any methods for the
+interoperable discovery of actors or metadata associated with a digital asset.
 
-This document defines the use of digital signatures to associate ISCC metadata with an actor, enabling
-verifiable attribution, integrity protection, and progressive disclosure of signer identity.
+This document defines the use of digital signatures to associate ISCC metadata with an actor,
+enabling verifiable attribution, integrity protection, and progressive disclosure of signer
+identity.
 
 ## 1 Scope
 
@@ -38,9 +39,10 @@ This document does not specify:
 
 ## 2 Normative references
 
-The following documents are referred to in the text in such a way that some or all of their content constitutes
-requirements of this document. For dated references, only the edition cited applies. For undated references, the
-latest edition of the referenced document (including any amendments) applies.
+The following documents are referred to in the text in such a way that some or all of their content
+constitutes requirements of this document. For dated references, only the edition cited applies. For
+undated references, the latest edition of the referenced document (including any amendments)
+applies.
 
 ISO 24138:2024, Information and documentation — International Standard Content Code (ISCC)
 
@@ -62,24 +64,25 @@ For the purposes of this document, the following terms and definitions apply.
 
 ### 3.1
 
-**controller** entity that has authority over a cryptographic key and is responsible for managing the associated
-digital credential
+**controller** entity that has authority over a cryptographic key and is responsible for managing
+the associated digital credential
 
 Note 1 to entry: Controllers are identified by dereferenceable URIs such as did:web or HTTP(S) URLs.
 
 ### 3.2
 
-**digital signature** cryptographic mechanism that provides data integrity, authentication, and non-repudiation
-for digital documents
+**digital signature** cryptographic mechanism that provides data integrity, authentication, and
+non-repudiation for digital documents
 
 ### 3.3
 
-**JSON Canonicalization Scheme** **JCS** deterministic transformation of JSON data into a canonical form
-suitable for cryptographic operations
+**JSON Canonicalization Scheme** **JCS** deterministic transformation of JSON data into a canonical
+form suitable for cryptographic operations
 
 ### 3.4
 
-**keypair** combination of a private key and its corresponding public key used for asymmetric cryptography
+**keypair** combination of a private key and its corresponding public key used for asymmetric
+cryptography
 
 ### 3.5
 
@@ -87,12 +90,13 @@ suitable for cryptographic operations
 
 ### 3.6
 
-**progressive disclosure** approach that allows signers to reveal identity information incrementally from
-anonymous to pseudonymous to fully public
+**progressive disclosure** approach that allows signers to reveal identity information incrementally
+from anonymous to pseudonymous to fully public
 
 ### 3.7
 
-**proof** cryptographic evidence that demonstrates the integrity and authenticity of a signed document
+**proof** cryptographic evidence that demonstrates the integrity and authenticity of a signed
+document
 
 ### 3.8
 
@@ -100,9 +104,15 @@ anonymous to pseudonymous to fully public
 
 ## 4 Signature structure and format
 
+2
+
 ### 4.1 General requirements
 
-ISCC metadata signatures shall use JSON as the base document format with embedded signature properties.
+ISCC metadata signatures shall use JSON as the base document format with embedded signature
+properties.
+
+The signature properties shall be contained within a top-level property named "signature" in the
+JSON object being signed.
 
 ### 4.2 Signature properties
 
@@ -126,18 +136,18 @@ The signature may contain the following optional properties:
 
 #### 4.3.1 Anonymous signatures
 
-Signatures containing only the proof property provide privacy-preserving verification requiring out-of-band
-public key distribution.
+Signatures containing only the proof property provide privacy-preserving verification requiring
+out-of-band public key distribution.
 
 #### 4.3.2 Pseudonymous signatures
 
-Signatures containing proof and pubkey properties enable non-interactive verification while maintaining
-pseudonymity.
+Signatures containing proof and pubkey properties enable non-interactive verification while
+maintaining pseudonymity.
 
 #### 4.3.3 Public signatures
 
-Signatures containing proof, pubkey, and controller properties enable full identity verification and key
-ownership validation.
+Signatures containing proof, pubkey, and controller properties enable full identity verification and
+key ownership validation.
 
 ## 5 Cryptographic algorithms
 
@@ -145,7 +155,8 @@ ownership validation.
 
 #### 5.1.1 EdDSA with Ed25519
 
-All signatures shall use the EdDSA signature algorithm with the Ed25519 elliptic curve as specified in RFC 8032.
+All signatures shall use the EdDSA signature algorithm with the Ed25519 elliptic curve as specified
+in RFC 8032.
 
 #### 5.1.2 Key generation
 
@@ -155,11 +166,19 @@ Ed25519 keypairs shall be generated using cryptographically secure random number
 
 #### 5.2.1 JSON Canonicalization Scheme
 
-All JSON documents shall be canonicalized using JCS as specified in RFC 8785 before signature generation.
+All JSON documents shall be canonicalized using JCS as specified in RFC 8785 before signature
+generation.
 
-#### 5.2.2 Signature field exclusion
+#### 5.2.2 Protected field inclusion
 
-The canonicalization process shall exclude signature-related fields from the document before hashing.
+The canonicalization process shall include the following fields, when present, before hashing:
+
+a) pubkey field; b) controller field; c) keyid field.
+
+The canonicalization process shall exclude only the proof field from the document before hashing.
+
+NOTE This ensures that pubkey, controller, and keyid fields are cryptographically protected by the
+signature.
 
 ## 6 Verification procedures
 
@@ -178,7 +197,8 @@ The verifier shall validate the EdDSA signature using the provided or resolved p
 
 #### 6.2.1 Controller resolution
 
-When a controller URI is present, the verifier should resolve the controller document to validate key ownership.
+When a controller URI is present, the verifier should resolve the controller document to validate
+key ownership.
 
 #### 6.2.2 Key binding verification
 
@@ -198,7 +218,8 @@ Signatures may reference did:web identifiers for web-based identity resolution.
 
 ### 7.2 Verification method resolution
 
-The verifier shall resolve DID documents and extract appropriate verification methods for signature validation.
+The verifier shall resolve DID documents and extract appropriate verification methods for signature
+validation.
 
 ## Annex A (informative) Implementation examples
 
@@ -262,31 +283,34 @@ ______________________________________________________________________
 
 - Signature properties are:
 
-  - proof: The actual digital signature in the form of a Multibase encoded Ed25519 signature ( z-base58-btc) -
-    (Required)
+  - proof: The actual digital signature in the form of a Multibase encoded Ed25519 signature (
+    z-base58-btc) - (Required)
   - pubkey: The public key of the signer for offline integrity verification (Optional)
-  - controller: The entity (person, organization, or system) who has authority over the cryptographic key used
-    to create the signature and is responsible for managing this digital credential represented by a
-    dereferencable URI did:web or URL to a controlled identifier document (Optional). If `pubkey` is set but
-    `controller` is not set we implicitly derive a `did:key` as `controller`.
-  - keyid: The id of the key in the controller document (optional). If not set, but `controller` is set we
-    assume the keyid is the `pubkey` itself
+  - controller: The entity (person, organization, or system) who has authority over the
+    cryptographic key used to create the signature and is responsible for managing this digital
+    credential represented by a dereferencable URI did:web or URL to a controlled identifier
+    document (Optional). If `pubkey` is set but `controller` is not set we implicitly derive a
+    `did:key` as `controller`.
+  - keyid: The id of the key in the controller document (optional). If not set, but `controller` is
+    set we assume the keyid is the `pubkey` itself
 
 - Concept: Property Set Implications — Progressive Disclosure — Three Levels and their implications:
 
   - Anonymous
-    - Providing only `proof` is anonymous (privacy preserving). For signature verification the signer musst
-      provide the `pubkey` to the verifier separately
+    - Providing only `proof` is anonymous (privacy preserving). For signature verification the
+      signer musst provide the `pubkey` to the verifier separately
   - Pseudonymous
-    - Providing `proof` and `pubkey` is pseudonymous depending on publicly linkable knowledge about the `pubkey`
-      but allows non-interactive integrity verification by the recipient.
+    - Providing `proof` and `pubkey` is pseudonymous depending on publicly linkable knowledge about
+      the `pubkey` but allows non-interactive integrity verification by the recipient.
   - Public
-    - Providing `proof`, `pubkey` and `controller` is public and allows the recipient to verify the signature,
-      establish the identity of the signer, and confirm that the public key belongs to the claimed controller by
-      dereferencing the controller URI to retrieve and validate the controlled identifier document.
+    - Providing `proof`, `pubkey` and `controller` is public and allows the recipient to verify the
+      signature, establish the identity of the signer, and confirm that the public key belongs to
+      the claimed controller by dereferencing the controller URI to retrieve and validate the
+      controlled identifier document.
 
-- Signed JSON objects by themselves are of no value to end users. We should also define UI/UX guidelines and
-  clearly communicate options, features, privacy, and security interactions and implications regarding:
+- Signed JSON objects by themselves are of no value to end users. We should also define UI/UX
+  guidelines and clearly communicate options, features, privacy, and security interactions and
+  implications regarding:
 
   - Key Generation
   - Key Managment
@@ -300,8 +324,8 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-When working on this document, make sure you consult and cross-refernce relevant existing starndards using
-deepwiki:
+When working on this document, make sure you consult and cross-refernce relevant existing starndards
+using deepwiki:
 
 - **ISCC ISO 24138:2024 Specification**: See deepwiki at iscc/iscc-ieps
 - **Verifiable Credentials Data Model v2.0**: See deepwiki at w3c/vc-data-model
