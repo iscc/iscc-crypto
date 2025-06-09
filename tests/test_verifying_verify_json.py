@@ -33,23 +33,39 @@ def test_verify_json_missing_signature():
         verify_json(doc)
 
 
+def test_verify_json_missing_version():
+    """Test verification fails when version field is missing."""
+    doc = {"signature": {"proof": "xyz", "pubkey": "zkey"}}
+    with pytest.raises(VerificationError, match="Missing required field: version"):
+        verify_json(doc)
+
+
+def test_verify_json_invalid_version():
+    """Test verification fails when version is invalid."""
+    doc = {"signature": {"proof": "xyz", "pubkey": "zkey", "version": "wrong-version"}}
+    with pytest.raises(
+        VerificationError, match="Invalid signature version: expected 'ISCC-SIG v1.0', got 'wrong-version'"
+    ):
+        verify_json(doc)
+
+
 def test_verify_json_missing_pubkey():
     """Test verification fails when pubkey field is missing."""
-    doc = {"signature": {"proof": "xyz"}}
+    doc = {"signature": {"proof": "xyz", "version": "ISCC-SIG v1.0"}}
     with pytest.raises(VerificationError, match="Missing pubkey field and no public_key parameter provided"):
         verify_json(doc)
 
 
 def test_verify_json_invalid_signature_format():
     """Test verification fails with invalid signature format."""
-    doc = {"signature": {"proof": "invalid", "pubkey": "zkey"}}
+    doc = {"signature": {"proof": "invalid", "pubkey": "zkey", "version": "ISCC-SIG v1.0"}}
     with pytest.raises(VerificationError, match="Invalid signature format"):
         verify_json(doc)
 
 
 def test_verify_json_invalid_pubkey_format():
     """Test verification fails with invalid pubkey format."""
-    doc = {"signature": {"proof": "zsig", "pubkey": "invalid"}}
+    doc = {"signature": {"proof": "zsig", "pubkey": "invalid", "version": "ISCC-SIG v1.0"}}
     with pytest.raises(VerificationError, match="Invalid pubkey format"):
         verify_json(doc)
 
@@ -58,7 +74,7 @@ def test_verify_json_invalid_public_key_prefix():
     """Test verification fails when public key has invalid prefix."""
     # Create a pubkey with an invalid prefix (not ED01)
     invalid_key = "z" + base58.b58encode(bytes.fromhex("0000") + bytes(32)).decode()
-    doc = {"signature": {"proof": "zsig", "pubkey": invalid_key}}
+    doc = {"signature": {"proof": "zsig", "pubkey": invalid_key, "version": "ISCC-SIG v1.0"}}
     with pytest.raises(VerificationError, match="Invalid pubkey format: Invalid public key prefix"):
         verify_json(doc)
 
@@ -508,7 +524,11 @@ def test_verify_json_controller_without_pubkey_rejected():
     doc = {"test": "value"}
     doc_with_controller = {
         "test": "value",
-        "signature": {"controller": "did:example:123456789abcdefghi", "keyid": "key-1"},
+        "signature": {
+            "version": "ISCC-SIG v1.0",
+            "controller": "did:example:123456789abcdefghi",
+            "keyid": "key-1",
+        },
     }
 
     # Sign the document with controller but no pubkey

@@ -2,7 +2,7 @@ import base58
 from copy import deepcopy
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey  # noqa: F401
-from iscc_crypto.signing import create_signature_payload
+from iscc_crypto.signing import create_signature_payload, ISCC_SIG_VERSION
 from iscc_crypto.keys import pubkey_decode
 import jcs
 from dataclasses import dataclass
@@ -98,8 +98,14 @@ def verify_json(obj, identity_doc=None, public_key=None, raise_on_error=True):
     # Extract required fields
     try:
         signature = obj["signature"]["proof"]
+        version = obj["signature"]["version"]
     except KeyError as e:
         msg = f"Missing required field: {e.args[0]}"
+        return raise_or_return(msg, raise_on_error)
+
+    # Validate version
+    if version != ISCC_SIG_VERSION:
+        msg = f"Invalid signature version: expected '{ISCC_SIG_VERSION}', got '{version}'"
         return raise_or_return(msg, raise_on_error)
 
     # Save external key parameter for later comparison

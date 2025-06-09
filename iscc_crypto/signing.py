@@ -12,7 +12,12 @@ __all__ = [
     "sign_json",
     "sign_raw",
     "create_signature_payload",
+    "ISCC_SIG_VERSION",
 ]
+
+
+# Version string for ISCC signature format
+ISCC_SIG_VERSION = "ISCC-SIG v1.0"
 
 
 class SigType(Enum):
@@ -59,7 +64,7 @@ def sign_json(obj, keypair, sigtype=SigType.AUTO):
         raise ValueError("Input must not contain a 'signature' field")
 
     signed = deepcopy(obj)
-    signed["signature"] = {}
+    signed["signature"] = {"version": ISCC_SIG_VERSION}
 
     # Determine what to include based on sigtype
     if sigtype == SigType.AUTO:

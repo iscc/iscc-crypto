@@ -10,6 +10,7 @@ def test_sign_json_basic():
     data = {"test": "value"}
     signed = sign_json(data, keypair)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["pubkey"] == keypair.public_key
     assert signed["signature"]["proof"].startswith("z")
     assert signed["test"] == "value"
@@ -91,6 +92,7 @@ def test_sign_json_with_controller():
     data = {"test": "value"}
     signed = sign_json(data, keypair_with_controller)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
     assert signed["signature"]["pubkey"] == keypair.public_key
     assert signed["signature"]["proof"].startswith("z")
@@ -103,6 +105,7 @@ def test_sign_json_sigtype_proof_only():
     data = {"test": "value"}
     signed = sign_json(data, keypair, SigType.PROOF_ONLY)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert "pubkey" not in signed["signature"]
     assert "controller" not in signed["signature"]
     assert signed["signature"]["proof"].startswith("z")
@@ -115,6 +118,7 @@ def test_sign_json_sigtype_self_verifying():
     data = {"test": "value"}
     signed = sign_json(data, keypair, SigType.SELF_VERIFYING)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["pubkey"] == keypair.public_key
     assert "controller" not in signed["signature"]
     assert signed["signature"]["proof"].startswith("z")
@@ -135,6 +139,7 @@ def test_sign_json_sigtype_identity_bound():
     data = {"test": "value"}
     signed = sign_json(data, keypair_with_controller, SigType.IDENTITY_BOUND)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["pubkey"] == keypair.public_key
     assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
     assert signed["signature"]["keyid"] == "key-1"
@@ -165,6 +170,7 @@ def test_sign_json_sigtype_auto_with_controller():
     data = {"test": "value"}
     signed = sign_json(data, keypair_with_controller, SigType.AUTO)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["pubkey"] == keypair.public_key
     assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
     assert signed["signature"]["keyid"] == "key-1"
@@ -178,6 +184,7 @@ def test_sign_json_sigtype_auto_without_controller():
     data = {"test": "value"}
     signed = sign_json(data, keypair, SigType.AUTO)
     assert "signature" in signed
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["pubkey"] == keypair.public_key
     assert "controller" not in signed["signature"]
     assert "keyid" not in signed["signature"]

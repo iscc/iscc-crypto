@@ -99,6 +99,7 @@ def test_sign_json():
     signed = icr.sign_json(obj, TEST_KEY)
     assert "signature" in signed
     assert signed["message"] == "hello"
+    assert signed["signature"]["version"] == "ISCC-SIG v1.0"
     assert signed["signature"]["pubkey"] == TEST_KEY.public_key
 
     # Test input validation
