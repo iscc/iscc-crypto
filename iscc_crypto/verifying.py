@@ -1,7 +1,7 @@
 import base58
 from copy import deepcopy
 from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey  # noqa: F401
 from iscc_crypto.signing import create_signature_payload
 from iscc_crypto.keys import pubkey_decode
 import jcs
@@ -89,8 +89,9 @@ def verify_json(obj, identity_doc=None, public_key=None, raise_on_error=True):
     4. If identity_doc provided and signature has controller, verifies key ownership
 
     :param obj: JSON object with signature to verify
-    :param identity_doc: Optional identity document (DID document or CID) for controller verification
-    :param public_key: Optional multibase-encoded public key for out-of-band verification (supports PROOF_ONLY signatures)
+    :param identity_doc: An optional identity document (DID document or CID) for controller verification
+    :param public_key: Optional multibase-encoded public key for out-of-band verification
+            (supports PROOF_ONLY signatures)
     :param raise_on_error: Raise VerificationError on failure instead of returning result
     :return: VerificationResult with signature and identity verification status
     :raises VerificationError: If signature verification fails and raise_on_error=True
@@ -152,7 +153,10 @@ def verify_json(obj, identity_doc=None, public_key=None, raise_on_error=True):
     # Strict validation: controller requires pubkey to identify which key was used
     signature_pubkey = obj.get("signature", {}).get("pubkey")
     if not signature_pubkey:
-        msg = "Signature has controller but no pubkey - controller alone cannot identify which key in identity document was used"
+        msg = (
+            "Signature has controller but no pubkey - controller alone cannot identify which key in "
+            "identity document was used"
+        )
         return raise_or_return(msg, raise_on_error)
 
     # If external key was provided, verify it matches the embedded pubkey for identity verification
@@ -245,7 +249,7 @@ def verify_vc(doc, raise_on_error=True):
         # Extract required proof
         try:
             proof = doc["proof"]
-        except KeyError as e:
+        except KeyError:
             msg = "Missing required field: proof"
             return raise_or_return(msg, raise_on_error)
 
@@ -277,7 +281,7 @@ def verify_vc(doc, raise_on_error=True):
             msg = f"Invalid public key in verificationMethod: {str(e)}"
             return raise_or_return(msg, raise_on_error)
 
-        # Create copy without proof for verification
+        # Create copy without a proof for verification
         doc_without_proof = deepcopy(doc)
         del doc_without_proof["proof"]
 
