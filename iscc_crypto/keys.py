@@ -1,8 +1,11 @@
 import base58
+import json
 import os
 from dataclasses import dataclass
 from functools import cached_property
+from pathlib import Path
 from dotenv import load_dotenv
+import platformdirs
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
@@ -14,6 +17,7 @@ __all__ = [
     "key_generate",
     "key_from_secret",
     "key_from_env",
+    "key_from_platform",
     "pubkey_encode",
     "seckey_encode",
     "pubkey_decode",
@@ -152,26 +156,61 @@ def key_from_secret(secret_key, controller=None, key_id=None):
 def key_from_env():
     # type: () -> KeyPair
     """
-    Create a KeyPair from environment variables.
+    Create a KeyPair from environment variables or platform directory.
 
-    Loads the following environment variables:
+    First tries to load from environment variables:
     - ISCC_CRYPTO_SECRET_KEY: The secret key in multikey format
     - ISCC_CRYPTO_CONTROLLER: Optional controller URL
     - ISCC_CRYPTO_KEY_ID: Optional key identifier
 
-    :return: KeyPair constructed from environment variables
-    :raises ValueError: If ISCC_CRYPTO_SECRET_KEY is missing or invalid
+    If environment variables are not found, falls back to platform directory.
+
+    :return: KeyPair constructed from environment variables or platform directory
+    :raises ValueError: If no valid keypair is found
     """
     load_dotenv()
     secret_key = os.getenv("ISCC_CRYPTO_SECRET_KEY")
-    if not secret_key:
-        raise ValueError("ISCC_CRYPTO_SECRET_KEY environment variable is required")
 
-    return key_from_secret(
-        secret_key=secret_key,
-        controller=os.getenv("ISCC_CRYPTO_CONTROLLER"),
-        key_id=os.getenv("ISCC_CRYPTO_KEY_ID"),
-    )
+    if secret_key:
+        return key_from_secret(
+            secret_key=secret_key,
+            controller=os.getenv("ISCC_CRYPTO_CONTROLLER"),
+            key_id=os.getenv("ISCC_CRYPTO_KEY_ID"),
+        )
+    else:
+        # Fallback to platform directory
+        return key_from_platform()
+
+
+def key_from_platform():
+    # type: () -> KeyPair
+    """
+    Create a KeyPair from platform-specific directory.
+
+    Loads keypair from the platform-specific configuration directory
+    created by the CLI setup command.
+
+    :return: KeyPair loaded from platform directory
+    :raises ValueError: If keypair file is not found or invalid
+    """
+    config_dir = Path(platformdirs.user_data_dir("iscc-crypto"))
+    keypair_file = config_dir / "keypair.json"
+
+    if not keypair_file.exists():
+        raise ValueError(f"No keypair found in {config_dir}. Run 'iscc-crypto setup' to create an identity.")
+
+    try:
+        with open(keypair_file) as f:
+            data = json.load(f)
+
+        return KeyPair(
+            public_key=data["public_key"],
+            secret_key=data["secret_key"],
+            controller=data.get("controller"),
+            key_id=data.get("key_id"),
+        )
+    except Exception as e:
+        raise ValueError(f"Invalid keypair file: {e}")
 
 
 def pubkey_encode(public_key):

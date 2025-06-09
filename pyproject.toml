@@ -36,10 +36,15 @@ dependencies = [
     "base58",
     "python-dotenv",
     "niquests>=3.14.1",
+    "click",
+    "platformdirs",
 ]
 
 [project.urls]
 Homepage = "https://iscc.codes"
+
+[project.scripts]
+iscc-crypto = "iscc_crypto.cli:main"
 
 [dependency-groups]
 test = [
@@ -56,6 +61,7 @@ dev = [
     "mdformat",
     "mdformat-tables",
     "mdformat_admon",
+    "iscc-crypto",
 ]
 docs = ["mkdocs-material"]
 
@@ -65,6 +71,9 @@ default-groups = [
     "dev",
     "docs",
 ]
+
+[tool.uv.sources]
+iscc-crypto = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

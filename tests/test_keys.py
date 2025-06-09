@@ -109,13 +109,81 @@ def test_from_env(monkeypatch):
 
 def test_from_env_missing_key(monkeypatch):
     # type: (object) -> None
-    """Test error handling for missing environment variables."""
+    """Test error handling for missing environment variables and platform directory."""
 
     # Clear relevant environment variables
     monkeypatch.delenv("ISCC_CRYPTO_SECRET_KEY", raising=False)
 
-    with pytest.raises(ValueError, match="ISCC_CRYPTO_SECRET_KEY.*required"):
+    # Mock platformdirs to return a non-existent directory
+    import platformdirs
+
+    monkeypatch.setattr(platformdirs, "user_data_dir", lambda x: "/tmp/nonexistent")
+
+    with pytest.raises(ValueError, match="No keypair found"):
         key_from_env()
+
+
+def test_key_from_platform_missing(monkeypatch):
+    # type: (object) -> None
+    """Test error handling for missing platform directory."""
+    import platformdirs
+
+    monkeypatch.setattr(platformdirs, "user_data_dir", lambda x: "/tmp/nonexistent")
+
+    with pytest.raises(ValueError, match="No keypair found"):
+        key_from_platform()
+
+
+def test_key_from_platform_success(tmp_path, monkeypatch):
+    # type: (object, object) -> None
+    """Test successful loading from platform directory."""
+    import platformdirs
+    import json
+
+    # Create test keypair data
+    test_dir = tmp_path / "iscc-crypto"
+    test_dir.mkdir()
+    keypair_file = test_dir / "keypair.json"
+
+    keypair_data = {
+        "public_key": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
+        "secret_key": "z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA",
+        "controller": "did:web:example.com",
+        "key_id": "did:web:example.com#key-1",
+    }
+
+    with open(keypair_file, "w") as f:
+        json.dump(keypair_data, f)
+
+    # Mock platformdirs to return our test directory (which contains iscc-crypto subfolder)
+    monkeypatch.setattr(platformdirs, "user_data_dir", lambda x: str(test_dir))
+
+    # Test loading
+    loaded = key_from_platform()
+    assert loaded.public_key == keypair_data["public_key"]
+    assert loaded.secret_key == keypair_data["secret_key"]
+    assert loaded.controller == keypair_data["controller"]
+    assert loaded.key_id == keypair_data["key_id"]
+
+
+def test_key_from_platform_invalid_json(tmp_path, monkeypatch):
+    # type: (object, object) -> None
+    """Test error handling for invalid JSON in platform directory."""
+    import platformdirs
+
+    # Create test directory with invalid JSON
+    test_dir = tmp_path / "iscc-crypto"
+    test_dir.mkdir()
+    keypair_file = test_dir / "keypair.json"
+
+    with open(keypair_file, "w") as f:
+        f.write("invalid json")
+
+    # Mock platformdirs to return our test directory
+    monkeypatch.setattr(platformdirs, "user_data_dir", lambda x: str(test_dir))
+
+    with pytest.raises(ValueError, match="Invalid keypair file"):
+        key_from_platform()
 
 
 def test_from_secret_invalid():
