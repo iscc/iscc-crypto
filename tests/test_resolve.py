@@ -1,8 +1,21 @@
 """Full test coverage for the iscc_crypto.resolve module."""
 
 import asyncio
-import json
 import pytest
+
+from iscc_crypto.resolve import (
+    resolve,
+    resolve_async,
+    resolve_did_key,
+    resolve_did_web,
+    resolve_url,
+    validate_cid,
+    build_did_web_url,
+    validate_did_doc,
+    NetworkError,
+    ResolutionError,
+    NiquestsHttpClient,
+)
 
 
 class MockHttpClient:
@@ -34,21 +47,6 @@ class MockHttpClient:
         from iscc_crypto.resolve import NetworkError
 
         raise NetworkError(f"Failed to fetch {url}: Mock 404")
-
-
-from iscc_crypto.resolve import (
-    resolve,
-    resolve_async,
-    resolve_did_key,
-    resolve_did_web,
-    resolve_url,
-    validate_cid,
-    build_did_web_url,
-    validate_did_doc,
-    NetworkError,
-    ResolutionError,
-    NiquestsHttpClient,
-)
 
 
 @pytest.mark.asyncio
