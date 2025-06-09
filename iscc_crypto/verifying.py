@@ -88,11 +88,10 @@ def verify_json(obj, identity_doc=None, public_key=None, raise_on_error=True):
     3. Verifies the signature using the public key from pubkey field or public_key parameter
     4. If identity_doc provided and signature has controller, verifies key ownership
 
-    :param obj: JSON object with signature to verify
-    :param identity_doc: An optional identity document (DID document or CID) for controller verification
-    :param public_key: Optional multibase-encoded public key for out-of-band verification
-            (supports PROOF_ONLY signatures)
-    :param raise_on_error: Raise VerificationError on failure instead of returning result
+    :param obj: JSON object containing signature to verify
+    :param identity_doc: Identity document for controller verification (optional)
+    :param public_key: Multibase-encoded public key for verification (optional)
+    :param raise_on_error: Raise exception on failure instead of returning result
     :return: VerificationResult with signature and identity verification status
     :raises VerificationError: If signature verification fails and raise_on_error=True
     """
