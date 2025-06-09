@@ -1,5 +1,5 @@
 import pytest
-from iscc_crypto.signing import sign_json
+from iscc_crypto.signing import sign_json, SigType
 from iscc_crypto.keys import key_generate
 
 
@@ -93,4 +93,92 @@ def test_sign_json_with_controller():
     assert "signature" in signed
     assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
     assert signed["signature"]["pubkey"] == keypair.public_key
+    assert signed["signature"]["proof"].startswith("z")
+
+
+def test_sign_json_sigtype_proof_only():
+    # type: () -> None
+    """Test PROOF_ONLY signature type"""
+    keypair = key_generate()
+    data = {"test": "value"}
+    signed = sign_json(data, keypair, SigType.PROOF_ONLY)
+    assert "signature" in signed
+    assert "pubkey" not in signed["signature"]
+    assert "controller" not in signed["signature"]
+    assert signed["signature"]["proof"].startswith("z")
+
+
+def test_sign_json_sigtype_self_verifying():
+    # type: () -> None
+    """Test SELF_VERIFYING signature type"""
+    keypair = key_generate()
+    data = {"test": "value"}
+    signed = sign_json(data, keypair, SigType.SELF_VERIFYING)
+    assert "signature" in signed
+    assert signed["signature"]["pubkey"] == keypair.public_key
+    assert "controller" not in signed["signature"]
+    assert signed["signature"]["proof"].startswith("z")
+
+
+def test_sign_json_sigtype_identity_bound():
+    # type: () -> None
+    """Test IDENTITY_BOUND signature type"""
+    from iscc_crypto.keys import KeyPair
+
+    keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=keypair.public_key,
+        secret_key=keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+    data = {"test": "value"}
+    signed = sign_json(data, keypair_with_controller, SigType.IDENTITY_BOUND)
+    assert "signature" in signed
+    assert signed["signature"]["pubkey"] == keypair.public_key
+    assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
+    assert signed["signature"]["keyid"] == "key-1"
+    assert signed["signature"]["proof"].startswith("z")
+
+
+def test_sign_json_sigtype_identity_bound_no_controller():
+    # type: () -> None
+    """Test IDENTITY_BOUND signature type fails without controller"""
+    keypair = key_generate()
+    data = {"test": "value"}
+    with pytest.raises(ValueError, match="IDENTITY_BOUND sigtype requires keypair with controller"):
+        sign_json(data, keypair, SigType.IDENTITY_BOUND)
+
+
+def test_sign_json_sigtype_auto_with_controller():
+    # type: () -> None
+    """Test AUTO signature type with controller includes all available data"""
+    from iscc_crypto.keys import KeyPair
+
+    keypair = key_generate()
+    keypair_with_controller = KeyPair(
+        public_key=keypair.public_key,
+        secret_key=keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+    data = {"test": "value"}
+    signed = sign_json(data, keypair_with_controller, SigType.AUTO)
+    assert "signature" in signed
+    assert signed["signature"]["pubkey"] == keypair.public_key
+    assert signed["signature"]["controller"] == "did:example:123456789abcdefghi"
+    assert signed["signature"]["keyid"] == "key-1"
+    assert signed["signature"]["proof"].startswith("z")
+
+
+def test_sign_json_sigtype_auto_without_controller():
+    # type: () -> None
+    """Test AUTO signature type without controller only includes pubkey"""
+    keypair = key_generate()
+    data = {"test": "value"}
+    signed = sign_json(data, keypair, SigType.AUTO)
+    assert "signature" in signed
+    assert signed["signature"]["pubkey"] == keypair.public_key
+    assert "controller" not in signed["signature"]
+    assert "keyid" not in signed["signature"]
     assert signed["signature"]["proof"].startswith("z")

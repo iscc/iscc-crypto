@@ -1,4 +1,5 @@
 from copy import deepcopy
+from enum import Enum
 from hashlib import sha256
 import base58
 from iscc_crypto.keys import KeyPair
@@ -6,11 +7,21 @@ import jcs
 
 
 __all__ = [
+    "SigType",
     "sign_vc",
     "sign_json",
     "sign_raw",
     "create_signature_payload",
 ]
+
+
+class SigType(Enum):
+    """Signature type enumeration for different disclosure levels."""
+
+    AUTO = "auto"  # (default) - Uses all available keypair data
+    PROOF_ONLY = "proof_only"  # Only includes signature proof (requires out-of-band pubkey for verification)
+    SELF_VERIFYING = "self_verifying"  # Includes the pubkey for standalone/offline verification
+    IDENTITY_BOUND = "identity_bound"  # Includes controller for attribution and online verification
 
 
 def sign_raw(payload, keypair):
@@ -30,18 +41,18 @@ def sign_raw(payload, keypair):
     return "z" + base58.b58encode(signature).decode("utf-8")
 
 
-def sign_json(obj, keypair):
-    # type: (dict, KeyPair) -> dict
+def sign_json(obj, keypair, sigtype=SigType.AUTO):
+    # type: (dict, KeyPair, SigType) -> dict
     """
     Sign any JSON serializable object using EdDSA and JCS canonicalization.
 
-    Creates a copy of the input object, adds a `signature` property containing a JSON object with
-    `pubkey` and `proof` as required properties, and an optional `controller` property if the
-    `Keypair` has a `controller` set. The proof property will contain an EdDSA signature over
-    the entire JSON object.
+    Creates a copy of the input object, adds a `signature` property containing signature data
+    based on the specified signature type. The proof property will contain an EdDSA signature
+    over the entire JSON object.
 
     :param obj: JSON-compatible dictionary to be signed
     :param keypair: Ed25519 KeyPair for signing
+    :param sigtype: Type of signature to create (AUTO, PROOF_ONLY, SELF_VERIFYING, IDENTITY_BOUND)
     :return: Copy of the input object with added 'signature' property
     """
     if "signature" in obj:
@@ -50,9 +61,28 @@ def sign_json(obj, keypair):
     signed = deepcopy(obj)
     signed["signature"] = {}
 
-    if keypair.controller:
+    # Determine what to include based on sigtype
+    if sigtype == SigType.AUTO:
+        # Include all available data from keypair
+        if keypair.controller:
+            signed["signature"]["controller"] = keypair.controller
+        if keypair.key_id:
+            signed["signature"]["keyid"] = keypair.key_id
+        signed["signature"]["pubkey"] = keypair.public_key
+    elif sigtype == SigType.PROOF_ONLY:
+        # Only include proof (added after signing)
+        pass
+    elif sigtype == SigType.SELF_VERIFYING:
+        # Include pubkey for verification
+        signed["signature"]["pubkey"] = keypair.public_key
+    elif sigtype == SigType.IDENTITY_BOUND:
+        # Include controller and pubkey for full attribution
+        if not keypair.controller:
+            raise ValueError("IDENTITY_BOUND sigtype requires keypair with controller")
         signed["signature"]["controller"] = keypair.controller
-    signed["signature"]["pubkey"] = keypair.public_key
+        if keypair.key_id:
+            signed["signature"]["keyid"] = keypair.key_id
+        signed["signature"]["pubkey"] = keypair.public_key
 
     payload = jcs.canonicalize(signed)
     signature = sign_raw(payload, keypair)

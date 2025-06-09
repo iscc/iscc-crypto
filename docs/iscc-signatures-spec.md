@@ -228,7 +228,6 @@ The verifier shall resolve DID documents and extract appropriate verification me
 
 [Examples demonstrating anonymous, pseudonymous, and public signature modes]
 
-
 ## Annex B (normative) Multibase encoding specifications
 
 ### B.1 Public key encoding
