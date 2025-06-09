@@ -36,7 +36,7 @@ def test_verify_json_missing_signature():
 def test_verify_json_missing_pubkey():
     """Test verification fails when pubkey field is missing."""
     doc = {"signature": {"proof": "xyz"}}
-    with pytest.raises(VerificationError, match="Missing pubkey field"):
+    with pytest.raises(VerificationError, match="Missing pubkey field and no public_key parameter provided"):
         verify_json(doc)
 
 
@@ -425,3 +425,144 @@ def test_verify_identity_missing_fields():
     # Missing controller
     sig_obj_no_controller = {"pubkey": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"}
     assert _verify_identity(sig_obj_no_controller, identity_doc) is False
+
+
+def test_verify_json_proof_only_with_external_key(test_keypair):
+    """Test verification of PROOF_ONLY signatures using external public key."""
+    from iscc_crypto.signing import SigType
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, test_keypair, SigType.PROOF_ONLY)
+
+    # Verify using external public key
+    result = verify_json(signed, public_key=test_keypair.public_key)
+    assert result.is_valid is True
+    assert result.signature_valid is True
+    assert result.identity_verified is None
+
+
+def test_verify_json_proof_only_missing_external_key(test_keypair):
+    """Test that PROOF_ONLY signatures fail without external public key."""
+    from iscc_crypto.signing import SigType
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, test_keypair, SigType.PROOF_ONLY)
+
+    # Try to verify without providing external key
+    with pytest.raises(VerificationError, match="Missing pubkey field and no public_key parameter provided"):
+        verify_json(signed)
+
+
+def test_verify_json_proof_only_wrong_external_key(test_keypair):
+    """Test that PROOF_ONLY signatures fail with wrong external public key."""
+    from iscc_crypto.signing import SigType
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, test_keypair, SigType.PROOF_ONLY)
+    other_keypair = key_generate()
+
+    # Try to verify with wrong external key
+    result = verify_json(signed, public_key=other_keypair.public_key, raise_on_error=False)
+    assert result.is_valid is False
+    assert result.signature_valid is False
+
+
+def test_verify_json_proof_only_no_identity_verification(test_keypair):
+    """Test that PROOF_ONLY signatures with external key cannot do identity verification."""
+    from iscc_crypto.signing import SigType
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, test_keypair, SigType.PROOF_ONLY)
+
+    # Create an identity doc (though it shouldn't be used)
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    # Verify using external public key with identity doc
+    result = verify_json(signed, identity_doc=identity_doc, public_key=test_keypair.public_key)
+    assert result.is_valid is True
+    assert result.signature_valid is True
+    assert result.identity_verified is None
+    # PROOF_ONLY signatures have no controller, so identity verification is skipped
+    assert result.message is None
+
+
+def test_verify_json_controller_without_pubkey_rejected():
+    """Test that signature with controller but no pubkey is rejected."""
+    from iscc_crypto.keys import KeyPair
+    import jcs
+    from iscc_crypto.signing import sign_raw
+
+    test_keypair = key_generate()
+
+    # Manually create a signature with controller but no pubkey
+    doc = {"test": "value"}
+    doc_with_controller = {
+        "test": "value",
+        "signature": {"controller": "did:example:123456789abcdefghi", "keyid": "key-1"},
+    }
+
+    # Sign the document with controller but no pubkey
+    payload = jcs.canonicalize(doc_with_controller)
+    signature = sign_raw(payload, test_keypair)
+    doc_with_controller["signature"]["proof"] = signature
+
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    # Should be rejected - controller without pubkey is malformed
+    with pytest.raises(VerificationError, match="controller alone cannot identify which key"):
+        verify_json(doc_with_controller, identity_doc=identity_doc, public_key=test_keypair.public_key)
+
+
+def test_verify_json_external_key_mismatch_with_embedded_pubkey():
+    """Test that external key must match embedded pubkey for identity verification."""
+    from iscc_crypto.keys import KeyPair
+    from iscc_crypto.signing import SigType
+
+    test_keypair = key_generate()
+    other_keypair = key_generate()
+
+    keypair_with_controller = KeyPair(
+        public_key=test_keypair.public_key,
+        secret_key=test_keypair.secret_key,
+        controller="did:example:123456789abcdefghi",
+        key_id="key-1",
+    )
+
+    doc = {"test": "value"}
+    signed = sign_json(doc, keypair_with_controller, SigType.IDENTITY_BOUND)
+
+    identity_doc = {
+        "id": "did:example:123456789abcdefghi",
+        "verificationMethod": [
+            {
+                "id": "did:example:123456789abcdefghi#key-1",
+                "type": "Multikey",
+                "controller": "did:example:123456789abcdefghi",
+                "publicKeyMultibase": test_keypair.public_key,
+            }
+        ],
+    }
+
+    # Should be rejected - external key doesn't match embedded pubkey
+    with pytest.raises(VerificationError, match="External public_key does not match signature pubkey"):
+        verify_json(signed, identity_doc=identity_doc, public_key=other_keypair.public_key)

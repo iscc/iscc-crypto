@@ -74,8 +74,8 @@ def verify_raw(payload, signature, public_key, raise_on_error=True):
         return raise_or_return(msg, raise_on_error)
 
 
-def verify_json(obj, identity_doc=None, raise_on_error=True):
-    # type: (dict, dict|None, bool) -> VerificationResult
+def verify_json(obj, identity_doc=None, public_key=None, raise_on_error=True):
+    # type: (dict, dict|None, str|None, bool) -> VerificationResult
     """
     Verify an EdDSA signature on a JSON object using JCS canonicalization.
 
@@ -83,13 +83,14 @@ def verify_json(obj, identity_doc=None, raise_on_error=True):
     - Optionally verifies identity ownership (when identity_doc provided)
 
     The verification process:
-    1. Extracts signature and pubkey fields from the document
+    1. Extracts signature and pubkey fields from the document (or uses provided public_key)
     2. Creates a canonicalized hash of the document without the `proof` field
-    3. Verifies the signature using the public key from pubkey field
+    3. Verifies the signature using the public key from pubkey field or public_key parameter
     4. If identity_doc provided and signature has controller, verifies key ownership
 
     :param obj: JSON object with signature to verify
     :param identity_doc: Optional identity document (DID document or CID) for controller verification
+    :param public_key: Optional multibase-encoded public key for out-of-band verification (supports PROOF_ONLY signatures)
     :param raise_on_error: Raise VerificationError on failure instead of returning result
     :return: VerificationResult with signature and identity verification status
     :raises VerificationError: If signature verification fails and raise_on_error=True
@@ -101,10 +102,13 @@ def verify_json(obj, identity_doc=None, raise_on_error=True):
         msg = f"Missing required field: {e.args[0]}"
         return raise_or_return(msg, raise_on_error)
 
-    # Check if we have pubkey for offline verification
-    pubkey = obj.get("signature", {}).get("pubkey")
+    # Save external key parameter for later comparison
+    external_public_key = public_key
+
+    # Get public key from document or parameter
+    pubkey = obj.get("signature", {}).get("pubkey") or public_key
     if not pubkey:
-        msg = "Missing pubkey field - cannot verify signature offline"
+        msg = "Missing pubkey field and no public_key parameter provided - cannot verify signature"
         return raise_or_return(msg, raise_on_error)
 
     # Validate signature format
@@ -114,7 +118,7 @@ def verify_json(obj, identity_doc=None, raise_on_error=True):
 
     # Parse and validate public key
     try:
-        public_key = pubkey_decode(pubkey)
+        public_key_obj = pubkey_decode(pubkey)
     except ValueError as e:
         msg = f"Invalid pubkey format: {str(e)}"
         return raise_or_return(msg, raise_on_error)
@@ -126,7 +130,7 @@ def verify_json(obj, identity_doc=None, raise_on_error=True):
     # Verify cryptographic signature
     try:
         verification_payload = jcs.canonicalize(doc_without_sig)
-        signature_result = verify_raw(verification_payload, signature, public_key, raise_on_error)
+        signature_result = verify_raw(verification_payload, signature, public_key_obj, raise_on_error)
 
         if not signature_result.signature_valid:
             return signature_result
@@ -144,6 +148,17 @@ def verify_json(obj, identity_doc=None, raise_on_error=True):
     if not controller:
         # No controller in signature, can't do identity verification
         return VerificationResult(signature_valid=True, identity_verified=None, message=None)
+
+    # Strict validation: controller requires pubkey to identify which key was used
+    signature_pubkey = obj.get("signature", {}).get("pubkey")
+    if not signature_pubkey:
+        msg = "Signature has controller but no pubkey - controller alone cannot identify which key in identity document was used"
+        return raise_or_return(msg, raise_on_error)
+
+    # If external key was provided, verify it matches the embedded pubkey for identity verification
+    if external_public_key and signature_pubkey and signature_pubkey != external_public_key:
+        msg = "External public_key does not match signature pubkey - cannot verify identity"
+        return raise_or_return(msg, raise_on_error)
 
     # Perform identity verification
     try:
