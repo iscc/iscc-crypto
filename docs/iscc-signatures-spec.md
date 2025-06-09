@@ -210,7 +210,11 @@ The verifier shall confirm that the signing key is authorized by the controller 
 
 #### 7.1.1 did:key method
 
-Signatures may reference did:key identifiers for self-contained public key verification.
+When a pubkey field is present but no controller field is specified, verifiers may implicitly derive
+a did:key identifier from the pubkey for verification method resolution.
+
+NOTE Explicit use of did:key as a controller value is discouraged since it is redundant with the
+pubkey field.
 
 #### 7.1.2 did:web method
 
