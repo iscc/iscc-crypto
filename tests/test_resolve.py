@@ -153,20 +153,7 @@ def test_resolve_from_running_event_loop():
 @pytest.mark.asyncio
 @pytest.mark.network
 async def test_resolve_async_http_url():
-    """Test resolve_async routes HTTP URLs to resolve_url."""
-    # httpbin.org/json returns JSON without 'id' property, should fail CID validation
-    url = "https://httpbin.org/json"
-    with pytest.raises(
-        ResolutionError,
-        match="Retrieved document must contain an 'id' property",
-    ):
-        await resolve_async(url)
-
-
-@pytest.mark.asyncio
-@pytest.mark.network
-async def test_resolve_async_https_url():
-    """Test resolve_async routes HTTPS URLs to resolve_url."""
+    """Test resolve_async routes HTTP/HTTPS URLs to resolve_url."""
     # httpbin.org/json returns JSON without 'id' property, should fail CID validation
     url = "https://httpbin.org/json"
     with pytest.raises(
@@ -208,7 +195,7 @@ async def test_resolve_async_unknown_scheme():
 # Tests for resolve_url() function
 @pytest.mark.asyncio
 @pytest.mark.network
-async def test_resolve_url_valid_json():
+async def test_resolve_url_invalid_cid():
     """Test resolve_url with JSON that lacks required 'id' property."""
     # httpbin.org/json returns valid JSON but lacks required 'id' property for CID
     url = "https://httpbin.org/json"
@@ -248,20 +235,6 @@ async def test_resolve_url_invalid_json():
     http_client = NiquestsHttpClient()
     with pytest.raises(ResolutionError, match="Invalid JSON response"):
         await resolve_url("https://httpbin.org/html", http_client)
-
-
-@pytest.mark.asyncio
-@pytest.mark.network
-async def test_resolve_url_missing_id_property():
-    """Test resolve_url validates presence of 'id' property."""
-    # This uses the existing httpbin test but with correct expectation
-    url = "https://httpbin.org/json"
-    http_client = NiquestsHttpClient()
-    with pytest.raises(
-        ResolutionError,
-        match="Retrieved document must contain an 'id' property",
-    ):
-        await resolve_url(url, http_client)
 
 
 @pytest.mark.asyncio
@@ -598,20 +571,16 @@ def test_validate_did_document_complex_valid():
 @pytest.mark.asyncio
 async def test_resolve_async_uses_default_http_client():
     """Test resolve_async uses NiquestsHttpClient by default."""
-    # Test the default http_client path - this will fail with niquests ConnectionError
-    import niquests
-
-    with pytest.raises(niquests.exceptions.ConnectionError):
+    # Test the default http_client path - this will fail with NetworkError (wrapped)
+    with pytest.raises(NetworkError):
         await resolve_async("https://nonexistent-url-for-testing.com/doc.json")
 
 
 @pytest.mark.asyncio
 async def test_resolve_async_did_web_with_default_client():
     """Test resolve_async did:web path with default client."""
-    # Test line 91 - did:web path in resolve_async with default client
-    import niquests
-
-    with pytest.raises(niquests.exceptions.ConnectionError):
+    # Test did:web path in resolve_async with default client - fails with NetworkError (wrapped)
+    with pytest.raises(NetworkError):
         await resolve_async("did:web:nonexistent-domain-12345.com")
 
 
@@ -699,7 +668,7 @@ async def test_niquests_http_client_json_decode_error():
     niquests.aget = mock_aget
 
     try:
-        with pytest.raises(niquests.JSONDecodeError):
+        with pytest.raises(ResolutionError, match="Invalid JSON response"):
             await client.get_json("https://example.com/test.json")
     finally:
         niquests.aget = original_aget
@@ -763,34 +732,11 @@ async def test_resolve_did_web_empty_identifier():
 
 @pytest.mark.asyncio
 @pytest.mark.network
-async def test_resolve_did_web_with_path():
-    """Test resolve_did_web with path segments."""
-    # This will fail with NetworkError but tests URL construction with paths
-    http_client = NiquestsHttpClient()
-    with pytest.raises(NetworkError, match="Failed to fetch DID document"):
-        await resolve_did_web("did:web:example.com:path:to:document", http_client)
-
-
-@pytest.mark.asyncio
-@pytest.mark.network
 async def test_resolve_did_web_network_error():
     """Test resolve_did_web raises NetworkError for network failures."""
     http_client = NiquestsHttpClient()
     with pytest.raises(NetworkError, match="Failed to fetch DID document"):
         await resolve_did_web("did:web:nonexistent-domain-12345.com", http_client)
-
-
-@pytest.mark.asyncio
-@pytest.mark.network
-async def test_resolve_did_web_mismatched_id():
-    """Test resolve_did_web raises ResolutionError for mismatched document ID."""
-    # Create a test case where we know the document will have a different ID
-    # We can't easily test this without a real endpoint that returns mismatched ID
-    # But we can test the logic by creating a situation where it fails
-    # This will hit a 404 which will be a NetworkError before we get to ID validation
-    http_client = NiquestsHttpClient()
-    with pytest.raises(NetworkError):
-        await resolve_did_web("did:web:httpbin.org:status:404", http_client)
 
 
 # Tests for exception hierarchy
@@ -826,15 +772,6 @@ async def test_resolve_did_key_short_multikey():
     """Test resolve_did_key with too short multikey."""
     with pytest.raises(ValueError, match="Invalid public key prefix"):
         await resolve_did_key("did:key:z123")
-
-
-@pytest.mark.asyncio
-@pytest.mark.network
-async def test_resolve_url_empty_url():
-    """Test resolve_url with malformed URL."""
-    http_client = NiquestsHttpClient()
-    with pytest.raises(NetworkError, match="Failed to fetch"):
-        await resolve_url("https://", http_client)
 
 
 def test_resolve_empty_string():

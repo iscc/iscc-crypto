@@ -51,9 +51,15 @@ class NiquestsHttpClient:
     async def get_json(self, url):
         # type: (str) -> dict
         """Fetch JSON from URL using niquests."""
-        response = await niquests.aget(url)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = await niquests.aget(url)
+            response.raise_for_status()
+            return response.json()
+        except niquests.JSONDecodeError as e:
+            raise ResolutionError(f"Invalid JSON response from {url}: {e}")
+        except Exception:
+            # Let other exceptions propagate to be caught by resolve_url/resolve_did_web
+            raise
 
 
 def resolve(uri, http_client=None):
@@ -87,7 +93,10 @@ async def resolve_async(uri, http_client=None):
 async def resolve_url(url, http_client):
     # type: (str, HttpClient) -> dict
     """Resolve Controlled Identifier HTTP(S) URLs per W3C CID specification."""
-    document = await http_client.get_json(url)
+    try:
+        document = await http_client.get_json(url)
+    except Exception as e:
+        raise NetworkError(f"Failed to fetch {url}: {e}")
     validate_cid(document, url)
     return document
 
@@ -147,7 +156,10 @@ async def resolve_did_web(did_web, http_client):
     # type: (str, HttpClient) -> dict
     """Convert did:web to HTTPS URL and fetch DID document per W3C spec."""
     https_url = build_did_web_url(did_web)
-    did_document = await http_client.get_json(https_url)
+    try:
+        did_document = await http_client.get_json(https_url)
+    except Exception as e:
+        raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
     validate_did_doc(did_document, did_web)
     return did_document
 
