@@ -104,8 +104,6 @@ document
 
 ## 4 Signature structure and format
 
-2
-
 ### 4.1 General requirements
 
 ISCC metadata signatures shall use JSON as the base document format with embedded signature
@@ -173,7 +171,9 @@ generation.
 
 The canonicalization process shall include the following fields, when present, before hashing:
 
-a) pubkey field; b) controller field; c) keyid field.
+1. pubkey field;
+2. controller field;
+3. keyid field.
 
 The canonicalization process shall exclude only the proof field from the document before hashing.
 
