@@ -17,16 +17,12 @@ Reference:
 """
 
 import asyncio
-import time
 import urllib.parse
 from typing import Protocol
 
 import niquests
 
 from iscc_crypto.keys import pubkey_decode
-
-# Simple in-memory cache: {url: (result, timestamp)}
-_cache = {}  # type: dict[str, tuple[dict | Exception, float]]
 
 
 __all__ = [
@@ -58,35 +54,19 @@ class NiquestsHttpClient:
 
     async def get_json(self, url):
         # type: (str) -> dict
-        """Fetch JSON from URL using niquests with 5-minute cache.
+        """Fetch JSON from URL using niquests.
 
         :param url: The URL to fetch JSON from
         :return: Parsed JSON response as dictionary
         :raises ResolutionError: If JSON parsing fails
         """
-        # Check cache (5-minute TTL)
-        now = time.time()
-        if url in _cache:
-            result, timestamp = _cache[url]
-            if now - timestamp < 300:  # 5 minutes
-                if isinstance(result, Exception):
-                    raise result
-                return result
-
-        # Fetch from network
         try:
             response = await niquests.aget(url, timeout=(5, 10), headers={"User-Agent": "iscc-notary"})
             response.raise_for_status()
-            json_result = response.json()
-            _cache[url] = (json_result, now)
-            return json_result
+            return response.json()
         except niquests.JSONDecodeError as e:
-            error = ResolutionError(f"Invalid JSON response from {url}: {e}")
-            _cache[url] = (error, now)
-            raise error
-        except Exception as e:
-            # Cache network errors too
-            _cache[url] = (e, now)
+            raise ResolutionError(f"Invalid JSON response from {url}: {e}")
+        except Exception:
             raise
 
 

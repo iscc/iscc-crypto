@@ -645,11 +645,8 @@ async def test_resolve_did_web_network_error_with_mock():
 @pytest.mark.asyncio
 async def test_niquests_http_client_json_decode_error():
     """Test NiquestsHttpClient propagates JSON decode errors."""
-    from iscc_crypto.resolve import NiquestsHttpClient, _cache
+    from iscc_crypto.resolve import NiquestsHttpClient
     import niquests
-
-    # Clear cache to avoid interference from other tests
-    _cache.clear()
 
     client = NiquestsHttpClient()
 
@@ -678,11 +675,8 @@ async def test_niquests_http_client_json_decode_error():
 @pytest.mark.asyncio
 async def test_niquests_http_client_request_error():
     """Test NiquestsHttpClient propagates request errors."""
-    from iscc_crypto.resolve import NiquestsHttpClient, _cache
+    from iscc_crypto.resolve import NiquestsHttpClient
     import niquests
-
-    # Clear cache to avoid interference from other tests
-    _cache.clear()
 
     client = NiquestsHttpClient()
 
