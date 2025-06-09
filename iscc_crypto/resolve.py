@@ -18,10 +18,12 @@ Reference:
 
 import asyncio
 import urllib.parse
+from typing import Protocol
 
 import niquests
 
 from iscc_crypto.keys import pubkey_decode
+
 
 __all__ = [
     "resolve",
@@ -29,51 +31,74 @@ __all__ = [
     "validate_cid",
     "build_did_web_url",
     "validate_did_doc",
+    "HttpClient",
+    "NiquestsHttpClient",
 ]
 
 
-def resolve(uri):
-    # type: (str) -> dict
+class HttpClient(Protocol):
+    """HTTP client protocol for dependency injection."""
+
+    async def get_json(self, url):
+        # type: (str) -> dict
+        """Fetch JSON from URL."""
+        ...
+
+
+class NiquestsHttpClient:
+    """Real HTTP client using niquests."""
+
+    async def get_json(self, url):
+        # type: (str) -> dict
+        """Fetch JSON from URL using niquests."""
+        try:
+            response = await niquests.aget(url)
+            response.raise_for_status()
+            return response.json()
+        except niquests.JSONDecodeError as e:
+            raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")
+        except niquests.RequestException as e:
+            raise NetworkError(f"Failed to fetch {url}: {e}")
+        except ValueError as e:  # pragma: no cover
+            raise InvalidControlledIdentifierDocument(
+                f"Invalid JSON response from {url}: {e}"
+            )  # pragma: no cover
+
+
+def resolve(uri, http_client=None):
+    # type: (str, HttpClient | None) -> dict
     """Resolve a URI to a CID or DID document (wraps async function)."""
     try:
-        return asyncio.run(resolve_async(uri))
+        return asyncio.run(resolve_async(uri, http_client))
     except RuntimeError as e:
         if "cannot be called from a running event loop" in str(e):
             raise ResolutionError("resolve() cannot be called from async context. Use resolve_async() instead.")
         raise  # pragma: no cover
 
 
-async def resolve_async(uri):
-    # type: (str) -> dict
-    """Resolve a URI to a CID or DID document asynchronously using niquests."""
+async def resolve_async(uri, http_client=None):
+    # type: (str, HttpClient | None) -> dict
+    """Resolve a URI to a CID or DID document asynchronously."""
+    if http_client is None:
+        http_client = NiquestsHttpClient()
+
     # Route to the appropriate resolver
     if uri.startswith(("http://", "https://")):
-        return await resolve_url(uri)
+        return await resolve_url(uri, http_client)
     elif uri.startswith("did:key:"):
         return await resolve_did_key(uri)
     elif uri.startswith("did:web:"):
-        return await resolve_did_web(uri)
+        return await resolve_did_web(uri, http_client)
     else:
         raise InvalidURIError(f"Unsupported URI scheme: {uri}")
 
 
-async def resolve_url(url):
-    # type: (str) -> dict
+async def resolve_url(url, http_client):
+    # type: (str, HttpClient) -> dict
     """Resolve Controlled Identifier HTTP(S) URLs per W3C CID specification."""
-    try:
-        response = await niquests.aget(url)
-        response.raise_for_status()
-        document = response.json()
-    except niquests.JSONDecodeError as e:
-        raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")
-    except niquests.RequestException as e:
-        raise NetworkError(f"Failed to fetch {url}: {e}")
-    except ValueError as e:  # pragma: no cover
-        raise InvalidControlledIdentifierDocument(f"Invalid JSON response from {url}: {e}")  # pragma: no cover
-
+    document = await http_client.get_json(url)
     validate_cid(document, url)
-
-    return document  # pragma: no cover
+    return document
 
 
 def validate_cid(document, canonical_url):
@@ -133,20 +158,17 @@ async def resolve_did_key(did_key):
     }
 
 
-async def resolve_did_web(did_web):
-    # type: (str) -> dict
+async def resolve_did_web(did_web, http_client):
+    # type: (str, HttpClient) -> dict
     """Convert did:web to HTTPS URL and fetch DID document per W3C spec."""
     https_url = build_did_web_url(did_web)
     try:
-        response = await niquests.aget(https_url)
-        response.raise_for_status()
-        did_document = response.json()
-    except niquests.JSONDecodeError as e:  # pragma: no cover
-        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")  # pragma: no cover
-    except niquests.RequestException as e:
-        raise NetworkError(f"Failed to fetch DID document from {https_url}: {e}")
-    except ValueError as e:  # pragma: no cover
-        raise InvalidDocumentError(f"Invalid JSON response from {https_url}: {e}")  # pragma: no cover
+        did_document = await http_client.get_json(https_url)
+    except (InvalidControlledIdentifierDocument, NetworkError) as e:
+        # Re-raise with DID-specific error types
+        if isinstance(e, InvalidControlledIdentifierDocument):
+            raise InvalidDocumentError(str(e).replace("Invalid JSON response", "Invalid JSON response"))
+        raise NetworkError(str(e).replace("Failed to fetch", "Failed to fetch DID document from"))
 
     validate_did_doc(did_document, did_web)
     return did_document
