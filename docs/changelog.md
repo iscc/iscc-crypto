@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0] - Unreleased
+## [0.3.0] - 2025-06-10
 
 - Added CLI for cryptographic identity management with setup, validate-identity, and info commands
 - Added signature version tracking for ISCC signatures
