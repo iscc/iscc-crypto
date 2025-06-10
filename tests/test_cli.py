@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 from pathlib import Path
 
-from iscc_crypto.cli import main, get_config_dir, create_web_identity_doc, create_standalone_identity_doc
+from iscc_crypto.cli import main, get_config_dir
 
 
 def test_main_help():
@@ -39,35 +39,6 @@ def test_info_no_identity():
             iscc_crypto.cli.get_config_dir = original_get_config_dir
 
 
-def test_create_web_identity_doc():
-    # type: () -> None
-    """Test web identity document creation."""
-    public_key = "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
-    domain = "example.com"
-
-    doc = create_web_identity_doc(domain, public_key)
-
-    assert doc["@context"] == "https://www.w3.org/ns/did/v1"
-    assert doc["id"] == "did:web:example.com"
-    assert len(doc["verificationMethod"]) == 1
-    assert doc["verificationMethod"][0]["publicKeyMultibase"] == public_key
-    assert doc["authentication"] == ["did:web:example.com#key-1"]
-    assert doc["assertionMethod"] == ["did:web:example.com#key-1"]
-
-
-def test_create_standalone_identity_doc():
-    # type: () -> None
-    """Test standalone identity document creation."""
-    public_key = "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
-
-    doc = create_standalone_identity_doc(public_key)
-
-    assert doc["@context"] == "https://w3id.org/cid/v1"
-    assert len(doc["verificationMethod"]) == 1
-    assert doc["verificationMethod"][0]["publicKeyMultibase"] == public_key
-    assert doc["verificationMethod"][0]["id"] == "#key-1"
-
-
 def test_setup_standalone_identity():
     # type: () -> None
     """Test setup command for standalone identity."""
@@ -86,11 +57,11 @@ def test_setup_standalone_identity():
 
             assert result.exit_code == 0
             assert "Generated keypair" in result.output
-            assert "standalone identity" in result.output
+            assert "standalone keypair" in result.output
 
             # Check files were created
             assert Path("keypair.json").exists()
-            assert Path("did.json").exists()
+            assert not Path("did.json").exists()  # No identity document for standalone
             assert Path("backup-instructions.txt").exists()
 
             # Verify file contents
@@ -98,11 +69,7 @@ def test_setup_standalone_identity():
                 keypair_data = json.load(f)
             assert "public_key" in keypair_data
             assert "secret_key" in keypair_data
-
-            with open("did.json") as f:
-                identity_doc = json.load(f)
-            assert "@context" in identity_doc
-            assert "verificationMethod" in identity_doc
+            assert keypair_data.get("controller") is None
 
         finally:
             iscc_crypto.cli.get_config_dir = original_get_config_dir
@@ -133,15 +100,24 @@ def test_setup_web_identity():
             assert Path("keypair.json").exists()
             assert Path("did.json").exists()
 
-            # Verify DID Web document
+            # Verify DID Web document structure (controller_document format)
             with open("did.json") as f:
                 identity_doc = json.load(f)
             assert identity_doc["id"] == "did:web:example.com"
+            assert "@context" not in identity_doc  # Plain JSON, not JSON-LD
+            assert "verificationMethod" in identity_doc
+            assert identity_doc["verificationMethod"][0]["type"] == "Multikey"
+            assert identity_doc["verificationMethod"][0]["id"] == "did:web:example.com#iscc"
+            assert "authentication" in identity_doc
+            assert "assertionMethod" in identity_doc
+            assert "capabilityDelegation" in identity_doc
+            assert "capabilityInvocation" in identity_doc
 
             # Verify keypair has controller info
             with open("keypair.json") as f:
                 keypair_data = json.load(f)
             assert keypair_data["controller"] == "did:web:example.com"
+            assert keypair_data["key_id"] == "iscc"
 
         finally:
             iscc_crypto.cli.get_config_dir = original_get_config_dir
@@ -201,7 +177,7 @@ def test_setup_standalone_no_webserver():
 
             assert result.exit_code == 0
             assert "Generated keypair" in result.output
-            assert "standalone identity" in result.output
+            assert "standalone keypair" in result.output
 
         finally:
             iscc_crypto.cli.get_config_dir = original_get_config_dir
@@ -225,7 +201,7 @@ def test_info_with_web_identity():
                 "public_key": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
                 "secret_key": "z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA",
                 "controller": "did:web:example.com",
-                "key_id": "did:web:example.com#key-1",
+                "key_id": "iscc",
             }
 
             identity_doc = {"id": "did:web:example.com", "@context": "https://www.w3.org/ns/did/v1"}
@@ -308,7 +284,7 @@ def test_verify_success_mock():
             "id": "did:web:example.com",
             "verificationMethod": [
                 {
-                    "id": "did:web:example.com#key-1",
+                    "id": "did:web:example.com#iscc",
                     "publicKeyMultibase": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
                 }
             ],
@@ -387,11 +363,11 @@ def test_save_files_chmod_oserror():
 
                 assert result.exit_code == 0
                 assert "Generated keypair" in result.output
-                assert "standalone identity" in result.output
+                assert "standalone keypair" in result.output
 
                 # Check files were created despite chmod failure
                 assert Path("keypair.json").exists()
-                assert Path("did.json").exists()
+                assert not Path("did.json").exists()  # No identity document for standalone
                 assert Path("backup-instructions.txt").exists()
 
         finally:
@@ -419,11 +395,11 @@ def test_save_files_chmod_notimplementederror():
 
                 assert result.exit_code == 0
                 assert "Generated keypair" in result.output
-                assert "standalone identity" in result.output
+                assert "standalone keypair" in result.output
 
                 # Check files were created despite chmod failure
                 assert Path("keypair.json").exists()
-                assert Path("did.json").exists()
+                assert not Path("did.json").exists()  # No identity document for standalone
                 assert Path("backup-instructions.txt").exists()
 
         finally:

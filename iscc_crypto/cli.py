@@ -19,42 +19,9 @@ def get_config_dir():
     return Path(platformdirs.user_data_dir(APP_NAME))
 
 
-def create_web_identity_doc(domain, public_key):
-    # type: (str, str) -> dict
-    """Create DID Web identity document."""
-    did_id = f"did:web:{domain}"
-    key_id = f"{did_id}#key-1"
-
-    return {
-        "@context": "https://www.w3.org/ns/did/v1",
-        "id": did_id,
-        "verificationMethod": [
-            {
-                "id": key_id,
-                "type": "Ed25519VerificationKey2020",
-                "controller": did_id,
-                "publicKeyMultibase": public_key,
-            }
-        ],
-        "authentication": [key_id],
-        "assertionMethod": [key_id],
-    }
-
-
-def create_standalone_identity_doc(public_key):
-    # type: (str) -> dict
-    """Create standalone CID identity document."""
-    return {
-        "@context": "https://w3id.org/cid/v1",
-        "verificationMethod": [
-            {"id": "#key-1", "type": "Ed25519VerificationKey2020", "publicKeyMultibase": public_key}
-        ],
-    }
-
-
 def save_files(keypair, identity_doc, config_dir):
-    # type: (KeyPair, dict, Path) -> None
-    """Save keypair and identity document with proper permissions."""
+    # type: (KeyPair, dict | None, Path) -> None
+    """Save keypair and optionally identity document with proper permissions."""
     config_dir.mkdir(parents=True, exist_ok=True)
 
     # Save keypair with restricted permissions
@@ -76,10 +43,11 @@ def save_files(keypair, identity_doc, config_dir):
         # Windows doesn't support Unix-style permissions, skip silently
         pass
 
-    # Save identity document as did.json (ready for upload)
-    identity_file = config_dir / "did.json"
-    with open(identity_file, "w") as f:
-        json.dump(identity_doc, f, indent=2)
+    # Save identity document as did.json (ready for upload) if provided
+    if identity_doc is not None:
+        identity_file = config_dir / "did.json"
+        with open(identity_file, "w") as f:
+            json.dump(identity_doc, f, indent=2)
 
     # Create simple backup instructions
     backup_file = config_dir / "backup-instructions.txt"
@@ -154,7 +122,6 @@ def setup():
 
     # Create identity document
     if domain:
-        identity_doc = create_web_identity_doc(domain, keypair.public_key)
         identity_id = f"did:web:{domain}"
         upload_url = f"https://{domain}/.well-known/did.json"
 
@@ -163,10 +130,11 @@ def setup():
             public_key=keypair.public_key,
             secret_key=keypair.secret_key,
             controller=identity_id,
-            key_id=f"{identity_id}#key-1",
+            key_id="iscc",
         )
+        identity_doc = keypair.controller_document
     else:
-        identity_doc = create_standalone_identity_doc(keypair.public_key)
+        identity_doc = None
         identity_id = "standalone"
 
     # Save files
@@ -174,7 +142,8 @@ def setup():
 
     # Success message
     click.echo("✓ Generated keypair")
-    click.echo("✓ Created identity document")
+    if domain:
+        click.echo("✓ Created identity document")
     click.echo(f"✓ Saved to: {config_dir}")
 
     if domain:
@@ -186,8 +155,8 @@ def setup():
         click.echo("• Web hosting: Upload via FTP/SFTP")
         click.echo(f"\nTest with: curl {upload_url}")
     else:
-        click.echo(f"\n✓ Your standalone identity is ready to use")
-        click.echo("  No publishing required - identity is self-contained")
+        click.echo(f"\n✓ Your standalone keypair is ready to use")
+        click.echo("  Use it for signing content and credentials")
 
     click.echo(f"\n📋 Check backup-instructions.txt for security guidance")
 
