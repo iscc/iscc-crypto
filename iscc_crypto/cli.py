@@ -1,13 +1,12 @@
 """ISCC Crypto CLI - Command line interface for cryptographic identity management."""
 
-import asyncio
 import json
 import stat
 from pathlib import Path
 import click
 import platformdirs
 from iscc_crypto.keys import key_generate, KeyPair
-from iscc_crypto.resolve import resolve_url, NiquestsHttpClient
+from iscc_crypto.resolve import resolve
 
 
 APP_NAME = "iscc-crypto"
@@ -161,52 +160,35 @@ def setup():
     click.echo(f"\n📋 Check backup-instructions.txt for security guidance")
 
 
-@main.command()
+@main.command("validate-identity")
 @click.argument("identifier")
-def verify(identifier):
+def validate_identity(identifier):
     # type: (str) -> None
-    """Verify an identity (DID URL or document URL)."""
-    click.echo(f"🔍 Verifying: {identifier}")
+    """Validate an identity document (DID URI or document URL)."""
+    click.echo(f"🔍 Validating identity: {identifier}")
 
     try:
-        if identifier.startswith("did:web:"):
-            # Convert DID Web to URL
-            domain = identifier.replace("did:web:", "")
-            url = f"https://{domain}/.well-known/did.json"
-        elif identifier.startswith("http"):
-            url = identifier
-        else:
-            click.echo("❌ Invalid identifier. Use DID Web (did:web:example.com) or URL")
-            return
+        # Use the resolve function which handles all URI types and validation
+        doc = resolve(identifier)
 
-        # Fetch and validate document
-        click.echo(f"📥 Fetching: {url}")
+        # If we get here, the document passed validation
+        click.echo("✅ Valid identity document")
 
-        async def fetch_doc():
-            http_client = NiquestsHttpClient()
-            return await resolve_url(url, http_client)
+        # Show basic info
+        if "id" in doc:
+            click.echo(f"   ID: {doc['id']}")
 
-        doc = asyncio.run(fetch_doc())
-
-        if "@context" in doc and "verificationMethod" in doc:
-            click.echo("✅ Valid identity document")
-
-            # Show basic info
-            if "id" in doc:
-                click.echo(f"   ID: {doc['id']}")
-
-            methods = doc.get("verificationMethod", [])
+        # Show verification methods if present
+        methods = doc.get("verificationMethod", [])
+        if methods:
             click.echo(f"   Verification methods: {len(methods)}")
-
             for method in methods:
                 if "publicKeyMultibase" in method:
                     key = method["publicKeyMultibase"]
                     click.echo(f"   Public key: {key[:20]}...")
-        else:
-            click.echo("❌ Invalid document format")
 
     except Exception as e:
-        click.echo(f"❌ Verification failed: {e}")
+        click.echo(f"❌ Validation failed: {e}")
 
 
 @main.command()

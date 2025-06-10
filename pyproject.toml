@@ -62,6 +62,7 @@ dev = [
     "mdformat-gfm",
     "mdformat-gfm-alerts",
     "iscc-crypto",
+    "mktestdocs>=0.2.4",
 ]
 docs = ["mkdocs-material"]
 

@@ -125,12 +125,12 @@ def test_setup_web_identity():
 
 def test_verify_invalid_identifier():
     # type: () -> None
-    """Test verify command with invalid identifier."""
+    """Test validate-identity command with invalid identifier."""
     runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
-    result = runner.invoke(main, ["verify", "invalid-identifier"])
+    result = runner.invoke(main, ["validate-identity", "invalid-identifier"])
 
     assert result.exit_code == 0
-    assert "Invalid identifier" in result.output
+    assert "Validation failed" in result.output
 
 
 def test_setup_overwrite_cancelled():
@@ -251,12 +251,12 @@ def test_info_with_invalid_keypair():
 
 def test_verify_network_error():
     # type: () -> None
-    """Test verify command with network error."""
+    """Test validate-identity command with network error."""
     runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
-    result = runner.invoke(main, ["verify", "did:web:nonexistent.example"])
+    result = runner.invoke(main, ["validate-identity", "did:web:nonexistent.example"])
 
     assert result.exit_code == 0
-    assert "Verification failed" in result.output
+    assert "Validation failed" in result.output
 
 
 def test_get_config_dir():
@@ -268,16 +268,15 @@ def test_get_config_dir():
 
 def test_verify_success_mock():
     # type: () -> None
-    """Test verify command with successful verification (mocked)."""
+    """Test validate-identity command with successful verification (mocked)."""
     runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
 
-    # Mock the async function to return a valid document
+    # Mock the resolve function to return a valid document
     import iscc_crypto.cli
-    import asyncio
 
-    original_asyncio_run = asyncio.run
+    original_resolve = iscc_crypto.cli.resolve
 
-    def mock_asyncio_run(coro):
+    def mock_resolve(uri, http_client=None):
         # Return a valid DID document
         return {
             "@context": "https://www.w3.org/ns/did/v1",
@@ -290,10 +289,10 @@ def test_verify_success_mock():
             ],
         }
 
-    iscc_crypto.cli.asyncio.run = mock_asyncio_run
+    iscc_crypto.cli.resolve = mock_resolve
 
     try:
-        result = runner.invoke(main, ["verify", "did:web:example.com"])
+        result = runner.invoke(main, ["validate-identity", "did:web:example.com"])
 
         assert result.exit_code == 0
         assert "Valid identity document" in result.output
@@ -302,44 +301,44 @@ def test_verify_success_mock():
         assert "Public key: z6MkpFpVngrAUTSY6Pag..." in result.output
 
     finally:
-        iscc_crypto.cli.asyncio.run = original_asyncio_run
+        iscc_crypto.cli.resolve = original_resolve
 
 
 def test_verify_invalid_format_mock():
     # type: () -> None
-    """Test verify command with invalid document format (mocked)."""
+    """Test validate-identity command with invalid document format (mocked)."""
     runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
 
-    # Mock the async function to return an invalid document
+    # Mock the resolve function to raise validation error
     import iscc_crypto.cli
-    import asyncio
+    from iscc_crypto.resolve import ResolutionError
 
-    original_asyncio_run = asyncio.run
+    original_resolve = iscc_crypto.cli.resolve
 
-    def mock_asyncio_run(coro):
-        # Return an invalid document (missing required fields)
-        return {"invalid": "document"}
+    def mock_resolve(uri, http_client=None):
+        # Raise validation error as would happen with invalid document
+        raise ResolutionError("Document 'id' 'invalid' does not match requested DID 'did:web:example.com'")
 
-    iscc_crypto.cli.asyncio.run = mock_asyncio_run
+    iscc_crypto.cli.resolve = mock_resolve
 
     try:
-        result = runner.invoke(main, ["verify", "did:web:example.com"])
+        result = runner.invoke(main, ["validate-identity", "did:web:example.com"])
 
         assert result.exit_code == 0
-        assert "Invalid document format" in result.output
+        assert "Validation failed" in result.output
 
     finally:
-        iscc_crypto.cli.asyncio.run = original_asyncio_run
+        iscc_crypto.cli.resolve = original_resolve
 
 
 def test_verify_http_url():
     # type: () -> None
-    """Test verify command with HTTP URL."""
+    """Test validate-identity command with HTTP URL."""
     runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
-    result = runner.invoke(main, ["verify", "https://example.com/.well-known/did.json"])
+    result = runner.invoke(main, ["validate-identity", "https://example.com/.well-known/did.json"])
 
     assert result.exit_code == 0
-    assert "Verification failed" in result.output  # Will fail due to network error
+    assert "Validation failed" in result.output  # Will fail due to network error
 
 
 def test_save_files_chmod_oserror():
