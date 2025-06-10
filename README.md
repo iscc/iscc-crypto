@@ -33,21 +33,31 @@ pip install iscc-crypto
 ## Quick Start
 
 ```python
-import iscc_crypto as icr
+>>> import json
+>>> import iscc_crypto as icr
 
-# Generate new Ed25519 keypair
-keypair = icr.key_generate()
+>>> # Use fixed test keys for deterministic output
+>>> keypair = icr.key_from_secret("z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA")
 
-# Sign a JSON document
-doc = {"title": "My Document", "content": "Important data"}
-signed_doc = icr.sign_json(doc, keypair)
+>>> # Sign a JSON document
+>>> doc = {"title": "My Document", "content": "Important data"}
+>>> signed_doc = icr.sign_json(doc, keypair)
 
-# Verify the signed document
-result = icr.verify_json(signed_doc)
-assert result.is_valid == True
+>>> # Show the signed document structure
+>>> print(json.dumps(signed_doc, indent=2))
+{
+  "title": "My Document",
+  "content": "Important data",
+  "signature": {
+    "version": "ISCC-SIG v1.0",
+    "pubkey": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
+    "proof": "z5xCgXk6tGJTVcvrcvVok5XgLn5Mefo49ztwwW8QCmjoySH4ZEkri4XoY2JjiyaD7yD4Na7eoGPqmhPoeM2uvBmF8"
+  }
+}
 
-# The original data is preserved in the signed document
-assert signed_doc["title"] == "My Document"
+>>> # Verify the signed document
+>>> icr.verify_json(signed_doc)
+VerificationResult(signature_valid=True, identity_verified=None, message=None)
 ```
 
 ## Documentation
