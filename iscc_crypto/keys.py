@@ -61,13 +61,25 @@ class KeyPair:
         return ed25519.Ed25519PublicKey.from_public_bytes(public_bytes)
 
     @cached_property
+    def key_id_fallback(self):
+        # type: () -> str
+        """Return key_id if set, otherwise public_key as fallback."""
+        return self.key_id or self.public_key
+
+    @cached_property
     def pubkey_multikey(self):
         # type: () -> dict
-        """Multikey formated public key object"""
-        if not all([self.controller, self.key_id]):
-            raise ValueError("MultiKey requires Controller and key ID")
+        """
+        Multikey formated public key object
+
+        NOTE: We use pubkey as key_id if key_id is not set
+        """
+
+        if not self.controller:
+            raise ValueError("MultiKey requires Controller")
+
         return dict(
-            id=f"{self.controller}#{self.key_id}",
+            id=f"{self.controller}#{self.key_id_fallback}",
             type="Multikey",
             controller=self.controller,
             publicKeyMultibase=self.public_key,
@@ -76,11 +88,20 @@ class KeyPair:
     @cached_property
     def controller_document(self):
         # type: () -> dict
-        """Get controller document as defined in https://www.w3.org/TR/controller-document/"""
+        """
+        Controlled Identifier Document as defined in https://www.w3.org/TR/cid-1.0/
+
+        We use the JSON (not JSON-LD) format to avoid the need for a dependency on a JSON-LD library and
+        authorize the key for all standard verification relationships.
+        """
+        verification_method_id = f"{self.controller}#{self.key_id_fallback}"
         return {
-            "@context": "https://www.w3.org/ns/controller/v1",
             "id": self.controller,
-            "assertionMethod": [self.pubkey_multikey],
+            "verificationMethod": [self.pubkey_multikey],
+            "authentication": [verification_method_id],
+            "assertionMethod": [verification_method_id],
+            "capabilityDelegation": [verification_method_id],
+            "capabilityInvocation": [verification_method_id],
         }
 
 

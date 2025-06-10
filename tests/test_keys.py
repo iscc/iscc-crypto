@@ -387,7 +387,7 @@ def test_keypair_pubkey_multikey():
 
     # Test error when missing required fields
     kp_incomplete = key_generate()
-    with pytest.raises(ValueError, match="MultiKey requires Controller and key ID"):
+    with pytest.raises(ValueError, match="MultiKey requires Controller"):
         _ = kp_incomplete.pubkey_multikey
 
 
@@ -399,13 +399,16 @@ def test_keypair_controller_document():
     doc = kp.controller_document
 
     # Verify document structure
-    assert doc["@context"] == "https://www.w3.org/ns/controller/v1"
     assert doc["id"] == "did:web:example.com"
-    assert isinstance(doc["assertionMethod"], list)
-    assert len(doc["assertionMethod"]) == 1
+    assert isinstance(doc["verificationMethod"], list)
+    assert len(doc["verificationMethod"]) == 1
+    assert doc["authentication"] == ["did:web:example.com#key-0"]
+    assert doc["assertionMethod"] == ["did:web:example.com#key-0"]
+    assert doc["capabilityDelegation"] == ["did:web:example.com#key-0"]
+    assert doc["capabilityInvocation"] == ["did:web:example.com#key-0"]
 
-    # Verify assertionMethod contains the multikey
-    multikey = doc["assertionMethod"][0]
+    # Verify verificationMethod contains the multikey
+    multikey = doc["verificationMethod"][0]
     assert multikey["id"] == "did:web:example.com#key-0"
     assert multikey["type"] == "Multikey"
     assert multikey["controller"] == "did:web:example.com"
