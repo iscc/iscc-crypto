@@ -70,7 +70,7 @@ markdown_extensions:
 nav:
   - Overview: index.md
   - Usage Guide: usage-guide.md
-  - ISCC Signature Spec: iscc-sig-spec.md
+  - Signature Spec: iscc-sig-spec.md
   - Changelog: changelog.md
 
 
