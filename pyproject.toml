@@ -53,6 +53,7 @@ test = [
     "coverage",
     "pytest-cov",
     "pytest-asyncio",
+    "mktestdocs",
 ]
 dev = [
     "poethepoet",

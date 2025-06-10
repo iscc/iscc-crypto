@@ -33,30 +33,21 @@ pip install iscc-crypto
 ## Quick Start
 
 ```python
-import iscc_crypto as ic
+import iscc_crypto as icr
 
 # Generate new Ed25519 keypair
-keypair = ic.key_generate()
-print(f"Public Key: {keypair.public_key}")
-print(f"Secret Key: {keypair.secret_key}")
+keypair = icr.key_generate()
 
 # Sign a JSON document
-doc = {"hello": "world"}
-signed = ic.sign_json(doc, keypair)
-print(f"Signed Doc: {signed}")
+doc = {"title": "My Document", "content": "Important data"}
+signed_doc = icr.sign_json(doc, keypair)
 
-# Verify signature
-verified = ic.verify_json(signed)
-print(f"Verified Doc: {verified}")
+# Verify the signed document
+result = icr.verify_json(signed_doc)
+assert result.is_valid == True
 
-# Create W3C Data Integrity Proof
-vc = {"type": "VerifiableCredential", "issuer": "did:web:example.com"}
-signed_vc = ic.sign_vc(vc, keypair)
-print(f"Signed VC: {signed_vc}")
-
-# Verify W3C Data Integrity Proof
-result = ic.verify_vc(signed_vc)
-print(f"VC Verified: {result.is_valid}")
+# The original data is preserved in the signed document
+assert signed_doc["title"] == "My Document"
 ```
 
 ## Documentation
@@ -68,14 +59,14 @@ Documentation is published at <https://crypto.iscc.codes>
 **Requirements**
 
 - [Python 3.10](https://www.python.org/) or higher
-- [Poetry](https://python-poetry.org/) for dependency management
+- [UV](https://docs.astral.sh/uv/) for dependency management
 
 **Development Setup**
 
 ```shell
 git clone https://github.com/iscc/iscc-crypto.git
 cd iscc-crypto
-poetry install
+uv sync
 ```
 
 **Testing**
@@ -83,7 +74,7 @@ poetry install
 Run the test suite:
 
 ```shell
-poetry run pytest
+uv run pytest
 ```
 
 ## Maintainers
