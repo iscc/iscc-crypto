@@ -399,7 +399,7 @@ wheels = [
 
 [[package]]
 name = "iscc-crypto"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "base58" },
@@ -414,7 +414,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "black" },
-    { name = "iscc-crypto" },
     { name = "mdformat" },
     { name = "mdformat-gfm" },
     { name = "mdformat-gfm-alerts" },
@@ -447,7 +446,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "black" },
-    { name = "iscc-crypto", editable = "." },
     { name = "mdformat" },
     { name = "mdformat-gfm" },
     { name = "mdformat-gfm-alerts" },

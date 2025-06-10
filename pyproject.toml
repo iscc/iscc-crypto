@@ -1,6 +1,6 @@
 [project]
 name = "iscc-crypto"
-version = "0.3.0"
+version = "0.4.0"
 description = "ISCC-CRYPTO - cryptographic operations for the International Standard Content Code"
 authors = [{ name = "Titusz", email = "tp@py7.de" }]
 requires-python = "~=3.10"
@@ -61,7 +61,6 @@ dev = [
     "mdformat",
     "mdformat-gfm",
     "mdformat-gfm-alerts",
-    "iscc-crypto",
     "mktestdocs>=0.2.4",
 ]
 docs = ["mkdocs-material"]
@@ -73,8 +72,6 @@ default-groups = [
     "docs",
 ]
 
-[tool.uv.sources]
-iscc-crypto = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
