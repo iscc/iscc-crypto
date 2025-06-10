@@ -110,8 +110,9 @@ When an identity document is provided:
 
 ### Keypair Information
 
-Public Key: `z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx` Secret Key:
-`z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA` Controller: `did:web:crypto.iscc.codes:alice`
+- **Public Key**: `z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx`
+- **Secret Key**: `z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA`
+- **Controller**: `did:web:crypto.iscc.codes:alice`
 
 ### Controlled Identity Document
 

@@ -24,9 +24,9 @@ def main():
 
     # Show the keypair being used
     print("### Keypair Information")
-    print(f"Public Key: `{PUBLIC_KEY}`")
-    print(f"Secret Key: `{SECRET_KEY}`")
-    print(f"Controller: `{CONTOLLER}`")
+    print(f"- **Public Key**: `{PUBLIC_KEY}`")
+    print(f"- **Secret Key**: `{SECRET_KEY}`")
+    print(f"- **Controller**: `{CONTOLLER}`")
     print()
 
     # Show corresponding controler document

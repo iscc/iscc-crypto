@@ -782,3 +782,57 @@ def test_resolve_none():
     """Test resolve with None input."""
     with pytest.raises(AttributeError):
         resolve(None)
+
+
+@pytest.mark.asyncio
+async def test_resolve_did_web_alice_example():
+    """Test did:web resolution with live example data from ISCC signature spec."""
+    # This tests the example from docs/iscc-sig-spec.md
+    did_web = "did:web:crypto.iscc.codes:alice"
+    http_client = NiquestsHttpClient()
+
+    result = await resolve_did_web(did_web, http_client)
+
+    # Verify the structure matches the expected DID document
+    assert result["id"] == "did:web:crypto.iscc.codes:alice"
+
+    # Verify verificationMethod
+    assert len(result["verificationMethod"]) == 1
+    vm = result["verificationMethod"][0]
+    assert vm["id"] == "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+    assert vm["type"] == "Multikey"
+    assert vm["controller"] == "did:web:crypto.iscc.codes:alice"
+    assert vm["publicKeyMultibase"] == "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+
+    # Verify capability references
+    expected_ref = "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+    assert result["authentication"] == [expected_ref]
+    assert result["assertionMethod"] == [expected_ref]
+    assert result["capabilityDelegation"] == [expected_ref]
+    assert result["capabilityInvocation"] == [expected_ref]
+
+
+def test_resolve_did_web_alice_example_sync():
+    """Test did:web resolution with live example data using sync interface."""
+    # This tests the example from docs/iscc-sig-spec.md
+    did_web = "did:web:crypto.iscc.codes:alice"
+
+    result = resolve(did_web)
+
+    # Verify the structure matches the expected DID document
+    assert result["id"] == "did:web:crypto.iscc.codes:alice"
+
+    # Verify verificationMethod
+    assert len(result["verificationMethod"]) == 1
+    vm = result["verificationMethod"][0]
+    assert vm["id"] == "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+    assert vm["type"] == "Multikey"
+    assert vm["controller"] == "did:web:crypto.iscc.codes:alice"
+    assert vm["publicKeyMultibase"] == "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+
+    # Verify capability references
+    expected_ref = "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+    assert result["authentication"] == [expected_ref]
+    assert result["assertionMethod"] == [expected_ref]
+    assert result["capabilityDelegation"] == [expected_ref]
+    assert result["capabilityInvocation"] == [expected_ref]
