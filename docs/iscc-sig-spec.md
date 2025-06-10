@@ -3,6 +3,20 @@
 This specification defines a simple JSON signature format for ISCC metadata using EdDSA signatures and JSON
 Canonicalization Scheme (JCS).
 
+## Why a Custom Signature Format?
+
+The ISCC framework requires a signature format that balances simplicity, flexibility, and standards compliance:
+
+- **Simplicity**: Unlike complex standards like JSON-LD signatures or JWT, ISCC signatures are straightforward
+  JSON objects that developers can implement without extensive cryptographic libraries
+- **Flexibility**: The format supports three verification modes (proof-only, self-verifying, identity-bound)
+  allowing use cases from simple integrity checks to full identity verification
+- **Minimal Dependencies**: Uses only Ed25519 and JCS, avoiding heavyweight dependencies like JSON-LD processors
+  or JWT libraries
+- **Identity Agnostic**: Works with any identity system (DIDs, CIDs, URLs) without requiring specific identity
+  infrastructure
+- **Backward Compatible**: The simple structure ensures long-term stability and easy migration paths
+
 ## Overview
 
 ISCC Signatures add a `signature` object to any JSON document, providing cryptographic integrity and optional
