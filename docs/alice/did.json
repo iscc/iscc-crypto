@@ -1,18 +1,23 @@
 {
-  "@context": [
-    "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/multikey/v1"
-  ],
   "id": "did:web:crypto.iscc.codes:alice",
   "verificationMethod": [
     {
-      "id": "did:web:crypto.iscc.codes#key-1",
+      "id": "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
       "type": "Multikey",
-      "controller": "did:web:crypto.iscc.codes",
+      "controller": "did:web:crypto.iscc.codes:alice",
       "publicKeyMultibase": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
     }
   ],
+  "authentication": [
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+  ],
   "assertionMethod": [
-    "did:web:crypto.iscc.codes#key-1"
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+  ],
+  "capabilityDelegation": [
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+  ],
+  "capabilityInvocation": [
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
   ]
 }

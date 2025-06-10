@@ -20,30 +20,31 @@ META = {
 
 
 def main():
-    print("# ISCC Signature Test Vectors\n")
+    print("## ISCC Signature Example\n")
 
     # Show the keypair being used
-    print("## Keypair Information")
-    print(f"Public Key: {PUBLIC_KEY}")
-    print(f"Secret Key: {SECRET_KEY}")
-    print(f"Controller: {CONTOLLER}")
+    print("### Keypair Information")
+    print(f"Public Key: `{PUBLIC_KEY}`")
+    print(f"Secret Key: `{SECRET_KEY}`")
+    print(f"Controller: `{CONTOLLER}`")
     print()
 
     # Show corresponding controler document
-    print("## Controller Document")
+    print("### Controlled Identity Document")
+    print("Must be published at http://crypto.iscc.codes/alice/did.json:")
     print("```json")
     print(json.dumps(KEYPAIR.controller_document, indent=2))
     print("```")
 
     # Show the document being signed
-    print("## Original Document")
+    print("### Document to be Signed")
     print("```json")
     print(json.dumps(META, indent=2))
     print("```")
     print()
 
     # Example 3: IDENTITY_BOUND signature
-    print("## Example: IDENTITY_BOUND Signature")
+    print("### Example: IDENTITY_BOUND Signature")
     print("Includes controller URI and public key for full attribution.")
     # Create keypair with controller
     keypair_with_controller = icr.KeyPair(

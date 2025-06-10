@@ -92,87 +92,73 @@ When an identity document is provided:
 - **Public Keys**: 34-byte format with 2-byte ED01 prefix + 32-byte key
 - **Signatures**: 64-byte Ed25519 signatures
 
-## Test Vectors
+## ISCC Signature Example
 
-### Keypair
+### Keypair Information
 
-```
-Public Key: z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx
-Secret Key: z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA
-```
+Public Key: `z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx` Secret Key:
+`z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA` Controller: `did:web:crypto.iscc.codes:alice`
 
-### Original Document
+### Controlled Identity Document
 
-```json
-{
-  "@context": "http://purl.org/iscc/context",
-  "@type": "VideoObject",
-  "$schema": "http://purl.org/iscc/schema",
-  "iscc": "ISCC:KACYPXW445FTYNJ3CYSXHAFJMA2HUWULUNRFE3BLHRSCXYH2M5AEGQY",
-  "name": "The Never Ending Story",
-  "description": "a 1984 fantasy film co-written and directed by *Wolfgang Petersen*",
-  "image": "https://picsum.photos/200/300.jpg"
-}
-```
-
-### Example Signature (IDENTITY_BOUND)
+Must be published at http://crypto.iscc.codes/alice/did.json:
 
 ```json
 {
-  "@context": "http://purl.org/iscc/context",
-  "@type": "VideoObject",
-  "$schema": "http://purl.org/iscc/schema",
-  "iscc": "ISCC:KACYPXW445FTYNJ3CYSXHAFJMA2HUWULUNRFE3BLHRSCXYH2M5AEGQY",
-  "name": "The Never Ending Story",
-  "description": "a 1984 fantasy film co-written and directed by *Wolfgang Petersen*",
-  "image": "https://picsum.photos/200/300.jpg",
-  "signature": {
-    "version": "ISCC-SIG v1.0",
-    "controller": "did:web:crypto.iscc.codes",
-    "pubkey": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
-    "proof": "z5sKjxbAHZ1cpoWUeg2cVJcmBpUmjy36b6Qt3SokHGbMUT8TY7WyPkJGyJTL76afTzsVZxx9vuNQzGijzZitX171x"
-  }
-}
-```
-
-### Canonicalized Form (for verification)
-
-After removing the `proof` field and applying JCS canonicalization:
-
-```
-{"$schema":"http://purl.org/iscc/schema","@context":"http://purl.org/iscc/context","@type":"VideoObject","description":"a 1984 fantasy film co-written and directed by *Wolfgang Petersen*","image":"https://picsum.photos/200/300.jpg","iscc":"ISCC:KACYPXW445FTYNJ3CYSXHAFJMA2HUWULUNRFE3BLHRSCXYH2M5AEGQY","name":"The Never Ending Story","signature":{"controller":"did:web:crypto.iscc.codes","pubkey":"z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx","version":"ISCC-SIG v1.0"}}
-```
-
-### Raw Signature Example
-
-```
-Message (UTF-8): Hello ISCC World!
-Message (hex): 48656c6c6f204953434320576f726c6421
-Signature: z2RbHNur6LCowVV7T2m8d8rdEvgMnYpb54166JyA17QZog1tPj7xHrif5hTJBp6fSbnEwdWaaY7rnA5z9nrKzpHT2
-```
-
-### DID Document
-
-For identity verification to work with `did:web:crypto.iscc.codes`, the following DID document must be published
-at `https://crypto.iscc.codes/.well-known/did.json`:
-
-```json
-{
-  "@context": [
-    "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/multikey/v1"
-  ],
-  "id": "did:web:crypto.iscc.codes",
+  "id": "did:web:crypto.iscc.codes:alice",
   "verificationMethod": [
     {
-      "id": "did:web:crypto.iscc.codes#key-1",
+      "id": "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
       "type": "Multikey",
-      "controller": "did:web:crypto.iscc.codes",
+      "controller": "did:web:crypto.iscc.codes:alice",
       "publicKeyMultibase": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
     }
   ],
+  "authentication": [
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+  ],
   "assertionMethod": [
-    "did:web:crypto.iscc.codes#key-1"
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+  ],
+  "capabilityDelegation": [
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
+  ],
+  "capabilityInvocation": [
+    "did:web:crypto.iscc.codes:alice#z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx"
   ]
+}
+```
+
+### Document to be Signed
+
+```json
+{
+  "@context": "http://purl.org/iscc/context",
+  "@type": "VideoObject",
+  "$schema": "http://purl.org/iscc/schema",
+  "iscc": "ISCC:KACYPXW445FTYNJ3CYSXHAFJMA2HUWULUNRFE3BLHRSCXYH2M5AEGQY",
+  "name": "The Never Ending Story",
+  "description": "a 1984 fantasy film co-written and directed by *Wolfgang Petersen*"
+}
+```
+
+### Example: IDENTITY_BOUND Signature
+
+Includes controller URI and public key for full attribution.
+
+```json
+{
+  "@context": "http://purl.org/iscc/context",
+  "@type": "VideoObject",
+  "$schema": "http://purl.org/iscc/schema",
+  "iscc": "ISCC:KACYPXW445FTYNJ3CYSXHAFJMA2HUWULUNRFE3BLHRSCXYH2M5AEGQY",
+  "name": "The Never Ending Story",
+  "description": "a 1984 fantasy film co-written and directed by *Wolfgang Petersen*",
+  "signature": {
+    "version": "ISCC-SIG v1.0",
+    "controller": "did:web:crypto.iscc.codes:alice",
+    "pubkey": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
+    "proof": "z3fVSTAfmNZTp1unwoXsyQa9sUx7gAxaZVavBLEPA5muup5ukxbCrirS8jcuhKzvQ3kp6UCJz2RA5wkZhYZ49o5wr"
+  }
 }
 ```
