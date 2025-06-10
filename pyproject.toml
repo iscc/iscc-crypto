@@ -59,8 +59,8 @@ dev = [
     "ruff",
     "black",
     "mdformat",
-    "mdformat-tables",
-    "mdformat_admon",
+    "mdformat-gfm",
+    "mdformat-gfm-alerts",
     "iscc-crypto",
 ]
 docs = ["mkdocs-material"]

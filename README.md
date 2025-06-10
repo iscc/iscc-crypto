@@ -5,7 +5,8 @@
 `iscc-crypto` is the cryptographic signing and verification module for the [ISCC](https://iscc.codes)
 (*International Standard Content Code*) Framework.
 
-> [!CAUTION] **This is a proof of concept.** All releases with version numbers below v1.0.0 may break backward
+> [!CAUTION]
+> **This is a proof of concept.** All releases with version numbers below v1.0.0 may break backward
 > compatibility. The algorithms and code of this repository are experimental and not part of the official
 > [ISO 24138:2024](https://www.iso.org/standard/77899.html) standard. **This library has not undergone a formal
 > security audit by independent third parties.** While we strive to follow best practices and have implemented
