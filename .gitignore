@@ -145,3 +145,5 @@ cython_debug/
 
 CLAUDE.local.md
 .claude
+notes/
+.mcp.json
