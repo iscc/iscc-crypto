@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.5.0] - Unreleased
+
 ## [0.4.0] - 2025-07-28
 
 - Added cryptographic nonce generation with embedded node identifier
