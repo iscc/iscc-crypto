@@ -6,6 +6,7 @@
 - Added keygen command for cryptographic key generation
 - Added version display in CLI help output
 - Added -h as short notation for the help option in CLI
+- Added "Getting Started" documentation
 - Updated project URLs in pyproject.toml
 - Updated version retrieval method
 
