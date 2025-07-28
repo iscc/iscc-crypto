@@ -8,13 +8,13 @@ Canonicalization Scheme (JCS).
 The ISCC framework requires a signature format that balances simplicity, flexibility, and standards compliance:
 
 - **Simplicity**: Unlike complex standards like JSON-LD signatures or JWT, ISCC signatures are straightforward
-  JSON objects that developers can implement without extensive cryptographic libraries
+    JSON objects that developers can implement without extensive cryptographic libraries
 - **Flexibility**: The format supports three verification modes (proof-only, self-verifying, identity-bound)
-  allowing use cases from simple integrity checks to full identity verification
+    allowing use cases from simple integrity checks to full identity verification
 - **Minimal Dependencies**: Uses only Ed25519 and JCS, avoiding heavyweight dependencies like JSON-LD processors
-  or JWT libraries
+    or JWT libraries
 - **Identity Agnostic**: Works with any identity system (DIDs, CIDs, URLs) without requiring specific identity
-  infrastructure
+    infrastructure
 - **Backward Compatible**: The simple structure ensures long-term stability and easy migration paths
 
 ## Overview
@@ -67,8 +67,8 @@ Includes all available fields from the signing keypair.
 
 1. Ensure input JSON has no existing `signature` field
 2. Create a copy and add `signature` object with:
-   - `version`: "ISCC-SIG v1.0"
-   - Optional fields based on signature type
+    - `version`: "ISCC-SIG v1.0"
+    - Optional fields based on signature type
 3. Canonicalize the entire object using JCS
 4. Sign the canonical bytes with Ed25519
 5. Encode signature as multibase (z-base58-btc)
@@ -77,11 +77,11 @@ Includes all available fields from the signing keypair.
 ## Verification Process
 
 1. Extract and validate `signature` object:
-   - Check `version` equals "ISCC-SIG v1.0"
-   - Extract `proof` field
+    - Check `version` equals "ISCC-SIG v1.0"
+    - Extract `proof` field
 2. Obtain public key from:
-   - `signature.pubkey` field (if present)
-   - External parameter (if provided)
+    - `signature.pubkey` field (if present)
+    - External parameter (if provided)
 3. Create copy without `signature.proof` field
 4. Canonicalize using JCS
 5. Verify EdDSA signature against canonical bytes
@@ -93,10 +93,10 @@ When an identity document is provided:
 1. Check if `signature.controller` exists
 2. Verify the public key is authorized in the identity document's `verificationMethod` array
 3. Match verification methods by:
-   - Same controller URI AND
-   - Same public key value (publicKeyMultibase)
-   - If `keyid` is provided: also match against verification method's id
-   - If `keyid` is absent: the public key itself acts as the identifier
+    - Same controller URI AND
+    - Same public key value (publicKeyMultibase)
+    - If `keyid` is provided: also match against verification method's id
+    - If `keyid` is absent: the public key itself acts as the identifier
 
 ## Implementation Requirements
 
