@@ -41,7 +41,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://iscc.codes"
+Documentation = "https://crypto.iscc.codes"
+Repository = "https://github.com/iscc/iscc-crypto"
 
 [project.scripts]
 iscc-crypto = "iscc_crypto.cli:main"
