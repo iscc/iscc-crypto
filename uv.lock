@@ -499,7 +499,6 @@ dev = [
     { name = "mdformat-gfm" },
     { name = "mdformat-gfm-alerts" },
     { name = "mdformat-mkdocs", extra = ["recommended"] },
-    { name = "mktestdocs" },
     { name = "poethepoet" },
     { name = "ruff" },
 ]
@@ -509,6 +508,7 @@ docs = [
 test = [
     { name = "bandit" },
     { name = "coverage" },
+    { name = "mktestdocs" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -532,7 +532,6 @@ dev = [
     { name = "mdformat-gfm" },
     { name = "mdformat-gfm-alerts" },
     { name = "mdformat-mkdocs", extras = ["recommended"], specifier = ">=4.3.0" },
-    { name = "mktestdocs", specifier = ">=0.2.4" },
     { name = "poethepoet" },
     { name = "ruff" },
 ]
@@ -540,6 +539,7 @@ docs = [{ name = "mkdocs-material" }]
 test = [
     { name = "bandit" },
     { name = "coverage" },
+    { name = "mktestdocs", specifier = ">=0.2.4" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },

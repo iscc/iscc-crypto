@@ -54,6 +54,7 @@ test = [
     "coverage",
     "pytest-cov",
     "pytest-asyncio",
+    "mktestdocs>=0.2.4",
 ]
 dev = [
     "poethepoet",
@@ -62,7 +63,6 @@ dev = [
     "mdformat",
     "mdformat-gfm",
     "mdformat-gfm-alerts",
-    "mktestdocs>=0.2.4",
     "mdformat-mkdocs[recommended]>=4.3.0",
 ]
 docs = ["mkdocs-material"]
