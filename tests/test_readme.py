@@ -11,8 +11,8 @@ def test_readme_examples():
     with open("README.md", "r") as f:
         readme_content = f.read()
 
-    # Extract Python code blocks with doctest format
-    python_blocks = re.findall(r"```python\n(.*?)\n```", readme_content, re.DOTALL)
+    # Extract Python and pycon code blocks with doctest format
+    python_blocks = re.findall(r"```(?:python|pycon)\n(.*?)\n```", readme_content, re.DOTALL)
 
     # Test each Python block that contains doctest examples
     for block in python_blocks:

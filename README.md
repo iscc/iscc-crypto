@@ -20,6 +20,8 @@
 - JSON canonicalization and signing
 - W3C Verifiable Credentials Data Integrity proofs
 - Multibase and multikey support
+- Cryptographic nonce generation with embedded node identifier
+- Command-line interface for key generation and identity management
 - Minimal external dependencies for core cryptographic operations
 
 ## Installation
@@ -32,11 +34,10 @@ pip install iscc-crypto
 
 ## Quick Start
 
-```python
+```pycon
 >>> import json
 >>> import iscc_crypto as icr
 
->>> # Use fixed test keys for deterministic output
 >>> keypair = icr.key_from_secret("z3u2So9EAtuYVuxGog4F2ksFGws8YT7pBPs4xyRbv3NJgrNA")
 
 >>> # Sign a JSON document
