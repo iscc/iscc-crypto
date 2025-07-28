@@ -72,7 +72,7 @@ Secret key: {}
         f.write(backup_text)
 
 
-@click.group(invoke_without_command=True)
+@click.group(invoke_without_command=True, context_settings=dict(help_option_names=["-h", "--help"]))
 @click.pass_context
 def main(ctx):
     # type: (click.Context) -> None
