@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.0] - Unreleased
+## [0.4.0] - 2025-07-28
 
 - Added cryptographic nonce generation with embedded node identifier
 - Added keygen command for cryptographic key generation
