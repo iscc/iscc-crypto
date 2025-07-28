@@ -5,8 +5,8 @@ import stat
 from pathlib import Path
 import click
 import platformdirs
-from iscc_crypto.keys import key_generate, KeyPair
-from iscc_crypto.resolve import resolve
+from iscc_crypto.keys import key_generate, KeyPair, key_from_secret
+from iscc_crypto.resolve import resolve, build_did_web_url
 
 
 APP_NAME = "iscc-crypto"
@@ -189,6 +189,60 @@ def validate_identity(identifier):
 
     except Exception as e:
         click.echo(f"❌ Validation failed: {e}")
+
+
+@main.command()
+@click.argument("domain", required=False)
+@click.option("-k", "--key-id", help="Custom key identifier (defaults to public key)")
+def keygen(domain, key_id):
+    # type: (str | None, str | None) -> None
+    """Generate a new keypair (optionally for a domain).
+
+    Examples:
+      iscc-crypto keygen                          # Standalone keypair
+      iscc-crypto keygen example.com              # Organization identity
+      iscc-crypto keygen example.com/alice        # Individual identity
+      iscc-crypto keygen example.com/users/alice  # Nested path identity
+      iscc-crypto keygen -k mykey example.com     # With custom key ID
+    """
+    import sys
+
+    # Generate keypair
+    if domain:
+        # Clean up domain (remove protocol, trailing slashes)
+        domain = domain.replace("https://", "").replace("http://", "").rstrip("/")
+
+        # Convert path separators to did:web format (: instead of /)
+        # example.com/alice becomes did:web:example.com:alice
+        controller = f"did:web:{domain.replace('/', ':')}"
+        keypair = key_generate(controller=controller, key_id=key_id)
+
+        # Use the resolve module's URL builder to get the correct publish URL
+        publish_url = build_did_web_url(controller)
+
+        # Output keys as text to stderr (not JSON to prevent copy/paste mistakes)
+        click.echo("# Generated keypair (KEEP SECRET!):", err=True)
+        click.echo(f"# Public Key:  {keypair.public_key}", err=True)
+        click.echo(f"# Secret Key:  {keypair.secret_key}", err=True)
+        if keypair.key_id:
+            click.echo(f"# Key ID:      {keypair.key_id}", err=True)
+        click.echo("#", err=True)
+        click.echo("# Controller Document for publication:", err=True)
+        click.echo(f"# Publish to: {publish_url}", err=True)
+        click.echo("#", err=True)
+
+        # Output only the controller document as JSON to stdout
+        click.echo(json.dumps(keypair.controller_document, indent=2))
+    else:
+        keypair = key_generate(key_id=key_id)
+        # For standalone keys, still output as JSON since there's no risk
+        output = {
+            "public_key": keypair.public_key,
+            "secret_key": keypair.secret_key,
+        }
+        if keypair.key_id:
+            output["key_id"] = keypair.key_id
+        click.echo(json.dumps(output, indent=2))
 
 
 @main.command()

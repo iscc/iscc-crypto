@@ -405,6 +405,183 @@ def test_save_files_chmod_notimplementederror():
             iscc_crypto.cli.get_config_dir = original_get_config_dir
 
 
+def test_keygen_without_domain():
+    # type: () -> None
+    """Test keygen command without domain."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen"])
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert "public_key" in output
+    assert "secret_key" in output
+    assert output["public_key"].startswith("z")
+    assert output["secret_key"].startswith("z")
+    # No controller or controller_document when no domain
+    assert "controller" not in output
+    assert "controller_document" not in output
+
+
+def test_keygen_with_domain():
+    # type: () -> None
+    """Test keygen command with domain."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen", "example.com"])
+
+    assert result.exit_code == 0
+
+    # Check that stderr contains keypair info
+    assert "# Generated keypair (KEEP SECRET!):" in result.output
+    assert "# Public Key:" in result.output
+    assert "# Secret Key:" in result.output
+    assert "# Controller Document for publication:" in result.output
+    assert "# Publish to: https://example.com/.well-known/did.json" in result.output
+
+    # Extract JSON from output (skip the comment lines)
+    output_lines = result.output.strip().split("\n")
+    json_lines = [line for line in output_lines if not line.startswith("#")]
+    json_str = "\n".join(json_lines)
+    doc = json.loads(json_str)
+
+    # Should only contain controller document, not keypair
+    assert "keypair" not in doc
+    assert "secret_key" not in doc
+    assert "public_key" not in doc
+
+    # Check controller document structure
+    assert doc["id"] == "did:web:example.com"
+    assert "verificationMethod" in doc
+    assert len(doc["verificationMethod"]) == 1
+
+    # Extract public key from the output comments for verification
+    pubkey_line = [line for line in output_lines if line.startswith("# Public Key:")][0]
+    pubkey = pubkey_line.split(":", 1)[1].strip()
+
+    # Check verification method uses public key as ID
+    vm = doc["verificationMethod"][0]
+    assert vm["type"] == "Multikey"
+    assert vm["controller"] == "did:web:example.com"
+    assert vm["publicKeyMultibase"] == pubkey
+    # ID should be controller#public_key since key_id is None
+    assert vm["id"] == f"did:web:example.com#{pubkey}"
+
+    # Check all verification relationships
+    assert "authentication" in doc
+    assert "assertionMethod" in doc
+    assert "capabilityDelegation" in doc
+    assert "capabilityInvocation" in doc
+
+
+def test_keygen_with_protocol_in_domain():
+    # type: () -> None
+    """Test keygen command strips protocol from domain."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen", "https://example.com/"])
+
+    assert result.exit_code == 0
+
+    # Extract JSON from output (skip the comment lines)
+    output_lines = result.output.strip().split("\n")
+    json_lines = [line for line in output_lines if not line.startswith("#")]
+    json_str = "\n".join(json_lines)
+    doc = json.loads(json_str)
+
+    # Check domain was cleaned in controller document
+    assert doc["id"] == "did:web:example.com"
+
+    # Check output shows clean URL
+    assert "# Publish to: https://example.com/.well-known/did.json" in result.output
+
+
+def test_keygen_with_individual_identity():
+    # type: () -> None
+    """Test keygen command with individual identity path."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen", "example.com/alice"])
+
+    assert result.exit_code == 0
+
+    # Check output contains correct information
+    assert "# Generated keypair (KEEP SECRET!):" in result.output
+    assert "# Publish to: https://example.com/alice/did.json" in result.output
+
+    # Extract JSON from output
+    output_lines = result.output.strip().split("\n")
+    json_lines = [line for line in output_lines if not line.startswith("#")]
+    json_str = "\n".join(json_lines)
+    doc = json.loads(json_str)
+
+    # Check controller document
+    assert doc["id"] == "did:web:example.com:alice"
+    assert doc["verificationMethod"][0]["controller"] == "did:web:example.com:alice"
+
+
+def test_keygen_with_nested_path():
+    # type: () -> None
+    """Test keygen command with nested path identity."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen", "example.com/users/alice"])
+
+    assert result.exit_code == 0
+
+    # Check output contains correct information
+    assert "# Publish to: https://example.com/users/alice/did.json" in result.output
+
+    # Extract JSON from output
+    output_lines = result.output.strip().split("\n")
+    json_lines = [line for line in output_lines if not line.startswith("#")]
+    json_str = "\n".join(json_lines)
+    doc = json.loads(json_str)
+
+    # Check controller document
+    assert doc["id"] == "did:web:example.com:users:alice"
+    assert doc["verificationMethod"][0]["controller"] == "did:web:example.com:users:alice"
+
+
+def test_keygen_with_custom_key_id():
+    # type: () -> None
+    """Test keygen command with custom key ID."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen", "-k", "mykey", "example.com"])
+
+    assert result.exit_code == 0
+
+    # Check that output shows custom key ID
+    assert "# Key ID:      mykey" in result.output
+
+    # Extract JSON from output
+    output_lines = result.output.strip().split("\n")
+    json_lines = [line for line in output_lines if not line.startswith("#")]
+    json_str = "\n".join(json_lines)
+    doc = json.loads(json_str)
+
+    # Check verification method uses custom key ID
+    vm = doc["verificationMethod"][0]
+    assert vm["id"] == "did:web:example.com#mykey"
+
+    # Check all verification relationships use custom key ID
+    assert doc["authentication"] == ["did:web:example.com#mykey"]
+    assert doc["assertionMethod"] == ["did:web:example.com#mykey"]
+    assert doc["capabilityDelegation"] == ["did:web:example.com#mykey"]
+    assert doc["capabilityInvocation"] == ["did:web:example.com#mykey"]
+
+
+def test_keygen_standalone_with_key_id():
+    # type: () -> None
+    """Test keygen command without domain but with key ID."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["keygen", "-k", "mykey"])
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+
+    # Check output includes key_id
+    assert "key_id" in output
+    assert output["key_id"] == "mykey"
+    assert "public_key" in output
+    assert "secret_key" in output
+
+
 def test_main_entry_point():
     # type: () -> None
     """Test main entry point when called directly."""
