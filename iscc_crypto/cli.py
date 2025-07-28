@@ -7,6 +7,7 @@ import click
 import platformdirs
 from iscc_crypto.keys import key_generate, KeyPair, key_from_secret
 from iscc_crypto.resolve import resolve, build_did_web_url
+from iscc_crypto import __version__
 
 
 APP_NAME = "iscc-crypto"
@@ -73,18 +74,20 @@ Secret key: {}
 
 
 @click.group(invoke_without_command=True, context_settings=dict(help_option_names=["-h", "--help"]))
+@click.version_option(__version__, "-v", "--version", message="iscc-crypto %(version)s")
 @click.pass_context
 def main(ctx):
     # type: (click.Context) -> None
-    """ISCC Crypto - Cryptographic operations for content identification."""
+    """ISCC-CRYPTO - Cryptographic operations for content identification."""
     if ctx.invoked_subcommand is None:
+        click.echo(f"iscc-crypto v{__version__}\n")
         click.echo(ctx.get_help())
 
 
 @main.command()
 def setup():
     # type: () -> None
-    """Set up your cryptographic identity."""
+    """Guided setup for your cryptographic identity."""
     click.echo("🔐 ISCC Crypto Identity Setup")
     click.echo("Create your cryptographic identity for content signing.\n")
 

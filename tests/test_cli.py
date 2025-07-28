@@ -15,7 +15,7 @@ def test_main_help():
     result = runner.invoke(main, [])
 
     assert result.exit_code == 0
-    assert "ISCC Crypto" in result.output
+    assert "ISCC-CRYPTO" in result.output
     assert "Commands:" in result.output
 
 
