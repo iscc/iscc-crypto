@@ -2,6 +2,13 @@
 
 ## [0.4.0] - Unreleased
 
+- Added cryptographic nonce generation with embedded node identifier
+- Added keygen command for cryptographic key generation
+- Added version display in CLI help output
+- Added -h as short notation for the help option in CLI
+- Updated project URLs in pyproject.toml
+- Updated version retrieval method
+
 ## [0.3.0] - 2025-06-10
 
 - Added CLI for cryptographic identity management with setup, validate-identity, and info commands
