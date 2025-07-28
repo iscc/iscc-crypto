@@ -111,9 +111,10 @@ Run the updated script. You'll see the document now includes a signature:
   "name": "Alice",
   "message": "Hello, ISCC-Crypto!",
   "timestamp": "2024-01-15T10:00:00Z",
-  "@signature": {
-    "publicKey": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
-    "signature": "zRSjXwQxvx8AiKqjeWB..."
+  "signature": {
+    "version": "ISCC-SIG v1.0",
+    "pubkey": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+    "proof": "z2kSw1VwHDepdegj6Rw8bMD8N2o56VhkdZ2qh8MHP5cHDk..."
   }
 }
 ```
@@ -133,6 +134,7 @@ from iscc_crypto import verify_json
 result = verify_json(signed_document)
 
 print(f"\nVerification result: {result.is_valid}")
+print(f"Signature valid: {result.signature_valid}")
 print(f"Message: {result.message}")
 ```
 
@@ -158,16 +160,18 @@ print("\nDetailed signature structure:")
 print(json.dumps(signed_document, indent=2))
 
 # Extract just the signature component
-signature_data = signed_document["@signature"]
-print(f"\nPublic key length: {len(signature_data['publicKey'])}")
-print(f"Signature length: {len(signature_data['signature'])}")
+signature_data = signed_document["signature"]
+print(f"\nPublic key length: {len(signature_data['pubkey'])}")
+print(f"Signature proof length: {len(signature_data['proof'])}")
+print(f"Version: {signature_data['version']}")
 ```
 
 Key points about the signature format:
 
-- ==**Multikey Encoding**==: Both keys use z-base58btc encoding for compactness
-- ==**Detached Signatures**==: The signature is added as a separate field
+- ==**Multikey Encoding**==: Both keys and proofs use z-base58btc encoding for compactness
+- ==**Structured Signature**==: The signature object contains version info, public key, and cryptographic proof
 - ==**JSON Canonicalization**==: Documents are normalized before signing to ensure consistent results
+- ==**Version Control**==: Each signature includes a version field ("ISCC-SIG v1.0")
 
 ### Step 6: Try Modifying the Document
 
@@ -179,9 +183,10 @@ tampered_document = signed_document.copy()
 tampered_document["message"] = "Modified message!"
 
 # Try to verify the tampered document
-tampered_result = verify_json(tampered_document)
+tampered_result = verify_json(tampered_document, raise_on_error=False)
 
 print(f"\nTampered document verification: {tampered_result.is_valid}")
+print(f"Signature valid: {tampered_result.signature_valid}")
 print(f"Error message: {tampered_result.message}")
 ```
 
@@ -215,7 +220,7 @@ print(f"Message: {result.message}")
 # Try tampering with the document
 tampered_document = signed_document.copy()
 tampered_document["message"] = "Modified message!"
-tampered_result = verify_json(tampered_document)
+tampered_result = verify_json(tampered_document, raise_on_error=False)
 print(f"\nTampered document verification: {tampered_result.is_valid}")
 print(f"Error message: {tampered_result.message}")
 ```
