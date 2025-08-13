@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.0] - Unreleased
+## [0.5.0] - 2025-08-13
 
 - Added controller-based verification method support in VC signing
 - Updated dependencies in lock file
