@@ -115,8 +115,13 @@ def sign_vc(vc, keypair, options=None):
     # Make a copy to avoid modifying input
     signed = deepcopy(vc)
 
-    # Create DID key URL for verification method
-    did_key = f"did:key:{keypair.public_key}#{keypair.public_key}"
+    # Determine verification method URL based on keypair configuration
+    if keypair.controller:
+        # Use controller's DID with fragment identifier for the key
+        verification_method = f"{keypair.controller}#{keypair.key_id_fallback}"
+    else:
+        # Use self-contained did:key URL (no network lookup needed)
+        verification_method = f"did:key:{keypair.public_key}#{keypair.public_key}"
 
     if options:
         proof_options = deepcopy(options)
@@ -130,7 +135,7 @@ def sign_vc(vc, keypair, options=None):
             {
                 "type": "DataIntegrityProof",
                 "cryptosuite": "eddsa-jcs-2022",
-                "verificationMethod": did_key,
+                "verificationMethod": verification_method,
                 "proofPurpose": "assertionMethod",
             }
         )

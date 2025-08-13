@@ -108,3 +108,70 @@ def test_sign_vc_with_context():
     signed = sign_vc(vc, keypair)
     assert signed["@context"] == ["https://www.w3.org/2018/credentials/v1"]
     assert signed["proof"]["@context"] == ["https://www.w3.org/2018/credentials/v1"]
+
+
+def test_sign_vc_with_controller():
+    # type: () -> None
+    """Test VC signing with keypair that has a controller"""
+    keypair = key_generate(controller="did:web:example.com", key_id="key-1")
+    vc = {"type": "VerifiableCredential", "issuer": "did:web:example.com"}
+    signed = sign_vc(vc, keypair)
+
+    # Should use controller#key_id as verification method
+    assert signed["proof"]["verificationMethod"] == "did:web:example.com#key-1"
+    assert signed["proof"]["type"] == "DataIntegrityProof"
+    assert signed["proof"]["cryptosuite"] == "eddsa-jcs-2022"
+    assert signed["proof"]["proofValue"].startswith("z")
+
+
+def test_sign_vc_with_controller_no_key_id():
+    # type: () -> None
+    """Test VC signing with controller but no explicit key_id (uses public_key as fallback)"""
+    keypair = key_generate(controller="did:web:example.org")
+    vc = {"type": "VerifiableCredential", "issuer": "did:web:example.org"}
+    signed = sign_vc(vc, keypair)
+
+    # Should use controller#public_key as verification method
+    expected_vm = f"did:web:example.org#{keypair.public_key}"
+    assert signed["proof"]["verificationMethod"] == expected_vm
+    assert signed["proof"]["proofValue"].startswith("z")
+
+
+def test_sign_vc_without_controller():
+    # type: () -> None
+    """Test that VC signing without controller still uses did:key"""
+    keypair = key_generate()  # No controller
+    vc = {"type": "VerifiableCredential"}
+    signed = sign_vc(vc, keypair)
+
+    # Should use did:key as verification method
+    expected_vm = f"did:key:{keypair.public_key}#{keypair.public_key}"
+    assert signed["proof"]["verificationMethod"] == expected_vm
+    assert signed["proof"]["proofValue"].startswith("z")
+
+
+def test_sign_vc_controller_compatibility():
+    # type: () -> None
+    """Test that signed VC is compatible with controller document"""
+    keypair = key_generate(controller="did:web:example.com", key_id="signing-key")
+
+    # Create VC with issuer matching the controller
+    vc = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        "type": ["VerifiableCredential"],
+        "issuer": keypair.controller,
+        "credentialSubject": {"id": "did:example:subject"},
+    }
+
+    signed = sign_vc(vc, keypair)
+    controller_doc = keypair.controller_document
+
+    # Verify the verification method in proof matches what's in controller document
+    proof_vm = signed["proof"]["verificationMethod"]
+    assert proof_vm == "did:web:example.com#signing-key"
+
+    # This should match the ID in the controller document's verification method
+    assert controller_doc["verificationMethod"][0]["id"] == proof_vm
+
+    # And it should be listed in assertionMethod
+    assert proof_vm in controller_doc["assertionMethod"]
