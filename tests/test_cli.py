@@ -582,6 +582,349 @@ def test_keygen_standalone_with_key_id():
     assert "secret_key" in output
 
 
+def test_sign_no_identity():
+    # type: () -> None
+    """Test sign command when no identity exists."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Create a test JSON file
+            test_json = {"test": "data", "value": 123}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            result = runner.invoke(main, ["sign", "test.json"])
+
+            assert result.exit_code == 0
+            assert "No identity configured" in result.output
+            assert not Path("test.signed.json").exists()
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_with_identity():
+    # type: () -> None
+    """Test sign command with configured identity."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup identity first
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create a test JSON file
+            test_json = {"test": "data", "value": 123}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Sign the file
+            result = runner.invoke(main, ["sign", "test.json"])
+
+            assert result.exit_code == 0
+            assert "Signed JSON saved to" in result.output
+            assert Path("test.signed.json").exists()
+
+            # Verify signed file structure
+            with open("test.signed.json") as f:
+                signed_data = json.load(f)
+
+            assert "test" in signed_data
+            assert signed_data["test"] == "data"
+            assert "signature" in signed_data
+            assert "version" in signed_data["signature"]
+            assert "pubkey" in signed_data["signature"]
+            assert "proof" in signed_data["signature"]
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_with_web_identity():
+    # type: () -> None
+    """Test sign command with web identity."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup web identity
+            result = runner.invoke(main, ["setup"], input="y\n1\nexample.com\n")
+            assert result.exit_code == 0
+
+            # Create a test JSON file
+            test_json = {"message": "Hello world"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Sign the file
+            result = runner.invoke(main, ["sign", "test.json"])
+
+            assert result.exit_code == 0
+            assert "Signed JSON saved to" in result.output
+            assert "Controller: did:web:example.com" in result.output
+            assert Path("test.signed.json").exists()
+
+            # Verify signed file has controller
+            with open("test.signed.json") as f:
+                signed_data = json.load(f)
+
+            assert signed_data["signature"]["controller"] == "did:web:example.com"
+            assert signed_data["signature"]["keyid"] == "iscc"
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_invalid_json():
+    # type: () -> None
+    """Test sign command with invalid JSON file."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup identity
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create invalid JSON file
+            with open("invalid.json", "w") as f:
+                f.write("not valid json {")
+
+            # Try to sign
+            result = runner.invoke(main, ["sign", "invalid.json"])
+
+            assert result.exit_code == 0
+            assert "Invalid JSON file" in result.output
+            assert not Path("invalid.signed.json").exists()
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_file_not_found():
+    # type: () -> None
+    """Test sign command with non-existent file."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    result = runner.invoke(main, ["sign", "nonexistent.json"])
+
+    assert result.exit_code != 0
+
+
+def test_sign_with_signature_type():
+    # type: () -> None
+    """Test sign command with different signature types."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup identity
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create test JSON
+            test_json = {"data": "test"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Test self_verifying type
+            result = runner.invoke(main, ["sign", "test.json", "-t", "self_verifying"])
+            assert result.exit_code == 0
+
+            with open("test.signed.json") as f:
+                signed_data = json.load(f)
+            assert "pubkey" in signed_data["signature"]
+            assert "controller" not in signed_data["signature"]
+
+            # Test proof_only type
+            result = runner.invoke(main, ["sign", "test.json", "-t", "proof_only"])
+            assert result.exit_code == 0
+
+            with open("test.signed.json") as f:
+                signed_data = json.load(f)
+            assert "proof" in signed_data["signature"]
+            assert "pubkey" not in signed_data["signature"]
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_already_signed():
+    # type: () -> None
+    """Test sign command with already signed JSON."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup identity
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create already signed JSON
+            signed_json = {"data": "test", "signature": {"proof": "existing"}}
+            with open("signed.json", "w") as f:
+                json.dump(signed_json, f)
+
+            # Try to sign
+            result = runner.invoke(main, ["sign", "signed.json"])
+
+            assert result.exit_code == 0
+            assert "Signing failed" in result.output
+            assert "Input must not contain a 'signature' field" in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_with_identity_bound_type():
+    # type: () -> None
+    """Test sign command with identity_bound signature type."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup web identity for identity_bound signature
+            result = runner.invoke(main, ["setup"], input="y\n1\nexample.com\n")
+            assert result.exit_code == 0
+
+            # Create test JSON
+            test_json = {"data": "test"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Test identity_bound type
+            result = runner.invoke(main, ["sign", "test.json", "-t", "identity_bound"])
+            assert result.exit_code == 0
+            assert "Signed JSON saved to" in result.output
+
+            with open("test.signed.json") as f:
+                signed_data = json.load(f)
+            assert "controller" in signed_data["signature"]
+            assert "keyid" in signed_data["signature"]
+            assert signed_data["signature"]["controller"] == "did:web:example.com"
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_corrupted_keypair():
+    # type: () -> None
+    """Test sign command with corrupted keypair that causes load_keypair to fail."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Create a keypair.json with invalid secret key
+            invalid_keypair = {
+                "public_key": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
+                "secret_key": "invalid_secret_key",  # This will cause key_from_secret to fail
+                "controller": None,
+                "key_id": None,
+            }
+            with open("keypair.json", "w") as f:
+                json.dump(invalid_keypair, f)
+
+            # Create test JSON
+            test_json = {"data": "test"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Try to sign with corrupted keypair
+            result = runner.invoke(main, ["sign", "test.json"])
+
+            assert result.exit_code == 0
+            assert "No identity configured" in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_load_keypair_with_missing_secret_key():
+    # type: () -> None
+    """Test load_keypair when secret_key is missing from keypair.json."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Create a keypair.json missing secret_key
+            invalid_keypair = {
+                "public_key": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
+                # Missing secret_key will cause KeyError
+            }
+            with open("keypair.json", "w") as f:
+                json.dump(invalid_keypair, f)
+
+            # Create test JSON
+            test_json = {"data": "test"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Try to sign with incomplete keypair
+            result = runner.invoke(main, ["sign", "test.json"])
+
+            assert result.exit_code == 0
+            assert "No identity configured" in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
 def test_main_entry_point():
     # type: () -> None
     """Test main entry point when called directly."""
@@ -592,3 +935,96 @@ def test_main_entry_point():
         # This tests the module structure
         assert hasattr(iscc_crypto.cli, "main")
         assert callable(iscc_crypto.cli.main)
+
+
+def test_sign_with_auto_type():
+    # type: () -> None
+    """Test sign command with auto signature type."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup standalone identity
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create test JSON
+            test_json = {"data": "test"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Test auto type (default)
+            result = runner.invoke(main, ["sign", "test.json", "-t", "auto"])
+            assert result.exit_code == 0
+            assert "Signed JSON saved to" in result.output
+
+            with open("test.signed.json") as f:
+                signed_data = json.load(f)
+            assert "signature" in signed_data
+            # Auto should choose self_verifying for standalone identity
+            assert "pubkey" in signed_data["signature"]
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_sign_output_shows_partial_keys():
+    # type: () -> None
+    """Test that sign command output shows partial keys and signature."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup standalone identity
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create test JSON
+            test_json = {"data": "test"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            # Sign and check output
+            result = runner.invoke(main, ["sign", "test.json"])
+            assert result.exit_code == 0
+
+            # Check that it shows truncated public key and signature
+            assert "Public key:" in result.output
+            assert "..." in result.output  # Shows truncated key
+            assert "Signature:" in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_main_version_option():
+    # type: () -> None
+    """Test main command with version option."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["--version"])
+
+    assert result.exit_code == 0
+    assert "iscc-crypto" in result.output
+
+
+def test_main_help_option():
+    # type: () -> None
+    """Test main command with help option."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+    result = runner.invoke(main, ["--help"])
+
+    assert result.exit_code == 0
+    assert "ISCC-CRYPTO" in result.output
+    assert "Commands:" in result.output

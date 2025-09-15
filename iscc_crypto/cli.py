@@ -7,6 +7,7 @@ import click
 import platformdirs
 from iscc_crypto.keys import key_generate, KeyPair, key_from_secret
 from iscc_crypto.resolve import resolve, build_did_web_url
+from iscc_crypto.signing import sign_json, SigType
 from iscc_crypto import __version__
 
 
@@ -17,6 +18,28 @@ def get_config_dir():
     # type: () -> Path
     """Get platform-specific configuration directory."""
     return Path(platformdirs.user_data_dir(APP_NAME))
+
+
+def load_keypair():
+    # type: () -> KeyPair | None
+    """Load keypair from configuration directory."""
+    config_dir = get_config_dir()
+    keypair_file = config_dir / "keypair.json"
+
+    if not keypair_file.exists():
+        return None
+
+    try:
+        with open(keypair_file) as f:
+            data = json.load(f)
+
+        # Reconstruct KeyPair from saved data
+        keypair = key_from_secret(
+            data["secret_key"], controller=data.get("controller"), key_id=data.get("key_id")
+        )
+        return keypair
+    except Exception:  # pragma: no cover
+        return None
 
 
 def save_files(keypair, identity_doc, config_dir):
@@ -246,6 +269,80 @@ def keygen(domain, key_id):
         if keypair.key_id:
             output["key_id"] = keypair.key_id
         click.echo(json.dumps(output, indent=2))
+
+
+@main.command()
+@click.argument("json_file", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "-t",
+    "--type",
+    type=click.Choice(["auto", "proof_only", "self_verifying", "identity_bound"]),
+    default="auto",
+    help="Signature type (default: auto)",
+)
+def sign(json_file, type):
+    # type: (Path, str) -> None
+    """Sign a JSON file with your configured identity.
+
+    The signed file will be saved as <filename>.signed.json in the same directory.
+    """
+    # Check if identity exists
+    keypair = load_keypair()
+    if not keypair:
+        click.echo("❌ No identity configured. Run 'iscc-crypto setup' first.")
+        return
+
+    # Load the JSON file
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        click.echo(f"❌ Invalid JSON file: {e}")
+        return
+    except Exception as e:  # pragma: no cover
+        click.echo(f"❌ Error reading file: {e}")
+        return
+
+    # Map string type to SigType enum
+    sigtype_map = {
+        "auto": SigType.AUTO,
+        "proof_only": SigType.PROOF_ONLY,
+        "self_verifying": SigType.SELF_VERIFYING,
+        "identity_bound": SigType.IDENTITY_BOUND,
+    }
+    sigtype = sigtype_map[type]
+
+    # Sign the JSON
+    try:
+        signed_data = sign_json(data, keypair, sigtype)
+    except ValueError as e:
+        click.echo(f"❌ Signing failed: {e}")
+        return
+    except Exception as e:  # pragma: no cover
+        click.echo(f"❌ Unexpected error during signing: {e}")
+        return
+
+    # Create output filename
+    output_file = json_file.parent / f"{json_file.stem}.signed.json"
+
+    # Save the signed JSON
+    try:
+        with open(output_file, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(signed_data, f, indent=2)
+        click.echo(f"✅ Signed JSON saved to: {output_file}")
+
+        # Show signature info
+        sig = signed_data.get("signature", {})
+        if "controller" in sig:
+            click.echo(f"   Controller: {sig['controller']}")
+        if "pubkey" in sig:
+            click.echo(f"   Public key: {sig['pubkey'][:20]}...")
+        if "proof" in sig:
+            click.echo(f"   Signature: {sig['proof'][:20]}...")
+
+    except Exception as e:  # pragma: no cover
+        click.echo(f"❌ Error saving signed file: {e}")
+        return
 
 
 @main.command()
