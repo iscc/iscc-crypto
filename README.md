@@ -99,6 +99,15 @@ make sure to update tests as appropriate.
 
 You may also want to join our developer chat on Telegram at <https://t.me/iscc_dev>.
 
+## Funding
+
+This work was supported through the Open Science Clusters’ Action for Research and Society (OSCARS) European
+project under grant agreement Nº101129751.
+
+See:
+[BIO-CODES](https://oscars-project.eu/projects/bio-codes-enhancing-ai-readiness-bioimaging-data-content-based-identifiers)
+project (Enhancing AI-Readiness of Bioimaging Data with Content-Based Identifiers).
+
 ## License
 
 `iscc-crypto` is licensed under the Apache License, Version 2.0

@@ -63,7 +63,7 @@ dev = [
     "mdformat",
     "mdformat-gfm",
     "mdformat-gfm-alerts",
-    "mdformat-mkdocs[recommended]>=4.3.0",
+    "mdformat-mkdocs>=4.3.0",
 ]
 docs = ["mkdocs-material"]
 
