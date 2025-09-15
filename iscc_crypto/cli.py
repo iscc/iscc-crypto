@@ -8,6 +8,7 @@ import platformdirs
 from iscc_crypto.keys import key_generate, KeyPair, key_from_secret
 from iscc_crypto.resolve import resolve, build_did_web_url
 from iscc_crypto.signing import sign_json, SigType
+from iscc_crypto.verifying import verify_json
 from iscc_crypto import __version__
 
 
@@ -342,6 +343,93 @@ def sign(json_file, type):
 
     except Exception as e:  # pragma: no cover
         click.echo(f"❌ Error saving signed file: {e}")
+        return
+
+
+@main.command()
+@click.argument("json_file", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--skip-identity",
+    is_flag=True,
+    help="Skip identity verification (only check signature integrity)",
+)
+def verify(json_file, skip_identity):
+    # type: (Path, bool) -> None
+    """Verify a signed JSON file.
+
+    Performs both integrity verification (signature check) and identity verification
+    (resolves and validates the controller's identity document if present).
+    """
+    # Load the JSON file
+    try:
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        click.echo(f"❌ Invalid JSON file: {e}")
+        return
+    except Exception as e:  # pragma: no cover
+        click.echo(f"❌ Error reading file: {e}")
+        return
+
+    # Check if file has a signature
+    if "signature" not in data:
+        click.echo("❌ No signature found in JSON file")
+        return
+
+    # Get controller if present for identity verification
+    sig = data.get("signature", {})
+    controller = sig.get("controller")
+    identity_doc = None
+
+    # Resolve identity document if controller is present and identity check not skipped
+    if controller and not skip_identity:
+        click.echo(f"🔍 Resolving identity: {controller}")
+        try:
+            identity_doc = resolve(controller)
+            click.echo("✅ Identity document resolved")
+        except Exception as e:
+            click.echo(f"⚠️  Could not resolve identity: {e}")
+            # Continue with signature verification only
+
+    # Verify the signature with optional identity verification
+    try:
+        result = verify_json(data, identity_doc=identity_doc, raise_on_error=False)
+
+        # Report integrity verification result
+        if result.signature_valid:
+            click.echo("✅ Signature integrity: Valid")
+        else:
+            click.echo(f"❌ Signature integrity: Invalid - {result.message}")
+            return  # Don't continue if signature is invalid
+
+        # Report identity verification result if applicable
+        if controller:
+            if skip_identity:
+                click.echo("⏭️  Identity verification: Skipped")
+            elif result.identity_verified is None:
+                click.echo("❓ Identity verification: Not performed (no identity document)")
+            elif result.identity_verified:
+                click.echo("✅ Identity verification: Valid")
+            else:
+                click.echo(f"❌ Identity verification: Invalid - {result.message}")
+
+        # Show signature details
+        click.echo("\n📋 Signature details:")
+        if controller:
+            click.echo(f"   Controller: {controller}")
+        if "pubkey" in sig:
+            click.echo(f"   Public key: {sig['pubkey'][:20]}...")
+        if "proof" in sig:
+            click.echo(f"   Signature: {sig['proof'][:20]}...")
+
+        # Overall result
+        if result.is_valid:
+            click.echo("\n✅ Overall verification: PASSED")
+        else:
+            click.echo("\n❌ Overall verification: FAILED")
+
+    except Exception as e:  # pragma: no cover
+        click.echo(f"❌ Verification error: {e}")
         return
 
 

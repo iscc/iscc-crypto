@@ -1,7 +1,6 @@
 """Tests for CLI functionality."""
 
 import json
-import pytest
 from click.testing import CliRunner
 from pathlib import Path
 
@@ -1028,3 +1027,315 @@ def test_main_help_option():
     assert result.exit_code == 0
     assert "ISCC-CRYPTO" in result.output
     assert "Commands:" in result.output
+
+
+def test_verify_no_signature():
+    # type: () -> None
+    """Test verify command with JSON that has no signature."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Create a JSON file without signature
+        test_json = {"test": "data", "value": 123}
+        with open("unsigned.json", "w") as f:
+            json.dump(test_json, f)
+
+        result = runner.invoke(main, ["verify", "unsigned.json"])
+
+        assert result.exit_code == 0
+        assert "No signature found" in result.output
+
+
+def test_verify_invalid_json_file():
+    # type: () -> None
+    """Test verify command with invalid JSON file."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Create invalid JSON file
+        with open("invalid.json", "w") as f:
+            f.write("not valid json {")
+
+        result = runner.invoke(main, ["verify", "invalid.json"])
+
+        assert result.exit_code == 0
+        assert "Invalid JSON file" in result.output
+
+
+def test_verify_file_not_found():
+    # type: () -> None
+    """Test verify command with non-existent file."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    result = runner.invoke(main, ["verify", "nonexistent.json"])
+
+    assert result.exit_code != 0
+
+
+def test_verify_standalone_signature():
+    # type: () -> None
+    """Test verify command with standalone signature (no controller)."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir to return current directory
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup standalone identity and sign a file
+            result = runner.invoke(main, ["setup"], input="n\n")
+            assert result.exit_code == 0
+
+            # Create and sign test JSON
+            test_json = {"test": "data"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            result = runner.invoke(main, ["sign", "test.json"])
+            assert result.exit_code == 0
+
+            # Verify the signed file
+            result = runner.invoke(main, ["verify", "test.signed.json"])
+
+            assert result.exit_code == 0
+            assert "Signature integrity: Valid" in result.output
+            assert "Overall verification: PASSED" in result.output
+            # No identity verification for standalone signature
+            assert "Identity verification" not in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_verify_with_controller_successful():
+    # type: () -> None
+    """Test verify command with controller that resolves successfully."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir and resolve function
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        original_resolve = iscc_crypto.cli.resolve
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup web identity and sign a file
+            result = runner.invoke(main, ["setup"], input="y\n1\nexample.com\n")
+            assert result.exit_code == 0
+
+            # Read the actual public key that was generated
+            with open("keypair.json") as f:
+                keypair_data = json.load(f)
+            actual_public_key = keypair_data["public_key"]
+
+            def mock_resolve(uri, http_client=None):
+                # Return a valid DID document matching the actual keypair
+                return {
+                    "id": "did:web:example.com",
+                    "verificationMethod": [
+                        {
+                            "id": "did:web:example.com#iscc",
+                            "type": "Multikey",
+                            "controller": "did:web:example.com",
+                            "publicKeyMultibase": actual_public_key,  # Use actual key
+                        }
+                    ],
+                }
+
+            iscc_crypto.cli.resolve = mock_resolve
+
+            # Create and sign test JSON
+            test_json = {"test": "data"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            result = runner.invoke(main, ["sign", "test.json"])
+            assert result.exit_code == 0
+
+            # Verify the signed file
+            result = runner.invoke(main, ["verify", "test.signed.json"])
+
+            assert result.exit_code == 0
+            assert "Resolving identity: did:web:example.com" in result.output
+            assert "Identity document resolved" in result.output
+            assert "Signature integrity: Valid" in result.output
+            assert "Identity verification: Valid" in result.output
+            assert "Overall verification: PASSED" in result.output
+            assert "Controller: did:web:example.com" in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+            iscc_crypto.cli.resolve = original_resolve
+
+
+def test_verify_with_controller_resolution_failed():
+    # type: () -> None
+    """Test verify command when controller resolution fails."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir and resolve function
+        import iscc_crypto.cli
+        from iscc_crypto.resolve import ResolutionError
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        original_resolve = iscc_crypto.cli.resolve
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        def mock_resolve(uri, http_client=None):
+            raise ResolutionError("Failed to resolve identity document")
+
+        iscc_crypto.cli.resolve = mock_resolve
+
+        try:
+            # Setup web identity and sign a file
+            result = runner.invoke(main, ["setup"], input="y\n1\nexample.com\n")
+            assert result.exit_code == 0
+
+            # Create and sign test JSON
+            test_json = {"test": "data"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            result = runner.invoke(main, ["sign", "test.json"])
+            assert result.exit_code == 0
+
+            # Verify the signed file - resolution will fail but signature should still be verified
+            result = runner.invoke(main, ["verify", "test.signed.json"])
+
+            assert result.exit_code == 0
+            assert "Resolving identity: did:web:example.com" in result.output
+            assert "Could not resolve identity" in result.output
+            assert "Signature integrity: Valid" in result.output
+            # Identity verification shows not performed since no doc available
+            assert "Identity verification: Not performed" in result.output
+            assert "Overall verification: PASSED" in result.output  # Passes since signature is valid
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+            iscc_crypto.cli.resolve = original_resolve
+
+
+def test_verify_skip_identity_flag():
+    # type: () -> None
+    """Test verify command with --skip-identity flag."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock get_config_dir
+        import iscc_crypto.cli
+
+        original_get_config_dir = iscc_crypto.cli.get_config_dir
+        iscc_crypto.cli.get_config_dir = lambda: Path(".")
+
+        try:
+            # Setup web identity and sign a file
+            result = runner.invoke(main, ["setup"], input="y\n1\nexample.com\n")
+            assert result.exit_code == 0
+
+            # Create and sign test JSON
+            test_json = {"test": "data"}
+            with open("test.json", "w") as f:
+                json.dump(test_json, f)
+
+            result = runner.invoke(main, ["sign", "test.json"])
+            assert result.exit_code == 0
+
+            # Verify with skip-identity flag
+            result = runner.invoke(main, ["verify", "test.signed.json", "--skip-identity"])
+
+            assert result.exit_code == 0
+            assert "Resolving identity" not in result.output  # Should not try to resolve
+            assert "Signature integrity: Valid" in result.output
+            assert "Identity verification: Skipped" in result.output
+            assert "Overall verification: PASSED" in result.output
+            assert "Controller: did:web:example.com" in result.output
+
+        finally:
+            iscc_crypto.cli.get_config_dir = original_get_config_dir
+
+
+def test_verify_invalid_signature():
+    # type: () -> None
+    """Test verify command with tampered/invalid signature."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Create a signed JSON with tampered data
+        signed_json = {
+            "test": "tampered data",  # Changed from original
+            "signature": {
+                "version": "v1",
+                "pubkey": "z6MkpFpVngrAUTSY6PagXa1x27qZqgdmmy3ZNWSBgyFSvBSx",
+                "proof": "z2Pqv3KJWZjZPqv3KJWZjZPqv3KJWZjZPqv3KJWZjZPqv3KJWZjZPqv3KJWZjZPqv3KJWZjZPqv3KJWZjZPqv3KJWZjZ",
+            },
+        }
+        with open("tampered.json", "w") as f:
+            json.dump(signed_json, f)
+
+        result = runner.invoke(main, ["verify", "tampered.json"])
+
+        assert result.exit_code == 0
+        assert "Signature integrity: Invalid" in result.output
+        assert "Overall verification: FAILED" not in result.output  # Returns early on invalid signature
+
+
+def test_verify_identity_mismatch():
+    # type: () -> None
+    """Test verify command when identity document doesn't match signature."""
+    runner = CliRunner(env={"PYTHONIOENCODING": "utf-8"})
+
+    with runner.isolated_filesystem():
+        # Mock resolve to return mismatched identity document
+        import iscc_crypto.cli
+        from iscc_crypto.keys import key_generate
+
+        original_resolve = iscc_crypto.cli.resolve
+
+        # Generate a different keypair for the mock identity document
+        different_keypair = key_generate()
+
+        def mock_resolve(uri, http_client=None):
+            # Return identity doc with different public key
+            return {
+                "id": "did:web:example.com",
+                "verificationMethod": [
+                    {
+                        "id": "did:web:example.com#iscc",
+                        "type": "Multikey",
+                        "controller": "did:web:example.com",
+                        "publicKeyMultibase": different_keypair.public_key,  # Different key
+                    }
+                ],
+            }
+
+        iscc_crypto.cli.resolve = mock_resolve
+
+        try:
+            # Create a signed JSON with controller
+            test_json = {"test": "data"}
+            keypair = key_generate(controller="did:web:example.com", key_id="iscc")
+
+            # Sign manually to ensure controller is included
+            from iscc_crypto.signing import sign_json, SigType
+
+            signed_json = sign_json(test_json, keypair, SigType.IDENTITY_BOUND)
+
+            with open("signed.json", "w") as f:
+                json.dump(signed_json, f)
+
+            # Verify - should fail identity verification
+            result = runner.invoke(main, ["verify", "signed.json"])
+
+            assert result.exit_code == 0
+            assert "Signature integrity: Valid" in result.output
+            assert "Identity verification: Invalid" in result.output
+            assert "Overall verification: FAILED" in result.output
+
+        finally:
+            iscc_crypto.cli.resolve = original_resolve
