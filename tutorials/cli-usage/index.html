@@ -1,0 +1,1350 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="International Standard Content Code - Cryptographic Functions">
+      
+      
+        <meta name="author" content="Titusz Pan">
+      
+      
+        <link rel="canonical" href="https://crypto.iscc.codes/tutorials/cli-usage/">
+      
+      
+        <link rel="prev" href="../getting-started/">
+      
+      
+        <link rel="next" href="../../iscc-sig-spec/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/iscc-logo-icon-black.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Command Line Usage - ISCC-CRYPTO</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  <script defer data-domain="crypto.iscc.codes" src="https://stats.iscc.codes/js/plausible.js"></script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#command-line-interface-tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ISCC-CRYPTO" class="md-header__button md-logo" aria-label="ISCC-CRYPTO" data-md-component="logo">
+      
+  <img src="../../images/iscc-logo-icon-white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ISCC-CRYPTO
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Command Line Usage
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/iscc/iscc-crypto" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    iscc/iscc-crypto
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ISCC-CRYPTO" class="md-nav__button md-logo" aria-label="ISCC-CRYPTO" data-md-component="logo">
+      
+  <img src="../../images/iscc-logo-icon-white.svg" alt="logo">
+
+    </a>
+    ISCC-CRYPTO
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/iscc/iscc-crypto" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    iscc/iscc-crypto
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Usage
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-your-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting Up Your Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generating-keypairs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generating Keypairs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generating Keypairs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standalone-keypair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone Keypair
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#domain-bound-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain-Bound Identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-based-identities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Path-Based Identities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signing-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signing Documents
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Signing Documents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signature-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signature Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-signatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying Signatures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validating-identity-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validating Identity Documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-your-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing Your Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publishing-your-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing Your Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batch-signing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Signing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cicd-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#programmatic-key-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Programmatic Key Extraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../iscc-sig-spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Signature Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-your-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting Up Your Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generating-keypairs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generating Keypairs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generating Keypairs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standalone-keypair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standalone Keypair
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#domain-bound-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain-Bound Identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-based-identities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Path-Based Identities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signing-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signing Documents
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Signing Documents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signature-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signature Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verifying-signatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verifying Signatures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validating-identity-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validating Identity Documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-your-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing Your Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publishing-your-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing Your Identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batch-signing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Signing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cicd-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#programmatic-key-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Programmatic Key Extraction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Command Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="command-line-interface-tutorial">Command Line Interface Tutorial<a class="headerlink" href="#command-line-interface-tutorial" title="Permanent link">#</a></h1>
+<p>Learn to use ISCC-CRYPTO from the command line: set up your cryptographic identity, generate keypairs, and
+sign/verify JSON documents.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">#</a></h2>
+<ul>
+<li>Python 3.10+</li>
+<li><a href="https://docs.astral.sh/uv/getting-started/installation/">uv package manager</a></li>
+</ul>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">#</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>iscc-crypto
+</code></pre></div>
+<p>Verify:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>iscc-crypto<span class="w"> </span>--version
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># iscc-crypto X.Y.Z</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tool Management</p>
+<p>Update: <code>uv tool upgrade iscc-crypto</code> | Uninstall: <code>uv tool uninstall iscc-crypto</code></p>
+</div>
+<h2 id="setting-up-your-identity">Setting Up Your Identity<a class="headerlink" href="#setting-up-your-identity" title="Permanent link">#</a></h2>
+<p>Before signing documents, create your cryptographic identity:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>iscc-crypto<span class="w"> </span>setup
+</code></pre></div>
+<p>This interactive command will:</p>
+<ol>
+<li>Ask about web server access</li>
+<li>Let you choose web-based or standalone identity</li>
+<li>Generate a secure keypair</li>
+<li>Save your identity to your system's app folder</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Backup Your Keys</p>
+<p>Check <code>backup-instructions.txt</code> in your configuration directory after setup!</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">setup vs keygen</p>
+<ul>
+<li><strong>setup</strong>: Stores keypair in your config directory as your default identity</li>
+<li><strong>keygen</strong>: Outputs keypair to console for programmatic use (not stored)</li>
+</ul>
+</div>
+<h2 id="generating-keypairs">Generating Keypairs<a class="headerlink" href="#generating-keypairs" title="Permanent link">#</a></h2>
+<p>The <code>keygen</code> command generates keypairs without storing them.</p>
+<h3 id="standalone-keypair">Standalone Keypair<a class="headerlink" href="#standalone-keypair" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iscc-crypto<span class="w"> </span>keygen
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;public_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;secret_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z3u2SqkHt13R6Y1AQPXnG7q3aBrJnxvbTdKDG8L6Wppzs...&quot;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="domain-bound-identity">Domain-Bound Identity<a class="headerlink" href="#domain-bound-identity" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>iscc-crypto<span class="w"> </span>keygen<span class="w"> </span>example.com
+</code></pre></div>
+<p>Outputs a DID document (stdout) and keypair info (stderr):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:web:example.com&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;verificationMethod&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:web:example.com#z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Multikey&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="nt">&quot;controller&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:web:example.com&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="nt">&quot;publicKeyMultibase&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK&quot;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="err">...</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="path-based-identities">Path-Based Identities<a class="headerlink" href="#path-based-identities" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>iscc-crypto<span class="w"> </span>keygen<span class="w"> </span>example.com/alice<span class="w">           </span><span class="c1"># Individual</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>iscc-crypto<span class="w"> </span>keygen<span class="w"> </span>example.com/engineering<span class="w">     </span><span class="c1"># Department</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>iscc-crypto<span class="w"> </span>keygen<span class="w"> </span>-k<span class="w"> </span>mykey<span class="w"> </span>example.com<span class="w">        </span><span class="c1"># Custom key ID</span>
+</code></pre></div>
+<h2 id="signing-documents">Signing Documents<a class="headerlink" href="#signing-documents" title="Permanent link">#</a></h2>
+<p>Sign JSON files using your stored identity (from <code>setup</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>iscc-crypto<span class="w"> </span>sign<span class="w"> </span>document.json
+</code></pre></div>
+<p>Output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>✅ Signed JSON saved to: document.signed.json
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>   Controller: did:web:example.com
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>   Public key: z6MkhaXgBZDvot...
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>   Signature: z2kSw1VwHDepde...
+</code></pre></div>
+<p>The signed file contains:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hello&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="nt">&quot;signature&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ISCC-SIG v1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="nt">&quot;controller&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:web:example.com&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="nt">&quot;pubkey&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="nt">&quot;proof&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;z2kSw1VwHDepdegj6Rw8bMD8N2o56VhkdZ2qh8MHP5cHDk...&quot;</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="signature-types">Signature Types<a class="headerlink" href="#signature-types" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>iscc-crypto<span class="w"> </span>sign<span class="w"> </span>document.json<span class="w"> </span>--type<span class="w"> </span>&lt;TYPE&gt;
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>auto</code></td>
+<td>Chooses based on keypair config (default)</td>
+</tr>
+<tr>
+<td><code>self_verifying</code></td>
+<td>Includes public key only</td>
+</tr>
+<tr>
+<td><code>identity_bound</code></td>
+<td>Includes controller reference</td>
+</tr>
+<tr>
+<td><code>proof_only</code></td>
+<td>Minimal, requires external key for verify</td>
+</tr>
+</tbody>
+</table>
+<h2 id="verifying-signatures">Verifying Signatures<a class="headerlink" href="#verifying-signatures" title="Permanent link">#</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>iscc-crypto<span class="w"> </span>verify<span class="w"> </span>document.signed.json
+</code></pre></div>
+<p>Output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>🔍 Resolving identity: did:web:example.com
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>✅ Identity document resolved
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>✅ Signature integrity: Valid
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>✅ Identity verification: Valid
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>✅ Overall verification: PASSED
+</code></pre></div>
+<p>Skip identity resolution (verify signature only):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>iscc-crypto<span class="w"> </span>verify<span class="w"> </span>document.signed.json<span class="w"> </span>--skip-identity
+</code></pre></div>
+<h2 id="validating-identity-documents">Validating Identity Documents<a class="headerlink" href="#validating-identity-documents" title="Permanent link">#</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>iscc-crypto<span class="w"> </span>validate-identity<span class="w"> </span>did:web:example.com
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>iscc-crypto<span class="w"> </span>validate-identity<span class="w"> </span>https://example.com/.well-known/did.json
+</code></pre></div>
+<h2 id="viewing-your-identity">Viewing Your Identity<a class="headerlink" href="#viewing-your-identity" title="Permanent link">#</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>iscc-crypto<span class="w"> </span>info
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>🔐 Your ISCC Crypto Identity
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>📁 Location: &lt;platform-specific-path&gt;
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>🔑 Public key: z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>🌐 Controller: did:web:example.com
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>📤 Publish to: https://example.com/.well-known/did.json
+</code></pre></div>
+<h2 id="configuration-directory">Configuration Directory<a class="headerlink" href="#configuration-directory" title="Permanent link">#</a></h2>
+<p>Identity files are stored in platform-specific locations:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux</td>
+<td><code>~/.local/share/iscc-crypto/</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/Library/Application Support/iscc-crypto/</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>%LOCALAPPDATA%\iscc-crypto\</code></td>
+</tr>
+</tbody>
+</table>
+<p>Contents:</p>
+<ul>
+<li><code>keypair.json</code> - Your keys (restricted permissions)</li>
+<li><code>did.json</code> - Your DID document (if web-based)</li>
+<li><code>backup-instructions.txt</code> - Security guidance</li>
+</ul>
+<h2 id="publishing-your-identity">Publishing Your Identity<a class="headerlink" href="#publishing-your-identity" title="Permanent link">#</a></h2>
+<p>For web-based identities:</p>
+<ol>
+<li>Copy <code>did.json</code> from your config directory</li>
+<li>Upload to <code>https://yourdomain.com/.well-known/did.json</code></li>
+<li>Verify: <code>curl https://yourdomain.com/.well-known/did.json</code></li>
+</ol>
+<h2 id="advanced-usage">Advanced Usage<a class="headerlink" href="#advanced-usage" title="Permanent link">#</a></h2>
+<h3 id="batch-signing">Batch Signing<a class="headerlink" href="#batch-signing" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span>*.json<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="o">[[</span><span class="w"> </span>!<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span>~<span class="w"> </span><span class="se">\.</span>signed<span class="se">\.</span>json$<span class="w"> </span><span class="o">]]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>iscc-crypto<span class="w"> </span>sign<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$file</span><span class="s2">&quot;</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="k">done</span>
+</code></pre></div>
+<h3 id="cicd-integration">CI/CD Integration<a class="headerlink" href="#cicd-integration" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Setup ISCC Crypto</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="no">uv tool install iscc-crypto</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">    </span><span class="no">mkdir -p ~/.local/share/iscc-crypto</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">    </span><span class="no">echo &#39;${{ secrets.KEYPAIR_JSON }}&#39; &gt; ~/.local/share/iscc-crypto/keypair.json</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sign artifacts</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">    </span><span class="no">iscc-crypto sign release-manifest.json</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">    </span><span class="no">iscc-crypto verify release-manifest.signed.json</span>
+</code></pre></div>
+<h3 id="programmatic-key-extraction">Programmatic Key Extraction<a class="headerlink" href="#programmatic-key-extraction" title="Permanent link">#</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Extract public key</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="nv">PUBLIC_KEY</span><span class="o">=</span><span class="k">$(</span>iscc-crypto<span class="w"> </span>keygen<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.public_key&#39;</span><span class="k">)</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="c1"># Generate and save DID document (keypair to stderr)</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>iscc-crypto<span class="w"> </span>keygen<span class="w"> </span>example.com<span class="w"> </span>&gt;<span class="w"> </span>did.json<span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>keypair-info.txt
+</code></pre></div>
+<h2 id="command-reference">Command Reference<a class="headerlink" href="#command-reference" title="Permanent link">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Key Options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setup</code></td>
+<td>Interactive identity setup</td>
+<td>Interactive prompts</td>
+</tr>
+<tr>
+<td><code>keygen</code></td>
+<td>Generate keypair</td>
+<td><code>[domain]</code>, <code>-k/--key-id</code></td>
+</tr>
+<tr>
+<td><code>sign</code></td>
+<td>Sign JSON document</td>
+<td><code>-t/--type</code></td>
+</tr>
+<tr>
+<td><code>verify</code></td>
+<td>Verify signed JSON</td>
+<td><code>--skip-identity</code></td>
+</tr>
+<tr>
+<td><code>validate-identity</code></td>
+<td>Validate DID document</td>
+<td><code>&lt;identifier&gt;</code></td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td>Show current identity</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">#</a></h2>
+<p><strong>"No identity configured"</strong>: Run <code>iscc-crypto setup</code> first.</p>
+<p><strong>Command not found</strong>: Add uv's tool directory to PATH:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>dir<span class="w">  </span><span class="c1"># Shows path to add</span>
+</code></pre></div>
+<p><strong>Invalid key format</strong>: Keys must use multibase z-base58btc format:</p>
+<ul>
+<li>Public keys: <code>z6Mk...</code></li>
+<li>Secret keys: <code>z3u2...</code></li>
+</ul>
+<p><strong>Verification fails</strong>:</p>
+<ul>
+<li>Document modified after signing</li>
+<li>Identity document not published/accessible</li>
+<li>Network issues</li>
+</ul>
+<p>Try <code>--skip-identity</code> to verify signature integrity only.</p>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
