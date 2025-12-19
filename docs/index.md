@@ -111,3 +111,19 @@ project (Enhancing AI-Readiness of Bioimaging Data with Content-Based Identifier
 ## License
 
 `iscc-crypto` is licensed under the Apache License, Version 2.0
+
+## Legal Notice
+
+ISCC-CRYPTO implements self-sovereign cryptographic operations for content identification and provenance using
+Ed25519 signatures. It operates independently of regulated trust services, certificate authorities, or statutory
+trust frameworks.
+
+Signatures produced by this library provide cryptographic authenticity and integrity but carry no inherent legal
+presumptions. The legal effect of electronic signatures depends on jurisdiction, context, and applicable law
+(including, where relevant, the UNCITRAL Model Law on Electronic Signatures, EU eIDAS, U.S. ESIGN/UETA, and
+corresponding national regulations).
+
+Where legal enforceability is required, ISCC declarations may be combined with jurisdiction-appropriate
+qualified electronic signatures, timestamps, or attestation services without altering the underlying protocol.
+
+This notice is provided for informational purposes only and does not constitute legal advice.
