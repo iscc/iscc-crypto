@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.0] - Unreleased
+
+- Added sign command for JSON document signing
+- Added verify command for signed JSON files
+
 ## [0.5.0] - 2025-08-13
 
 - Added controller-based verification method support in VC signing
